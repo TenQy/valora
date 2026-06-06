@@ -7,15 +7,15 @@ on conflict (name) do nothing;
 
 insert into competencies (name, description, category)
 values
-  ('Flutter', 'Framework para construir aplicaciones multiplataforma.', 'Tecnología'),
-  ('React', 'Biblioteca para construir interfaces web.', 'Tecnología'),
-  ('Python', 'Lenguaje de programación de propósito general.', 'Tecnología'),
-  ('PostgreSQL', 'Sistema de base de datos relacional.', 'Tecnología'),
-  ('Git', 'Sistema de control de versiones.', 'Tecnología'),
-  ('Figma', 'Herramienta de diseño de interfaces y prototipos.', 'Diseño'),
-  ('Adobe Illustrator', 'Herramienta de ilustración y diseño vectorial.', 'Diseño'),
-  ('SEO', 'Optimización para motores de búsqueda.', 'Marketing'),
-  ('Google Ads', 'Plataforma de publicidad digital de Google.', 'Marketing')
+  ('Flutter', 'Framework para construir aplicaciones multiplataforma.', 'framework'),
+  ('React', 'Biblioteca para construir interfaces web.', 'framework'),
+  ('Python', 'Lenguaje de programación de propósito general.', 'language'),
+  ('PostgreSQL', 'Sistema de base de datos relacional.', 'database'),
+  ('Git', 'Sistema de control de versiones.', 'tool'),
+  ('Figma', 'Herramienta de diseño de interfaces y prototipos.', 'design_tool'),
+  ('Adobe Illustrator', 'Herramienta de ilustración y diseño vectorial.', 'design_tool'),
+  ('SEO', 'Optimización para motores de búsqueda.', 'domain_knowledge'),
+  ('Google Ads', 'Plataforma de publicidad digital de Google.', 'marketing_tool')
 on conflict (name) do nothing;
 
 insert into competency_areas (competency_id, professional_area_id)
