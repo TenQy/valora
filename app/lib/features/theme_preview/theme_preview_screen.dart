@@ -4,9 +4,11 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../shared/widgets/app_badge.dart';
+import '../../shared/widgets/app_bar.dart';
 import '../../shared/widgets/app_card.dart';
 import '../../shared/widgets/language_chip.dart';
 import '../../shared/widgets/match_badge.dart';
+import '../../shared/widgets/nav_bar.dart';
 import '../../shared/widgets/progress_bar.dart';
 import '../../shared/widgets/score_item.dart';
 import '../../shared/widgets/section_label.dart';
@@ -24,9 +26,14 @@ class _ThemePreviewScreenState extends State<ThemePreviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final topPadding = MediaQuery.paddingOf(context).top +
+        ValoraAppBar.barHeight +
+        AppSpacing.space24;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const _ValoraLogo(),
+      extendBody: true,
+      extendBodyBehindAppBar: true,
+      appBar: ValoraAppBar(
         actions: [
           IconButton(
             tooltip: 'Notificaciones',
@@ -35,36 +42,34 @@ class _ThemePreviewScreenState extends State<ThemePreviewScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: NavBar(
         currentIndex: _selectedIndex,
         onTap: (index) => setState(() => _selectedIndex = index),
         items: const [
-          BottomNavigationBarItem(
-            icon: _NavIcon(Icons.home_outlined),
-            activeIcon: _NavIcon(Icons.home_outlined, isActive: true),
+          NavBarItem(
+            icon: Icons.home_outlined,
             label: 'Inicio',
           ),
-          BottomNavigationBarItem(
-            icon: _NavIcon(Icons.person_outline),
-            activeIcon: _NavIcon(Icons.person_outline, isActive: true),
+          NavBarItem(
+            icon: Icons.person_outline,
             label: 'Perfil',
           ),
-          BottomNavigationBarItem(
-            icon: _NavIcon(Icons.analytics_outlined),
-            activeIcon: _NavIcon(Icons.analytics_outlined, isActive: true),
+          NavBarItem(
+            icon: Icons.analytics_outlined,
             label: 'Resultados',
           ),
-          BottomNavigationBarItem(
-            icon: _NavIcon(Icons.work_outline),
-            activeIcon: _NavIcon(Icons.work_outline, isActive: true),
+          NavBarItem(
+            icon: Icons.work_outline,
             label: 'Proyectos',
           ),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.space24,
-          vertical: AppSpacing.space24,
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.space24,
+          topPadding,
+          AppSpacing.space24,
+          AppSpacing.space48 + 84,
         ),
         children: const [
           _HeaderPreview(),
@@ -85,61 +90,6 @@ class _ThemePreviewScreenState extends State<ThemePreviewScreen> {
   }
 }
 
-class _ValoraLogo extends StatelessWidget {
-  const _ValoraLogo();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 6,
-          height: 6,
-          decoration: const BoxDecoration(
-            color: AppColors.green,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: AppSpacing.space8),
-        const Text('Valora'),
-      ],
-    );
-  }
-}
-
-class _NavIcon extends StatelessWidget {
-  const _NavIcon(this.icon, {this.isActive = false});
-
-  final IconData icon;
-  final bool isActive;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox.square(
-      dimension: 24,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Icon(icon, size: 20),
-          Positioned(
-            bottom: 0,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              width: 4,
-              height: 4,
-              decoration: BoxDecoration(
-                color: isActive ? AppColors.silver : AppColors.transparent,
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _HeaderPreview extends StatelessWidget {
   const _HeaderPreview();
 
@@ -152,6 +102,11 @@ class _HeaderPreview extends StatelessWidget {
         const SizedBox(height: AppSpacing.space12),
         Text('AppTheme oscuro', style: AppTextStyles.h1),
         const SizedBox(height: AppSpacing.space12),
+        Text(
+          'Pantalla temporal para revisar paleta, tipografias, bordes, '
+          'espaciados y componentes base de Valora.',
+          style: AppTextStyles.body,
+        ),
         Text(
           'Pantalla temporal para revisar paleta, tipografias, bordes, '
           'espaciados y componentes base de Valora.',
