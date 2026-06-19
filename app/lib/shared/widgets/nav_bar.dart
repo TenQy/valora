@@ -1,6 +1,3 @@
-import 'dart:ui';
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -29,44 +26,37 @@ class NavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
 
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: bottomPadding > 0 ? bottomPadding + 8 : 22,
-        left: 24,
-        right: 24,
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.bgBase.withValues(alpha: 0.97),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(16),
+        ),
+        border: const Border(
+          top: BorderSide(color: AppColors.borderDefault, width: 0.5),
+        ),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(32),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppColors.bgBase.withValues(alpha: 0.94),
-              borderRadius: BorderRadius.circular(32),
-              border: Border.all(color: AppColors.borderDefault, width: 1),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x99000000),
-                  blurRadius: 30,
-                  offset: Offset(0, 8),
-                ),
-              ],
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                for (var index = 0; index < items.length; index++)
-                  _NavBarButton(
+      padding: EdgeInsets.only(
+        top: 0,
+        bottom: bottomPadding > 0 ? bottomPadding + 10 : 14,
+      ),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              for (var index = 0; index < items.length; index++)
+                Expanded(
+                  child: _NavBarButton(
                     item: items[index],
                     isActive: currentIndex == index,
                     onTap: () => onTap(index),
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
-        ),
+        ],
       ),
     );
   }
@@ -118,9 +108,13 @@ class _NavBarButtonState extends State<_NavBarButton>
   @override
   void didUpdateWidget(_NavBarButton oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.isActive && !oldWidget.isActive) {
+    if (widget.isActive == oldWidget.isActive) return;
+
+    if (widget.isActive) {
+      _pulseController.stop();
+      _pulseController.reset();
       _pulseController.repeat();
-    } else if (!widget.isActive && oldWidget.isActive) {
+    } else {
       _pulseController.stop();
       _pulseController.reset();
     }
@@ -132,8 +126,8 @@ class _NavBarButtonState extends State<_NavBarButton>
     super.dispose();
   }
 
-  static const _duration = Duration(milliseconds: 420);
-  static const _curve = Curves.easeOutBack;
+  static const _duration = Duration(milliseconds: 300);
+  static const _curve = Curves.easeOut;
 
   @override
   Widget build(BuildContext context) {
@@ -147,63 +141,59 @@ class _NavBarButtonState extends State<_NavBarButton>
         onTap: widget.onTap,
         behavior: HitTestBehavior.opaque,
         child: SizedBox(
-          width: 52,
           height: 56,
           child: Stack(
             alignment: Alignment.center,
             clipBehavior: Clip.none,
             children: [
-              // Label below
               Positioned(
-                bottom: 0,
+                bottom: 4,
                 child: AnimatedSlide(
                   duration: _duration,
                   curve: _curve,
-                  offset: isActive ? const Offset(0, -0.15) : Offset.zero,
-                  child: AnimatedDefaultTextStyle(
-                    duration: _duration,
-                    curve: _curve,
+                  offset: isActive ? const Offset(0, -0.1) : Offset.zero,
+                  child: Text(
+                    widget.item.label,
                     style: AppTextStyles.hint.copyWith(
                       color: isActive
                           ? AppColors.silverMuted
                           : AppColors.bottomNavUnselected,
-                      fontWeight: isActive ? FontWeight.w500 : FontWeight.w300,
+                      fontWeight:
+                          isActive ? FontWeight.w500 : FontWeight.w300,
                       fontSize: 9,
                       letterSpacing: 0.3,
+                      shadows: const [],
                     ),
-                    child: Text(widget.item.label),
                   ),
                 ),
               ),
-
-              // Icon bubble
               Positioned(
-                top: 0,
+                top: 2,
                 child: AnimatedSlide(
                   duration: _duration,
                   curve: _curve,
-                  offset: isActive ? const Offset(0, -0.36) : Offset.zero,
+                  offset: isActive ? const Offset(0, -0.45) : Offset.zero,
                   child: AnimatedContainer(
                     duration: _duration,
                     curve: _curve,
-                    width: 36,
-                    height: 36,
+                    width: 40,
+                    height: 34,
                     decoration: BoxDecoration(
                       color: isActive
                           ? AppColors.silver
                           : AppColors.transparent,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                       boxShadow: isActive
                           ? [
                               BoxShadow(
                                 color: AppColors.silver.withValues(alpha: 0.10),
-                                blurRadius: 18,
-                                spreadRadius: 4,
+                                blurRadius: 12,
+                                spreadRadius: 2,
                               ),
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.40),
-                                blurRadius: 14,
-                                offset: const Offset(0, 4),
+                                color: Colors.black.withValues(alpha: 0.35),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
                               ),
                             ]
                           : null,
@@ -211,7 +201,6 @@ class _NavBarButtonState extends State<_NavBarButton>
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
-                        // Pulse ring
                         if (isActive)
                           AnimatedBuilder(
                             animation: _pulseController,
@@ -222,13 +211,12 @@ class _NavBarButtonState extends State<_NavBarButton>
                                   opacity: _pulseOpacity.value,
                                   child: Container(
                                     width: 46,
-                                    height: 46,
+                                    height: 40,
                                     decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(17),
+                                      borderRadius: BorderRadius.circular(13),
                                       border: Border.all(
-                                        color: AppColors.silver.withValues(
-                                          alpha: 0.15,
-                                        ),
+                                        color: AppColors.silver
+                                            .withValues(alpha: 0.15),
                                         width: 1,
                                       ),
                                     ),
@@ -237,20 +225,12 @@ class _NavBarButtonState extends State<_NavBarButton>
                               );
                             },
                           ),
-
-                        // Icon
-                        AnimatedSwitcher(
-                          duration: _duration,
-                          switchInCurve: _curve,
-                          switchOutCurve: Curves.easeInCubic,
-                          child: Icon(
-                            widget.item.icon,
-                            key: ValueKey(isActive),
-                            size: 20,
-                            color: isActive
-                                ? AppColors.bgBase
-                                : AppColors.bottomNavUnselected,
-                          ),
+                        Icon(
+                          widget.item.icon,
+                          size: 19,
+                          color: isActive
+                              ? AppColors.bgBase
+                              : AppColors.bottomNavUnselected,
                         ),
                       ],
                     ),
