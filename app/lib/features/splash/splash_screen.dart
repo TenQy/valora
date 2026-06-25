@@ -13,23 +13,49 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _fadeController;
-  late final Animation<double> _fadeAnimation;
+  late final AnimationController _controller;
+
+  // Fade del logo
+  late final Animation<double> _logoOpacity;
+  // Scale del logo
+  late final Animation<double> _logoScale;
+  // Fade del indicador de carga (aparece después del logo)
+  late final Animation<double> _loaderOpacity;
 
   @override
   void initState() {
     super.initState();
 
-    _fadeController = AnimationController(
+    _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-    _fadeAnimation = CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeIn,
+      duration: const Duration(milliseconds: 1800),
     );
 
-    _fadeController.forward();
+    // Logo: fade-in de 0 → 1 en los primeros ~800ms
+    _logoOpacity = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.45, curve: Curves.easeOut),
+      ),
+    );
+
+    // Logo: scale de 0.88 → 1.0 (sutil, no exagerado)
+    _logoScale = Tween<double>(begin: 0.88, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.45, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    // Loader: fade-in después del logo, entre ~800ms y ~1200ms
+    _loaderOpacity = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.45, 0.65, curve: Curves.easeIn),
+      ),
+    );
+
+    _controller.forward();
     _checkSession();
   }
 
@@ -47,17 +73,15 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     if (session != null) {
-      // Usuario con sesión activa → Dashboard
       Navigator.of(context).pushReplacementNamed('/dashboard');
     } else {
-      // Sin sesión → Bienvenida
       Navigator.of(context).pushReplacementNamed('/welcome');
     }
   }
 
   @override
   void dispose() {
-    _fadeController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
@@ -65,19 +89,40 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bgBase,
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // ── Logo ──────────────────────────────────────────────
-              _ValoraLogo(),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ── Logo ──────────────────────────────────────────────
+            AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                return Opacity(
+                  opacity: _logoOpacity.value,
+                  child: Transform.scale(scale: _logoScale.value, child: child),
+                );
+              },
+              child: const Text(
+                'Valora',
+                style: TextStyle(
+                  fontFamily: AppFonts.display,
+                  fontSize: 32,
+                  fontWeight: FontWeight.w300,
+                  color: AppColors.textPrimary,
+                  height: 1.2,
+                ),
+              ),
+            ),
 
-              const SizedBox(height: 48),
+            const SizedBox(height: 48),
 
-              // ── Indicador de carga ────────────────────────────────
-              const SizedBox(
+            // ── Indicador de carga ────────────────────────────────
+            AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                return Opacity(opacity: _loaderOpacity.value, child: child);
+              },
+              child: const SizedBox(
                 width: 18,
                 height: 18,
                 child: CircularProgressIndicator(
@@ -85,46 +130,10 @@ class _SplashScreenState extends State<SplashScreen>
                   strokeWidth: 1,
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-    );
-  }
-}
-
-/// Logo de Valora: dot verde + nombre en Cormorant Garamond.
-class _ValoraLogo extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        // Dot verde semántico
-        Container(
-          width: 6,
-          height: 6,
-          decoration: const BoxDecoration(
-            color: AppColors.green,
-            shape: BoxShape.circle,
-          ),
-        ),
-
-        const SizedBox(width: 8),
-
-        // Nombre de la app
-        const Text(
-          'Valora',
-          style: TextStyle(
-            fontFamily: AppFonts.display,
-            fontSize: 32,
-            fontWeight: FontWeight.w300,
-            color: AppColors.textPrimary,
-            height: 1.2,
-          ),
-        ),
-      ],
     );
   }
 }
