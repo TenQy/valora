@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_text_styles.dart';
+import '../welcome/welcome_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -14,12 +13,9 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
-
-  // Fade del logo
-  late final Animation<double> _logoOpacity;
-  // Scale del logo
-  late final Animation<double> _logoScale;
-  // Fade del indicador de carga (aparece después del logo)
+  late final Animation<double> _fadeIn;
+  late final Animation<double> _scaleIn;
+  late final Animation<double> _pulse;
   late final Animation<double> _loaderOpacity;
 
   @override
@@ -28,55 +24,70 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1800),
+      duration: const Duration(milliseconds: 2200),
     );
 
-    // Logo: fade-in de 0 → 1 en los primeros ~800ms
-    _logoOpacity = Tween<double>(begin: 0, end: 1).animate(
+    _fadeIn = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.0, 0.45, curve: Curves.easeOut),
+        curve: const Interval(0.0, 0.23, curve: Curves.easeOut),
       ),
     );
 
-    // Logo: scale de 0.88 → 1.0 (sutil, no exagerado)
-    _logoScale = Tween<double>(begin: 0.88, end: 1.0).animate(
+    _scaleIn = Tween<double>(begin: 0.82, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.0, 0.45, curve: Curves.easeOutCubic),
+        curve: const Interval(0.0, 0.23, curve: Curves.easeOutCubic),
       ),
     );
 
-    // Loader: fade-in después del logo, entre ~800ms y ~1200ms
+    _pulse = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.0, end: 1.06)
+            .chain(CurveTween(curve: Curves.easeInOut)),
+        weight: 50,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.06, end: 1.0)
+            .chain(CurveTween(curve: Curves.easeInOut)),
+        weight: 50,
+      ),
+    ]).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.36, 0.64, curve: Curves.linear),
+      ),
+    );
+
     _loaderOpacity = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.45, 0.65, curve: Curves.easeIn),
+        curve: const Interval(0.27, 0.45, curve: Curves.easeIn),
       ),
     );
 
     _controller.forward();
-    _checkSession();
-  }
 
-  Future<void> _checkSession() async {
-    // Mínimo 1.5s de splash aunque la sesión cargue antes
-    await Future.wait([
-      Future.delayed(const Duration(milliseconds: 1500)),
-      _resolveSession(),
-    ]);
-  }
-
-  Future<void> _resolveSession() async {
-    final session = Supabase.instance.client.auth.currentSession;
-
-    if (!mounted) return;
-
-    if (session != null) {
-      Navigator.of(context).pushReplacementNamed('/dashboard');
-    } else {
-      Navigator.of(context).pushReplacementNamed('/welcome');
-    }
+    Future.delayed(const Duration(milliseconds: 2000), () {
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          transitionDuration: const Duration(milliseconds: 800),
+          reverseTransitionDuration: const Duration(milliseconds: 400),
+          pageBuilder: (_, __, ___) => const WelcomeScreen(),
+          transitionsBuilder: (_, animation, __, child) {
+            // Fade suave mientras el Hero hace su magia
+            return FadeTransition(
+              opacity: CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeIn,
+              ),
+              child: child,
+            );
+          },
+        ),
+      );
+    });
   }
 
   @override
@@ -93,35 +104,38 @@ class _SplashScreenState extends State<SplashScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ── Logo ──────────────────────────────────────────────
-            AnimatedBuilder(
-              animation: _controller,
-              builder: (context, child) {
-                return Opacity(
-                  opacity: _logoOpacity.value,
-                  child: Transform.scale(scale: _logoScale.value, child: child),
-                );
-              },
-              child: const Text(
-                'Valora',
-                style: TextStyle(
-                  fontFamily: AppFonts.display,
-                  fontSize: 32,
-                  fontWeight: FontWeight.w300,
-                  color: AppColors.textPrimary,
-                  height: 1.2,
+            // Hero — el logo vuela desde aquí hasta WelcomeScreen
+            Hero(
+              tag: 'valora-logo',
+              child: AnimatedBuilder(
+                animation: _controller,
+                builder: (context, child) {
+                  final double scale = _scaleIn.value * _pulse.value;
+                  return Opacity(
+                    opacity: _fadeIn.value,
+                    child: Transform.scale(scale: scale, child: child),
+                  );
+                },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: Image.asset(
+                    'assets/logos/app_icon.png',
+                    width: 110,
+                    height: 110,
+                    filterQuality: FilterQuality.high,
+                  ),
                 ),
               ),
             ),
 
             const SizedBox(height: 48),
 
-            // ── Indicador de carga ────────────────────────────────
             AnimatedBuilder(
               animation: _controller,
-              builder: (context, child) {
-                return Opacity(opacity: _loaderOpacity.value, child: child);
-              },
+              builder: (context, child) => Opacity(
+                opacity: _loaderOpacity.value,
+                child: child,
+              ),
               child: const SizedBox(
                 width: 18,
                 height: 18,

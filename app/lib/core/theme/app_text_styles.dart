@@ -1,128 +1,115 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 
 class AppFonts {
   const AppFonts._();
 
-  static const String display = 'Cormorant Garamond';
   static const String body = 'Inter';
+  static const String display = 'Cormorant Garamond';
   static const String mono = 'JetBrains Mono';
 }
 
 class AppTextStyles {
   const AppTextStyles._();
 
-  static const TextStyle salary = TextStyle(
-    fontFamily: AppFonts.display,
-    fontSize: 52,
-    height: 1.1,
-    fontWeight: FontWeight.w300,
-    color: AppColors.green,
-  );
+  static TextStyle get salary => GoogleFonts.cormorantGaramond(
+        fontSize: 52,
+        height: 1.1,
+        fontWeight: FontWeight.w300,
+        color: AppColors.green,
+      );
 
-  static const TextStyle currencySymbol = TextStyle(
-    fontFamily: AppFonts.display,
-    fontSize: 28,
-    height: 1.15,
-    fontWeight: FontWeight.w300,
-    color: AppColors.greenMuted,
-  );
+  static TextStyle get currencySymbol => GoogleFonts.cormorantGaramond(
+        fontSize: 28,
+        height: 1.15,
+        fontWeight: FontWeight.w300,
+        color: AppColors.greenMuted,
+      );
 
-  static const TextStyle h1 = TextStyle(
-    fontFamily: AppFonts.display,
-    fontSize: 32,
-    height: 1.2,
-    fontWeight: FontWeight.w300,
-    color: AppColors.textPrimary,
-  );
+  static TextStyle get h1 => GoogleFonts.cormorantGaramond(
+        fontSize: 32,
+        height: 1.2,
+        fontWeight: FontWeight.w300,
+        color: AppColors.textPrimary,
+      );
 
-  static const TextStyle score = TextStyle(
-    fontFamily: AppFonts.display,
-    fontSize: 28,
-    height: 1.2,
-    fontWeight: FontWeight.w300,
-    color: AppColors.textPrimary,
-  );
+  static TextStyle get score => GoogleFonts.cormorantGaramond(
+        fontSize: 28,
+        height: 1.2,
+        fontWeight: FontWeight.w300,
+        color: AppColors.textPrimary,
+      );
 
-  static const TextStyle title = TextStyle(
-    fontFamily: AppFonts.body,
-    fontSize: 18,
-    height: 1.35,
-    fontWeight: FontWeight.w400,
-    color: AppColors.textPrimary,
-  );
+  static TextStyle get title => GoogleFonts.inter(
+        fontSize: 18,
+        height: 1.35,
+        fontWeight: FontWeight.w400,
+        color: AppColors.textPrimary,
+      );
 
-  static const TextStyle userName = TextStyle(
-    fontFamily: AppFonts.body,
-    fontSize: 16,
-    height: 1.4,
-    fontWeight: FontWeight.w400,
-    color: AppColors.textSecondary,
-  );
+  static TextStyle get userName => GoogleFonts.inter(
+        fontSize: 16,
+        height: 1.4,
+        fontWeight: FontWeight.w400,
+        color: AppColors.textSecondary,
+      );
 
-  static const TextStyle subtitle = TextStyle(
-    fontFamily: AppFonts.body,
-    fontSize: 14,
-    height: 1.6,
-    fontWeight: FontWeight.w300,
-    color: AppColors.textSecondary,
-  );
+  static TextStyle get subtitle => GoogleFonts.inter(
+        fontSize: 14,
+        height: 1.6,
+        fontWeight: FontWeight.w300,
+        color: AppColors.textSecondary,
+      );
 
-  static const TextStyle body = TextStyle(
-    fontFamily: AppFonts.body,
-    fontSize: 14,
-    height: 1.6,
-    fontWeight: FontWeight.w300,
-    color: AppColors.textSecondary,
-  );
+  static TextStyle get body => GoogleFonts.inter(
+        fontSize: 14,
+        height: 1.6,
+        fontWeight: FontWeight.w300,
+        color: AppColors.textSecondary,
+      );
 
-  static const TextStyle compactBody = TextStyle(
-    fontFamily: AppFonts.body,
-    fontSize: 12,
-    height: 1.5,
-    fontWeight: FontWeight.w300,
-    color: AppColors.textSecondary,
-  );
+  static TextStyle get compactBody => GoogleFonts.inter(
+        fontSize: 12,
+        height: 1.5,
+        fontWeight: FontWeight.w300,
+        color: AppColors.textSecondary,
+      );
 
-  static const TextStyle sectionLabel = TextStyle(
-    fontFamily: AppFonts.body,
-    fontSize: 11,
-    height: 1.3,
-    fontWeight: FontWeight.w400,
-    color: AppColors.textMuted,
-    letterSpacing: 2.2,
-  );
+  static TextStyle get sectionLabel => GoogleFonts.inter(
+        fontSize: 11,
+        height: 1.3,
+        fontWeight: FontWeight.w400,
+        color: AppColors.textMuted,
+        letterSpacing: 2.2,
+      );
 
-  static const TextStyle hint = TextStyle(
-    fontFamily: AppFonts.body,
-    fontSize: 11,
-    height: 1.4,
-    fontWeight: FontWeight.w300,
-    color: AppColors.textMuted,
-  );
+  static TextStyle get hint => GoogleFonts.inter(
+        fontSize: 11,
+        height: 1.4,
+        fontWeight: FontWeight.w300,
+        color: AppColors.textMuted,
+      );
 
-  static const TextStyle button = TextStyle(
-    fontFamily: AppFonts.body,
-    fontSize: 14,
-    height: 1.2,
-    fontWeight: FontWeight.w500,
-    letterSpacing: 0.84,
-  );
+  static TextStyle get button => GoogleFonts.inter(
+        fontSize: 14,
+        height: 1.2,
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0.84,
+      );
 
-  static const TextStyle skill = TextStyle(
-    fontFamily: AppFonts.mono,
-    fontSize: 12,
-    height: 1.3,
-    fontWeight: FontWeight.w400,
-    color: AppColors.silverMuted,
-  );
+  static TextStyle get skill => GoogleFonts.jetBrainsMono(
+        fontSize: 12,
+        height: 1.3,
+        fontWeight: FontWeight.w400,
+        color: AppColors.silverMuted,
+      );
 
-  static const TextStyle match = TextStyle(
-    fontFamily: AppFonts.mono,
-    fontSize: 12,
-    height: 1.3,
-    fontWeight: FontWeight.w500,
-    color: AppColors.green,
-  );
+  static TextStyle get match => GoogleFonts.jetBrainsMono(
+        fontSize: 12,
+        height: 1.3,
+        fontWeight: FontWeight.w500,
+        color: AppColors.green,
+      );
 }
