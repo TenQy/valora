@@ -93,7 +93,6 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
     // Logo pequeño al lado del título
     const double logoSize = 48.0;
 
