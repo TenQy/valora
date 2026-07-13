@@ -12,296 +12,265 @@ class WelcomeScreen extends StatefulWidget {
 }
 
 class _WelcomeScreenState extends State<WelcomeScreen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _topOpacity;
-  late final Animation<double> _topSlide;
-  late final Animation<double> _bottomOpacity;
-  late final Animation<double> _bottomSlide;
+    with TickerProviderStateMixin {
+  // Controlador del título (aparece junto al Hero al terminar)
+  late final AnimationController _titleCtrl;
+  late final Animation<double> _titleOpacity;
+  late final Animation<double> _titleSlide;
+
+  // Controlador del eslogan
+  late final AnimationController _taglineCtrl;
+  late final Animation<double> _taglineOpacity;
+  late final Animation<double> _taglineSlide;
+
+  // Controlador de botones
+  late final AnimationController _buttonsCtrl;
+  late final Animation<double> _buttonsOpacity;
+  late final Animation<double> _buttonsSlide;
 
   @override
   void initState() {
     super.initState();
 
-    // El texto y botones aparecen DESPUÉS de que el Hero termina (~700ms)
-    _controller = AnimationController(
+    // ── Título ───────────────────────────────────────────────
+    _titleCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 400),
+    );
+    _titleOpacity = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _titleCtrl, curve: Curves.easeOut),
+    );
+    _titleSlide = Tween<double>(begin: 12, end: 0).animate(
+      CurvedAnimation(parent: _titleCtrl, curve: Curves.easeOut),
     );
 
-    _topOpacity = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.0, 0.7, curve: Curves.easeOut),
-      ),
+    // ── Eslogan ──────────────────────────────────────────────
+    _taglineCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
     );
-    _topSlide = Tween<double>(begin: -14, end: 0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.0, 0.7, curve: Curves.easeOut),
-      ),
+    _taglineOpacity = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _taglineCtrl, curve: Curves.easeOut),
     );
-    _bottomOpacity = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
-      ),
-    );
-    _bottomSlide = Tween<double>(begin: 14, end: 0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
-      ),
+    _taglineSlide = Tween<double>(begin: 12, end: 0).animate(
+      CurvedAnimation(parent: _taglineCtrl, curve: Curves.easeOut),
     );
 
-    // Espera que el Hero termine antes de animar texto/botones
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) _controller.forward();
+    // ── Botones ──────────────────────────────────────────────
+    _buttonsCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _buttonsOpacity = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _buttonsCtrl, curve: Curves.easeOut),
+    );
+    _buttonsSlide = Tween<double>(begin: 12, end: 0).animate(
+      CurvedAnimation(parent: _buttonsCtrl, curve: Curves.easeOut),
+    );
+
+    // Secuencia: Hero tarda ~700ms en llegar
+    // 1. Logo llega + título aparece: 700ms
+    // 2. Eslogan: 700 + 500 = 1200ms
+    // 3. Botones: 1200 + 500 = 1700ms
+    Future.delayed(const Duration(milliseconds: 700), () {
+      if (mounted) _titleCtrl.forward();
+    });
+    Future.delayed(const Duration(milliseconds: 1200), () {
+      if (mounted) _taglineCtrl.forward();
+    });
+    Future.delayed(const Duration(milliseconds: 1700), () {
+      if (mounted) _buttonsCtrl.forward();
     });
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _titleCtrl.dispose();
+    _taglineCtrl.dispose();
+    _buttonsCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-
-    // Logo al 50% del alto
-    final double logoSize = size.height * 0.50;
+    // Logo pequeño al lado del título
+    const double logoSize = 48.0;
 
     return Scaffold(
       backgroundColor: AppColors.bgBase,
-      body: Stack(
-        children: [
-          // ── Hero logo — recibe la transición del splash ──────
-          Positioned(
-            left: AppSpacing.space20,
-            right: AppSpacing.space20,
-            top: (size.height - logoSize) / 2,
-            height: logoSize,
-            child: Hero(
-              tag: 'valora-logo',
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(28),
-                child: Image.asset(
-                  'assets/logos/app_icon.png',
-                  fit: BoxFit.cover,
-                  filterQuality: FilterQuality.high,
-                ),
-              ),
-            ),
-          ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Spacer(flex: 2),
 
-          // ── Gradiente superior ───────────────────────────────
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: size.height * 0.50,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    AppColors.bgBase,
-                    AppColors.bgBase.withOpacity(0.80),
-                    Colors.transparent,
-                  ],
-                  stops: const [0.0, 0.45, 1.0],
-                ),
-              ),
-            ),
-          ),
-
-          // ── Gradiente inferior ───────────────────────────────
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: size.height * 0.50,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    AppColors.bgBase,
-                    AppColors.bgBase.withOpacity(0.88),
-                    Colors.transparent,
-                  ],
-                  stops: const [0.0, 0.5, 1.0],
-                ),
-              ),
-            ),
-          ),
-
-          // ── Contenido ────────────────────────────────────────
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.space24,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              // ── 1. Logo + Título ───────────────────────────────
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // ── Texto superior ──────────────────────────
-                  AnimatedBuilder(
-                    animation: _controller,
-                    builder: (context, child) => Opacity(
-                      opacity: _topOpacity.value,
-                      child: Transform.translate(
-                        offset: Offset(0, _topSlide.value),
-                        child: child,
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: AppSpacing.space32),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Valora',
-                            style: GoogleFonts.dmSans(
-                              fontSize: 52,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary,
-                              height: 1.1,
-                              letterSpacing: -1.5,
-                            ),
-                          ),
-
-                          const SizedBox(height: AppSpacing.space8),
-
-                          Text(
-                            'Conoce tu valor\nen el mercado laboral.',
-                            style: GoogleFonts.dmSans(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w300,
-                              fontStyle: FontStyle.italic,
-                              color: AppColors.textSecondary,
-                              height: 1.4,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
-
-                          const SizedBox(height: AppSpacing.space12),
-
-                          Text(
-                            'Estima tu salario, descubre puestos\ncompatibles y valora tus proyectos.',
-                            style: GoogleFonts.dmSans(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w300,
-                              color: AppColors.textMuted,
-                              height: 1.65,
-                            ),
-                          ),
-                        ],
+                  // Hero — el logo encoge desde la splash hasta aquí
+                  Hero(
+                    tag: 'valora-logo',
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.asset(
+                        'assets/logos/app_icon.png',
+                        width: logoSize,
+                        height: logoSize,
+                        fit: BoxFit.cover,
+                        filterQuality: FilterQuality.high,
                       ),
                     ),
                   ),
 
-                  const Spacer(),
+                  const SizedBox(width: AppSpacing.space12),
 
-                  // ── Botones inferiores ──────────────────────
+                  // Título aparece junto al logo
                   AnimatedBuilder(
-                    animation: _controller,
+                    animation: _titleCtrl,
                     builder: (context, child) => Opacity(
-                      opacity: _bottomOpacity.value,
+                      opacity: _titleOpacity.value,
                       child: Transform.translate(
-                        offset: Offset(0, _bottomSlide.value),
+                        offset: Offset(_titleSlide.value, 0),
                         child: child,
                       ),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.only(
-                        bottom: AppSpacing.space32,
-                      ),
-                      child: Column(
-                        children: [
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                // TODO: navegar a registro
-                              },
-                              child: Text(
-                                'Crear cuenta',
-                                style: GoogleFonts.dmSans(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: AppSpacing.space12),
-
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton(
-                              onPressed: () {
-                                // TODO: navegar a login
-                              },
-                              child: Text(
-                                'Iniciar sesión',
-                                style: GoogleFonts.dmSans(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w400,
-                                  color: AppColors.silverMuted,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: AppSpacing.space12),
-
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton(
-                              onPressed: () {
-                                // TODO: login con Google
-                              },
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: AppColors.textSecondary,
-                                side: const BorderSide(
-                                  color: AppColors.borderDefault,
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: AppSpacing.space24,
-                                  vertical: AppSpacing.space16,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.circular(AppRadius.xs),
-                                ),
-                              ),
-                              child: Text(
-                                'Continuar con Google',
-                                style: GoogleFonts.dmSans(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w400,
-                                  color: AppColors.textSecondary,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                    child: Text(
+                      'Valora',
+                      style: GoogleFonts.dmSans(
+                        fontSize: 42,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                        height: 1.1,
+                        letterSpacing: -1.5,
                       ),
                     ),
                   ),
                 ],
               ),
-            ),
+
+              const SizedBox(height: AppSpacing.space24),
+
+              // ── 2. Eslogan ─────────────────────────────────────
+              AnimatedBuilder(
+                animation: _taglineCtrl,
+                builder: (context, child) => Opacity(
+                  opacity: _taglineOpacity.value,
+                  child: Transform.translate(
+                    offset: Offset(0, _taglineSlide.value),
+                    child: child,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      'Conoce tu valor en el mercado laboral.',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.dmSans(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w300,
+                        fontStyle: FontStyle.italic,
+                        color: AppColors.textSecondary,
+                        height: 1.4,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+
+                    const SizedBox(height: AppSpacing.space8),
+
+                    Text(
+                      'Estima tu salario, descubre puestos\ncompatibles y valora tus proyectos.',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.dmSans(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w300,
+                        color: AppColors.textMuted,
+                        height: 1.65,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const Spacer(flex: 2),
+
+              // ── 3. Botones ─────────────────────────────────────
+              AnimatedBuilder(
+                animation: _buttonsCtrl,
+                builder: (context, child) => Opacity(
+                  opacity: _buttonsOpacity.value,
+                  child: Transform.translate(
+                    offset: Offset(0, _buttonsSlide.value),
+                    child: child,
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.space32),
+                  child: Column(
+                    children: [
+                      // Iniciar sesión
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            // TODO: navegar a login
+                          },
+                          child: Text(
+                            'Iniciar sesión',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: AppSpacing.space12),
+
+                      // Iniciar sesión con Google
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: () {
+                            // TODO: login con Google
+                          },
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.textSecondary,
+                            side: const BorderSide(
+                              color: AppColors.borderDefault,
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.space24,
+                              vertical: AppSpacing.space16,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.xs),
+                            ),
+                          ),
+                          child: Text(
+                            'Iniciar sesión con Google',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                              color: AppColors.textSecondary,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
