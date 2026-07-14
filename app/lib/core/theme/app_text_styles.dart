@@ -4,7 +4,6 @@ import 'app_colors.dart';
 
 class AppFonts {
   const AppFonts._();
-
   static const String display = 'Cormorant Garamond';
   static const String body = 'Inter';
   static const String mono = 'JetBrains Mono';
@@ -12,7 +11,6 @@ class AppFonts {
 
 class AppTextStyles {
   const AppTextStyles._();
-
   static const TextStyle salary = TextStyle(
     fontFamily: AppFonts.display,
     fontSize: 52,
@@ -20,7 +18,6 @@ class AppTextStyles {
     fontWeight: FontWeight.w300,
     color: AppColors.green,
   );
-
   static const TextStyle currencySymbol = TextStyle(
     fontFamily: AppFonts.display,
     fontSize: 28,
@@ -28,7 +25,6 @@ class AppTextStyles {
     fontWeight: FontWeight.w300,
     color: AppColors.greenMuted,
   );
-
   static const TextStyle h1 = TextStyle(
     fontFamily: AppFonts.display,
     fontSize: 32,
@@ -36,7 +32,6 @@ class AppTextStyles {
     fontWeight: FontWeight.w300,
     color: AppColors.textPrimary,
   );
-
   static const TextStyle score = TextStyle(
     fontFamily: AppFonts.display,
     fontSize: 28,
@@ -44,7 +39,6 @@ class AppTextStyles {
     fontWeight: FontWeight.w300,
     color: AppColors.textPrimary,
   );
-
   static const TextStyle title = TextStyle(
     fontFamily: AppFonts.body,
     fontSize: 18,
@@ -52,7 +46,6 @@ class AppTextStyles {
     fontWeight: FontWeight.w400,
     color: AppColors.textPrimary,
   );
-
   static const TextStyle userName = TextStyle(
     fontFamily: AppFonts.body,
     fontSize: 16,
@@ -60,7 +53,6 @@ class AppTextStyles {
     fontWeight: FontWeight.w400,
     color: AppColors.textSecondary,
   );
-
   static const TextStyle subtitle = TextStyle(
     fontFamily: AppFonts.body,
     fontSize: 14,
@@ -68,7 +60,6 @@ class AppTextStyles {
     fontWeight: FontWeight.w300,
     color: AppColors.textSecondary,
   );
-
   static const TextStyle body = TextStyle(
     fontFamily: AppFonts.body,
     fontSize: 14,
@@ -76,7 +67,6 @@ class AppTextStyles {
     fontWeight: FontWeight.w300,
     color: AppColors.textSecondary,
   );
-
   static const TextStyle compactBody = TextStyle(
     fontFamily: AppFonts.body,
     fontSize: 12,
@@ -84,7 +74,6 @@ class AppTextStyles {
     fontWeight: FontWeight.w300,
     color: AppColors.textSecondary,
   );
-
   static const TextStyle sectionLabel = TextStyle(
     fontFamily: AppFonts.body,
     fontSize: 11,
@@ -93,7 +82,6 @@ class AppTextStyles {
     color: AppColors.textMuted,
     letterSpacing: 2.2,
   );
-
   static const TextStyle hint = TextStyle(
     fontFamily: AppFonts.body,
     fontSize: 11,
@@ -101,7 +89,6 @@ class AppTextStyles {
     fontWeight: FontWeight.w300,
     color: AppColors.textMuted,
   );
-
   static const TextStyle button = TextStyle(
     fontFamily: AppFonts.body,
     fontSize: 14,
@@ -109,7 +96,6 @@ class AppTextStyles {
     fontWeight: FontWeight.w500,
     letterSpacing: 0.84,
   );
-
   static const TextStyle skill = TextStyle(
     fontFamily: AppFonts.mono,
     fontSize: 12,
@@ -117,7 +103,6 @@ class AppTextStyles {
     fontWeight: FontWeight.w400,
     color: AppColors.silverMuted,
   );
-
   static const TextStyle match = TextStyle(
     fontFamily: AppFonts.mono,
     fontSize: 12,

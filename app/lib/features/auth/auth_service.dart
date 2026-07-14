@@ -1,3 +1,4 @@
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Centraliza todas las llamadas a Supabase Auth (Email/Password y Google).
@@ -8,6 +9,11 @@ class AuthService {
   AuthService(this._client);
 
   final SupabaseClient _client;
+
+  /// Client ID de tipo "Web" registrado en Google Cloud Console.
+  /// Supabase lo necesita para validar el ID token del usuario.
+  static const _webClientId =
+      '800696677701-ckm02ftoae9vi5bm9toa0qlbsvd3u51t.apps.googleusercontent.com';
 
   /// Usuario actualmente autenticado (null si no hay sesión activa).
   User? get currentUser => _client.auth.currentUser;
@@ -40,21 +46,38 @@ class AuthService {
     return _client.auth.signInWithPassword(email: email, password: password);
   }
 
-  /// Inicia sesión con Google usando el flujo nativo (Android/iOS).
+  /// Inicia sesión con Google usando el SDK nativo de Android.
   ///
-  /// Requiere que el provider de Google esté configurado en el dashboard
-  /// de Supabase y que el Client ID de tipo "Web" esté registrado ahí.
-  /// En Android/iOS, supabase_flutter abre el flujo nativo de Google
-  /// y luego intercambia el token con Supabase.
-  Future<bool> signInWithGoogle() {
-    return _client.auth.signInWithOAuth(
-      OAuthProvider.google,
-      redirectTo: 'io.supabase.valora://login-callback',
+  /// Muestra el selector de cuentas de Google directamente dentro de la
+  /// app (sin abrir un navegador externo), obtiene el ID token y lo
+  /// intercambia con Supabase para crear la sesión.
+  Future<AuthResponse> signInWithGoogle() async {
+    final googleSignIn = GoogleSignIn(serverClientId: _webClientId);
+
+    final googleUser = await googleSignIn.signIn();
+    if (googleUser == null) {
+      throw const AuthException('Inicio de sesión con Google cancelado.');
+    }
+
+    final googleAuth = await googleUser.authentication;
+    final idToken = googleAuth.idToken;
+
+    if (idToken == null) {
+      throw const AuthException(
+        'No se pudo obtener el token de Google. Intenta de nuevo.',
+      );
+    }
+
+    return _client.auth.signInWithIdToken(
+      provider: OAuthProvider.google,
+      idToken: idToken,
+      accessToken: googleAuth.accessToken,
     );
   }
 
   /// Cierra la sesión actual.
-  Future<void> signOut() {
-    return _client.auth.signOut();
+  Future<void> signOut() async {
+    await GoogleSignIn().signOut();
+    await _client.auth.signOut();
   }
 }
