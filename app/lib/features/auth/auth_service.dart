@@ -13,7 +13,7 @@ class AuthService {
   /// Client ID de tipo "Web" registrado en Google Cloud Console.
   /// Supabase lo necesita para validar el ID token del usuario.
   static const _webClientId =
-      '800696677701-ckm02ftoae9vi5bm9toa0qlbsvd3u51t.apps.googleusercontent.com';
+      '668166580258-52kloamq5fk6vh9fajsr61i30sodq8m5.apps.googleusercontent.com';
 
   /// Usuario actualmente autenticado (null si no hay sesión activa).
   User? get currentUser => _client.auth.currentUser;
@@ -35,6 +35,7 @@ class AuthService {
       email: email,
       password: password,
       data: {'full_name': fullName},
+      emailRedirectTo: 'io.supabase.valora://login-callback',
     );
   }
 
