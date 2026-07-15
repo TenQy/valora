@@ -133,7 +133,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(10),
                           child: Image.asset(
-                            'assets/logos/app_icon.jpeg',
+                            'assets/logos/app_icon.png',
                             width: logoSize,
                             height: logoSize,
                             fit: BoxFit.cover,
