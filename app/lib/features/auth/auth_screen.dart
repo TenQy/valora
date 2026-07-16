@@ -53,7 +53,17 @@ class _AuthScreenState extends State<AuthScreen> {
     setState(() {
       _isLogin = !_isLogin;
       _errorMessage = null;
+
+      _fullNameController.clear();
+      _emailController.clear();
+      _passwordController.clear();
+      _confirmPasswordController.clear();
+      _obscurePassword = true;
+      _obscureConfirmPassword = true;
     });
+
+    // Limpia los estados de validación (bordes rojos) del Form.
+    _formKey.currentState?.reset();
   }
 
   /// Ejecuta una acción de auth (email o Google) manejando loading,
