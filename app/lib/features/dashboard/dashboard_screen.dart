@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../shared/widgets/app_bar.dart';
+import '../../shared/widgets/animated_app_background.dart';
 import '../../shared/widgets/nav_bar.dart';
 import '../auth/auth_service.dart';
 import '../welcome/welcome_screen.dart';
@@ -53,32 +54,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bgPage,
+      extendBodyBehindAppBar: true,
       appBar: ValoraAppBar(),
-      body: SafeArea(
-        bottom: false,
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.space24),
-            child: OutlinedButton(
-              onPressed: _isSigningOut ? null : _signOut,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.textSecondary,
-                side: const BorderSide(color: AppColors.borderDefault),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.space24,
-                  vertical: AppSpacing.space16,
+      body: AnimatedAppBackground(
+        child: SafeArea(
+          bottom: false,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.space24),
+              child: OutlinedButton(
+                onPressed: _isSigningOut ? null : _signOut,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.textSecondary,
+                  side: const BorderSide(color: AppColors.borderDefault),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.space24,
+                    vertical: AppSpacing.space16,
+                  ),
                 ),
+                child: _isSigningOut
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.textSecondary,
+                        ),
+                      )
+                    : const Text('Cerrar sesión'),
               ),
-              child: _isSigningOut
-                  ? const SizedBox(
-                      height: 18,
-                      width: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.textSecondary,
-                      ),
-                    )
-                  : const Text('Cerrar sesión'),
             ),
           ),
         ),

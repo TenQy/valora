@@ -27,7 +27,7 @@ class ValoraAppBar extends StatelessWidget implements PreferredSizeWidget {
         filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: AppColors.bgBase.withValues(alpha: 0.68),
+            color: AppColors.bgBase.withValues(alpha: 0.2),
             border: const Border(
               bottom: BorderSide(color: AppColors.borderSubtle),
             ),
