@@ -6,7 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 
-import '../auth/auth_test_screen.dart';
+import '../auth/auth_screen.dart';
 import '../auth/auth_service.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -235,7 +235,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                             child: ElevatedButton(
                               onPressed: () {
                                 Navigator.of(context).push(
-                                  MaterialPageRoute(builder: (_) => const AuthTestScreen()),
+                                  MaterialPageRoute(builder: (_) => const AuthScreen()),
                                 );
                               },
                               child: Text(
@@ -257,7 +257,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                   await AuthService(Supabase.instance.client).signInWithGoogle();
                                   if (context.mounted) {
                                     Navigator.of(context).pushReplacement(
-                                      MaterialPageRoute(builder: (_) => const AuthTestScreen()),
+                                      MaterialPageRoute(builder: (_) => const AuthScreen()),
                                     );
                                   }
                                 } catch (e) {
