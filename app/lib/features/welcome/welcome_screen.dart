@@ -34,6 +34,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           (route) => false,
         );
       }
+    } on GoogleSignInCancelledException {
+      // Cancelación del usuario: no mostramos snackbar.
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

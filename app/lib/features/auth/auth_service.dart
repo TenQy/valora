@@ -1,6 +1,13 @@
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+/// Se lanza cuando el usuario cierra el selector de cuentas de Google
+/// sin completar el login. No es un error real — es una cancelación
+/// intencional del usuario, y las pantallas deben tratarla en silencio.
+class GoogleSignInCancelledException implements Exception {
+  const GoogleSignInCancelledException();
+}
+
 /// Centraliza todas las llamadas a Supabase Auth (Email/Password y Google).
 ///
 /// Mantener esta lógica separada de las pantallas permite reutilizarla
@@ -57,7 +64,7 @@ class AuthService {
 
     final googleUser = await googleSignIn.signIn();
     if (googleUser == null) {
-      throw const AuthException('Inicio de sesión con Google cancelado.');
+      throw const GoogleSignInCancelledException();
     }
 
     final googleAuth = await googleUser.authentication;

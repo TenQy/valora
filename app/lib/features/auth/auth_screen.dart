@@ -88,6 +88,8 @@ class _AuthScreenState extends State<AuthScreen> {
           MaterialPageRoute(builder: (_) => const DashboardScreen()),
         );
       }
+    } on GoogleSignInCancelledException {
+      // Cancelación del usuario: no es un error, no mostramos nada.
     } on AuthException catch (e) {
       setState(() => _errorMessage = e.message);
     } catch (e) {
