@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
-import '../../shared/widgets/app_bar.dart';
+import '../../shared/widgets/valora_app_bar.dart';
 import '../../shared/widgets/animated_app_background.dart';
 import '../../shared/widgets/nav_bar.dart';
 import '../auth/auth_service.dart';
