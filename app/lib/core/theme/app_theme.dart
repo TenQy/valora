@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 import 'app_spacing.dart';
@@ -10,7 +11,6 @@ class AppTheme {
   static final ThemeData dark = ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
-    fontFamily: AppFonts.body,
     scaffoldBackgroundColor: AppColors.bgPage,
     canvasColor: AppColors.bgPage,
     dividerColor: AppColors.borderSubtle,
@@ -23,7 +23,7 @@ class AppTheme {
       surface: AppColors.bgSurface,
       onSurface: AppColors.textPrimary,
     ),
-    textTheme: const TextTheme(
+    textTheme: TextTheme(
       displayLarge: AppTextStyles.salary,
       displayMedium: AppTextStyles.h1,
       displaySmall: AppTextStyles.score,
@@ -35,45 +35,34 @@ class AppTheme {
       labelLarge: AppTextStyles.button,
       labelSmall: AppTextStyles.sectionLabel,
     ),
-    appBarTheme: const AppBarTheme(
+    appBarTheme: AppBarTheme(
       backgroundColor: AppColors.bgBase,
       surfaceTintColor: AppColors.transparent,
       elevation: 0,
       centerTitle: false,
-      iconTheme: IconThemeData(color: AppColors.silverMuted),
-      titleTextStyle: TextStyle(
-        fontFamily: AppFonts.display,
+      iconTheme: const IconThemeData(color: AppColors.silverMuted),
+      titleTextStyle: GoogleFonts.cormorantGaramond(
         fontSize: 18,
         height: 1.2,
         fontWeight: FontWeight.w300,
         color: AppColors.textPrimary,
       ),
     ),
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+    bottomNavigationBarTheme: BottomNavigationBarThemeData(
       backgroundColor: AppColors.bgBase,
       selectedItemColor: AppColors.silverMuted,
       unselectedItemColor: AppColors.bottomNavUnselected,
-      selectedLabelStyle: TextStyle(
-        fontFamily: AppFonts.body,
-        fontSize: 10,
-        letterSpacing: 0.6,
-      ),
-      unselectedLabelStyle: TextStyle(fontFamily: AppFonts.body, fontSize: 10),
+      selectedLabelStyle: GoogleFonts.inter(fontSize: 10, letterSpacing: 0.6),
+      unselectedLabelStyle: GoogleFonts.inter(fontSize: 10),
       type: BottomNavigationBarType.fixed,
       elevation: 0,
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: AppColors.bgInput,
-      hintStyle: AppTextStyles.subtitle.copyWith(
-        color: AppColors.textPlaceholder,
-      ),
-      labelStyle: AppTextStyles.compactBody.copyWith(
-        color: AppColors.textMuted,
-      ),
-      errorStyle: AppTextStyles.compactBody.copyWith(
-        color: AppColors.colorError,
-      ),
+      hintStyle: AppTextStyles.subtitle.copyWith(color: AppColors.textPlaceholder),
+      labelStyle: AppTextStyles.compactBody.copyWith(color: AppColors.textMuted),
+      errorStyle: AppTextStyles.compactBody.copyWith(color: AppColors.colorError),
       contentPadding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.space16,
         vertical: AppSpacing.space16,
@@ -96,7 +85,7 @@ class AppTheme {
         foregroundColor: const WidgetStatePropertyAll(AppColors.bgBase),
         overlayColor: const WidgetStatePropertyAll(AppColors.transparent),
         elevation: const WidgetStatePropertyAll(0),
-        textStyle: const WidgetStatePropertyAll(AppTextStyles.button),
+        textStyle: WidgetStatePropertyAll(AppTextStyles.button),
         padding: const WidgetStatePropertyAll(
           EdgeInsets.symmetric(
             horizontal: AppSpacing.space24,
@@ -116,7 +105,7 @@ class AppTheme {
         side: const WidgetStatePropertyAll(
           BorderSide(color: AppColors.borderDefault),
         ),
-        textStyle: const WidgetStatePropertyAll(AppTextStyles.button),
+        textStyle: WidgetStatePropertyAll(AppTextStyles.button),
         padding: const WidgetStatePropertyAll(
           EdgeInsets.symmetric(
             horizontal: AppSpacing.space24,
@@ -142,10 +131,6 @@ class AppTheme {
       linearTrackColor: AppColors.borderSubtle,
     ),
   );
-
-  static ThemeData get light {
-    return dark.copyWith(brightness: Brightness.light);
-  }
 
   static OutlineInputBorder _inputBorder(Color color) {
     return OutlineInputBorder(
