@@ -7,7 +7,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 
 import 'auth_service.dart';
-import 'auth_test_screen.dart';
+import '../dashboard/dashboard_screen.dart';
 
 /// Pantalla real de autenticación (Login / Registro en un mismo lugar,
 /// alternable mediante un toggle), siguiendo UI_GUIDELINES.md §7.3.
@@ -78,7 +78,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const AuthTestScreen()),
+          MaterialPageRoute(builder: (_) => const DashboardScreen()),
         );
       }
     } on AuthException catch (e) {
@@ -100,7 +100,7 @@ class _AuthScreenState extends State<AuthScreen> {
       await _authService.signInWithGoogle();
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const AuthTestScreen()),
+          MaterialPageRoute(builder: (_) => const DashboardScreen()),
         );
       }
     } on AuthException catch (e) {
