@@ -8,6 +8,7 @@ import '../../core/theme/app_spacing.dart';
 
 import '../auth/auth_screen.dart';
 import '../auth/auth_service.dart';
+import '../dashboard/dashboard_screen.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -256,8 +257,9 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                 try {
                                   await AuthService(Supabase.instance.client).signInWithGoogle();
                                   if (context.mounted) {
-                                    Navigator.of(context).pushReplacement(
-                                      MaterialPageRoute(builder: (_) => const AuthScreen()),
+                                    Navigator.of(context).pushAndRemoveUntil(
+                                      MaterialPageRoute(builder: (_) => const DashboardScreen()),
+                                      (route) => false,
                                     );
                                   }
                                 } catch (e) {

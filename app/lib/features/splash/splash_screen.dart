@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../dashboard/dashboard_screen.dart';
 import '../welcome/welcome_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -70,11 +72,17 @@ class _SplashScreenState extends State<SplashScreen>
 
     Future.delayed(const Duration(milliseconds: 2000), () {
       if (!mounted) return;
+
+      final session = Supabase.instance.client.auth.currentSession;
+      final hasValidSession = session != null && !session.isExpired;
+
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           transitionDuration: const Duration(milliseconds: 800),
           reverseTransitionDuration: const Duration(milliseconds: 400),
-          pageBuilder: (_, _, _) => const WelcomeScreen(),
+          pageBuilder: (_, _, _) => hasValidSession
+              ? const DashboardScreen()
+              : const WelcomeScreen(),
           transitionsBuilder: (_, animation, _, child) {
             // Fade suave mientras el Hero hace su magia
             return FadeTransition(
