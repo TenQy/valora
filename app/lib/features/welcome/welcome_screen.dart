@@ -1,9 +1,13 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+
+import '../auth/auth_test_screen.dart';
+import '../auth/auth_service.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -229,13 +233,17 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(builder: (_) => const AuthTestScreen()),
+                                );
+                              },
                               child: Text(
-                                'Iniciar sesión',
-                                style: GoogleFonts.dmSans(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  letterSpacing: 0.5,
+                                  'Iniciar sesión',
+                                  style: GoogleFonts.dmSans(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    letterSpacing: 0.5,
                                 ),
                               ),
                             ),
@@ -244,7 +252,22 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                           SizedBox(
                             width: double.infinity,
                             child: OutlinedButton(
-                              onPressed: () {},
+                              onPressed: () async {
+                                try {
+                                  await AuthService(Supabase.instance.client).signInWithGoogle();
+                                  if (context.mounted) {
+                                    Navigator.of(context).pushReplacement(
+                                      MaterialPageRoute(builder: (_) => const AuthTestScreen()),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Error al iniciar sesión: $e')),
+                                    );
+                                  }
+                                }
+                              },
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: AppColors.textSecondary,
                                 side: const BorderSide(
