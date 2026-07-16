@@ -5,6 +5,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../shared/widgets/animated_app_background.dart';
+import '../../shared/widgets/fade_slide_in.dart';
+import '../../shared/widgets/primary_button.dart';
+import '../../shared/widgets/secondary_button.dart';
 
 import '../auth/auth_screen.dart';
 import '../auth/auth_service.dart';
@@ -17,75 +20,29 @@ class WelcomeScreen extends StatefulWidget {
   State<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _WelcomeScreenState extends State<WelcomeScreen>
-    with TickerProviderStateMixin {
-  // ── Contenido ─────────────────────────────────────────────
-  late final AnimationController _titleCtrl;
-  late final Animation<double> _titleOpacity;
-  late final Animation<double> _titleSlide;
+class _WelcomeScreenState extends State<WelcomeScreen> {
+  bool _isGoogleLoading = false;
 
-  late final AnimationController _taglineCtrl;
-  late final Animation<double> _taglineOpacity;
-  late final Animation<double> _taglineSlide;
+  Future<void> _signInWithGoogle() async {
+    setState(() => _isGoogleLoading = true);
 
-  late final AnimationController _buttonsCtrl;
-  late final Animation<double> _buttonsOpacity;
-  late final Animation<double> _buttonsSlide;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _titleCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    );
-    _titleOpacity = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _titleCtrl, curve: Curves.easeOut),
-    );
-    _titleSlide = Tween<double>(begin: 12, end: 0).animate(
-      CurvedAnimation(parent: _titleCtrl, curve: Curves.easeOut),
-    );
-
-    _taglineCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    );
-    _taglineOpacity = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _taglineCtrl, curve: Curves.easeOut),
-    );
-    _taglineSlide = Tween<double>(begin: 12, end: 0).animate(
-      CurvedAnimation(parent: _taglineCtrl, curve: Curves.easeOut),
-    );
-
-    _buttonsCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    );
-    _buttonsOpacity = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _buttonsCtrl, curve: Curves.easeOut),
-    );
-    _buttonsSlide = Tween<double>(begin: 12, end: 0).animate(
-      CurvedAnimation(parent: _buttonsCtrl, curve: Curves.easeOut),
-    );
-
-    Future.delayed(const Duration(milliseconds: 700), () {
-      if (mounted) _titleCtrl.forward();
-    });
-    Future.delayed(const Duration(milliseconds: 1200), () {
-      if (mounted) _taglineCtrl.forward();
-    });
-    Future.delayed(const Duration(milliseconds: 1700), () {
-      if (mounted) _buttonsCtrl.forward();
-    });
-  }
-
-  @override
-  void dispose() {
-    _titleCtrl.dispose();
-    _taglineCtrl.dispose();
-    _buttonsCtrl.dispose();
-    super.dispose();
+    try {
+      await AuthService(Supabase.instance.client).signInWithGoogle();
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al iniciar sesión: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isGoogleLoading = false);
+    }
   }
 
   @override
@@ -124,18 +81,10 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                         ),
                       ),
                     ),
-
                     const SizedBox(width: AppSpacing.space12),
-
-                    AnimatedBuilder(
-                      animation: _titleCtrl,
-                      builder: (context, child) => Opacity(
-                        opacity: _titleOpacity.value,
-                        child: Transform.translate(
-                          offset: Offset(_titleSlide.value, 0),
-                          child: child,
-                        ),
-                      ),
+                    FadeSlideIn(
+                      delay: const Duration(milliseconds: 700),
+                      offset: const Offset(12, 0),
                       child: Text(
                         'Valora',
                         style: GoogleFonts.dmSans(
@@ -153,15 +102,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                 const SizedBox(height: AppSpacing.space24),
 
                 // ── 2. Eslogan ───────────────────────────
-                AnimatedBuilder(
-                  animation: _taglineCtrl,
-                  builder: (context, child) => Opacity(
-                    opacity: _taglineOpacity.value,
-                    child: Transform.translate(
-                      offset: Offset(0, _taglineSlide.value),
-                      child: child,
-                    ),
-                  ),
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 1200),
                   child: Column(
                     children: [
                       Text(
@@ -194,84 +136,29 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                 const Spacer(flex: 2),
 
                 // ── 3. Botones ───────────────────────────
-                AnimatedBuilder(
-                  animation: _buttonsCtrl,
-                  builder: (context, child) => Opacity(
-                    opacity: _buttonsOpacity.value,
-                    child: Transform.translate(
-                      offset: Offset(0, _buttonsSlide.value),
-                      child: child,
-                    ),
-                  ),
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 1700),
                   child: Padding(
                     padding: const EdgeInsets.only(
                       bottom: AppSpacing.space32,
                     ),
                     child: Column(
                       children: [
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(builder: (_) => const AuthScreen()),
-                              );
-                            },
-                            child: Text(
-                                'Iniciar sesión',
-                                style: GoogleFonts.dmSans(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  letterSpacing: 0.5,
+                        PrimaryButton(
+                          label: 'Iniciar sesión',
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const AuthScreen(),
                               ),
-                            ),
-                          ),
+                            );
+                          },
                         ),
                         const SizedBox(height: AppSpacing.space12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton(
-                            onPressed: () async {
-                              try {
-                                await AuthService(Supabase.instance.client).signInWithGoogle();
-                                if (context.mounted) {
-                                  Navigator.of(context).pushAndRemoveUntil(
-                                    MaterialPageRoute(builder: (_) => const DashboardScreen()),
-                                    (route) => false,
-                                  );
-                                }
-                              } catch (e) {
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Error al iniciar sesión: $e')),
-                                  );
-                                }
-                              }
-                            },
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.textSecondary,
-                              side: const BorderSide(
-                                color: AppColors.borderDefault,
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.space24,
-                                vertical: AppSpacing.space16,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(AppRadius.xs),
-                              ),
-                            ),
-                            child: Text(
-                              'Iniciar sesión con Google',
-                              style: GoogleFonts.dmSans(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                                color: AppColors.textSecondary,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ),
+                        SecondaryButton(
+                          label: 'Iniciar sesión con Google',
+                          isLoading: _isGoogleLoading,
+                          onPressed: _signInWithGoogle,
                         ),
                       ],
                     ),
