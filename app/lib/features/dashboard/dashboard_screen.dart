@@ -9,7 +9,7 @@ import '../../shared/widgets/animated_app_background.dart';
 import '../../shared/widgets/nav_bar.dart';
 import '../auth/auth_service.dart';
 import '../welcome/welcome_screen.dart';
-import '../profile/profile_screen.dart';
+import '../profile/profile_tab.dart';
 import '../results/salary_estimation_screen.dart';
 
 /// Dashboard con navegación inferior (ver ROADMAP.md Fase 7).
@@ -72,7 +72,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             index: _currentIndex,
             children: [
               _HomeTab(onEstimateSalaryPressed: _openSalaryEstimation),
-              ProfileContent(
+              ProfileTab(
                 onEditPressed: () {
                   // TODO: navegar a Editar Perfil.
                 },
