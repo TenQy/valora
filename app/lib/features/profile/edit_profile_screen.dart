@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -32,6 +33,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late final TextEditingController _fullNameController;
   late final TextEditingController _yearsExperienceController;
   late final TextEditingController _bioController;
+  late final FocusNode _yearsExperienceFocusNode;
 
   String? _selectedAreaId;
   JobRoleItem? _selectedCareerObj;
@@ -59,12 +61,30 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     'Especialista',
   ];
 
+  int _getMaxYearsForLevel(String level) {
+    switch (level) {
+      case 'Estudiante':
+        return 2;
+      case 'Practicante':
+        return 3;
+      case 'Junior':
+        return 5;
+      case 'Semi Senior':
+        return 10;
+      case 'Senior':
+      case 'Especialista':
+      default:
+        return 70;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _fullNameController = TextEditingController();
     _yearsExperienceController = TextEditingController();
     _bioController = TextEditingController();
+    _yearsExperienceFocusNode = FocusNode();
 
     _loadData();
   }
@@ -74,6 +94,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _fullNameController.dispose();
     _yearsExperienceController.dispose();
     _bioController.dispose();
+    _yearsExperienceFocusNode.dispose();
     super.dispose();
   }
 
@@ -178,7 +199,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _saveProfile() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      final yrsText = _yearsExperienceController.text.trim();
+      if (yrsText.isNotEmpty) {
+        final yrs = int.tryParse(yrsText);
+        if (yrs != null) {
+          final maxYears = _getMaxYearsForLevel(_selectedProfessionalLevel);
+          if (yrs > maxYears) {
+            _yearsExperienceFocusNode.requestFocus();
+          }
+        }
+      }
+      return;
+    }
 
     setState(() => _isSaving = true);
 
@@ -234,6 +267,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         availableCompetencies: availableCompetencies,
       ),
     );
+    if (!mounted) return;
+    FocusScope.of(context).unfocus();
 
     if (result != null) {
       setState(() => _selectedCompetencies.add(result));
@@ -252,6 +287,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         levelsCatalog: _languageLevelsCatalog,
       ),
     );
+    if (!mounted) return;
+    FocusScope.of(context).unfocus();
 
     if (result != null) {
       setState(() => _selectedLanguages.add(result));
@@ -266,6 +303,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         repository: _repository,
       ),
     );
+    if (!mounted) return;
+    FocusScope.of(context).unfocus();
 
     if (result != null) {
       setState(() => _selectedCertifications.add(result));
@@ -308,10 +347,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       )
                     : Form(
                       key: _formKey,
-                      child: ListView(
+                      child: SingleChildScrollView(
                         padding: const EdgeInsets.all(AppSpacing.space24),
-                        children: [
-                          SectionLabel('Información General'),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            SectionLabel('Información General'),
                           const SizedBox(height: AppSpacing.space16),
 
                           TextFormField(
@@ -355,8 +396,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           const SizedBox(height: AppSpacing.space16),
 
                           TextFormField(
+                            focusNode: _yearsExperienceFocusNode,
                             controller: _yearsExperienceController,
                             keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(2),
+                            ],
+                            validator: (val) {
+                              if (val != null && val.isNotEmpty) {
+                                final number = int.tryParse(val);
+                                if (number != null) {
+                                  final maxYears = _getMaxYearsForLevel(_selectedProfessionalLevel);
+                                  if (number > maxYears) {
+                                    if (maxYears == 70) return 'Máximo 70 años';
+                                    return 'Como $_selectedProfessionalLevel máximo $maxYears años';
+                                  }
+                                }
+                              }
+                              return null;
+                            },
                             decoration: const InputDecoration(
                               labelText: 'Años de Experiencia',
                               hintText: 'ej. 2',
@@ -505,8 +564,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   )
                                 : const Text('Guardar Perfil'),
                           ),
-                          const SizedBox(height: AppSpacing.space24),
-                        ],
+                            const SizedBox(height: AppSpacing.space32),
+                          ],
+                        ),
                       ),
                     ),
           ),
