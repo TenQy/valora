@@ -11,6 +11,7 @@ import '../auth/auth_service.dart';
 import '../welcome/welcome_screen.dart';
 import '../profile/edit_profile_screen.dart';
 import '../profile/profile_tab.dart';
+import '../results/job_match_screen.dart';
 import '../results/salary_estimation_screen.dart';
 
 /// Dashboard con navegación inferior (ver ROADMAP.md Fase 7).
@@ -85,7 +86,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: IndexedStack(
             index: _currentIndex,
             children: [
-              _HomeTab(onEstimateSalaryPressed: _openSalaryEstimation),
+              _HomeTab(
+                onEstimateSalaryPressed: _openSalaryEstimation,
+                onJobMatchPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => const JobMatchScreen()),
+                  );
+                },
+              ),
               ProfileTab(
                 key: _profileTabKey,
                 onEditPressed: _openEditProfile,
@@ -114,9 +122,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 /// ARCHITECTURE.md "dashboard/"). Ya incluye el acceso a la estimación
 /// salarial.
 class _HomeTab extends StatelessWidget {
-  const _HomeTab({required this.onEstimateSalaryPressed});
+  const _HomeTab({
+    required this.onEstimateSalaryPressed,
+    required this.onJobMatchPressed,
+  });
 
   final VoidCallback onEstimateSalaryPressed;
+  final VoidCallback onJobMatchPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -138,9 +150,27 @@ class _HomeTab extends StatelessWidget {
               style: AppTextStyles.subtitle,
             ),
             const SizedBox(height: AppSpacing.space24),
-            ElevatedButton(
-              onPressed: onEstimateSalaryPressed,
-              child: const Text('Estimar salario'),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: onEstimateSalaryPressed,
+                icon: const Icon(Icons.monetization_on_outlined),
+                label: const Text('Estimar salario'),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.space16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: onJobMatchPressed,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.bgSurface,
+                  foregroundColor: AppColors.silver,
+                  side: const BorderSide(color: AppColors.borderDefault),
+                ),
+                icon: const Icon(Icons.work_outline),
+                label: const Text('Compatibilidad Laboral'),
+              ),
             ),
           ],
         ),
