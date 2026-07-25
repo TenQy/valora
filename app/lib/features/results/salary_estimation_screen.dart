@@ -6,7 +6,6 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/animated_app_background.dart';
 import '../../../shared/widgets/section_label.dart';
-import '../../../shared/widgets/skill_chip.dart';
 import '../../../shared/widgets/valora_app_bar.dart';
 import 'models/salary_estimation.dart';
 
@@ -143,17 +142,17 @@ class _ResultView extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.space24),
       children: [
-        // 1. Card Principal Salarial (§7.7 UI_GUIDELINES.md)
+        // 1. Card Principal Salarial (§7.7 UI_GUIDELINES.md) - Sin texto de resumen
         _SalaryCard(result: result),
 
         const SizedBox(height: AppSpacing.space24),
 
-        // 2. Grid 2x2 de métricas (Mismo alto con IntrinsicHeight) (§6.7 / §7.7 UI_GUIDELINES.md)
+        // 2. Grid 2x2 de métricas con espaciado y alineación idénticos
         _ScoreGrid(result: result),
 
         const SizedBox(height: AppSpacing.space32),
 
-        // 3. Destacados que más suman a tu valor (2 a 4 factores principales)
+        // 3. Destacados que más suman a tu valor (íconos en gris más apagados)
         if (result.topHighlights.isNotEmpty) ...[
           SectionLabel('FACTORES QUE MÁS AÑADEN VALOR'),
           const SizedBox(height: AppSpacing.space16),
@@ -161,7 +160,7 @@ class _ResultView extends StatelessWidget {
           const SizedBox(height: AppSpacing.space32),
         ],
 
-        // 4. Tabla de barras hacia abajo con % de impacto de cada categoría
+        // 4. Tabla de barras de impacto (barra de progreso en verde)
         if (result.factorBreakdown.isNotEmpty) ...[
           SectionLabel('DESGLOSE DE IMPACTO EN TU VALOR'),
           const SizedBox(height: AppSpacing.space16),
@@ -169,27 +168,7 @@ class _ResultView extends StatelessWidget {
           const SizedBox(height: AppSpacing.space32),
         ],
 
-        // 5. Todos los factores evaluados
-        SectionLabel('COMPETENCIAS Y FACTORES EVALUADOS'),
-        const SizedBox(height: AppSpacing.space16),
-
-        if (result.influentialFactors.isEmpty)
-          const Text(
-            'Agrega competencias o idiomas a tu perfil para incrementar tu estimación.',
-            style: TextStyle(color: AppColors.textMuted, fontSize: 13),
-          )
-        else
-          Wrap(
-            spacing: AppSpacing.space8,
-            runSpacing: AppSpacing.space8,
-            children: [
-              for (final factor in result.influentialFactors) SkillChip(factor),
-            ],
-          ),
-
-        const SizedBox(height: AppSpacing.space32),
-
-        // Nota orientativa estilizada
+        // 5. Nota orientativa estilizada
         const _DisclaimerCard(),
 
         const SizedBox(height: AppSpacing.space24),
@@ -198,7 +177,7 @@ class _ResultView extends StatelessWidget {
   }
 }
 
-/// Card Salarial principal con gradiente verde en la esquina superior derecha (§6.3, §7.7)
+/// Card Salarial principal con gradiente verde en la esquina superior derecha
 class _SalaryCard extends StatelessWidget {
   const _SalaryCard({required this.result});
 
@@ -260,7 +239,7 @@ class _SalaryCard extends StatelessWidget {
                       Flexible(
                         child: Text(
                           '${_formatThousands(result.estimatedMinSalary)} – ${_formatThousands(result.estimatedMaxSalary)}',
-                          style: AppTextStyles.salary.copyWith(fontSize: 34),
+                          style: AppTextStyles.salary,
                         ),
                       ),
                     ],
@@ -276,12 +255,6 @@ class _SalaryCard extends StatelessWidget {
                   _SalaryRangeBar(
                     minSalary: result.estimatedMinSalary,
                     maxSalary: result.estimatedMaxSalary,
-                  ),
-                  const SizedBox(height: AppSpacing.space20),
-
-                  Text(
-                    result.summary,
-                    style: AppTextStyles.body,
                   ),
                 ],
               ),
@@ -390,7 +363,7 @@ class _SalaryRangeBar extends StatelessWidget {
   }
 }
 
-/// Grid de métricas con IntrinsicHeight para asegurar mismo alto en ambas cards
+/// Grid 2x2 de métricas con alineación y espaciados simétricos
 class _ScoreGrid extends StatelessWidget {
   const _ScoreGrid({required this.result});
 
@@ -407,7 +380,6 @@ class _ScoreGrid extends StatelessWidget {
               label: 'NIVEL DETECTADO',
               value: result.professionalLevel,
               valueColor: AppColors.textPrimary,
-              subtitle: 'Basado en tu perfil',
             ),
           ),
           const SizedBox(width: AppSpacing.space12),
@@ -416,7 +388,6 @@ class _ScoreGrid extends StatelessWidget {
               label: 'POTENCIAL MÁXIMO',
               value: '\$${_formatCompact(result.estimatedMaxSalary)}',
               valueColor: AppColors.green,
-              subtitle: 'Rango superior',
             ),
           ),
         ],
@@ -438,18 +409,19 @@ class _ScoreItem extends StatelessWidget {
     required this.label,
     required this.value,
     required this.valueColor,
-    required this.subtitle,
   });
 
   final String label;
   final String value;
   final Color valueColor;
-  final String subtitle;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.space16),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space16,
+        vertical: AppSpacing.space16,
+      ),
       decoration: BoxDecoration(
         color: AppColors.bgInput,
         borderRadius: BorderRadius.circular(10),
@@ -457,7 +429,7 @@ class _ScoreItem extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             label,
@@ -468,22 +440,13 @@ class _ScoreItem extends StatelessWidget {
               letterSpacing: 1.8,
             ),
           ),
-          const SizedBox(height: AppSpacing.space8),
+          const SizedBox(height: AppSpacing.space12),
           Text(
             value,
-            style: GoogleFonts.cormorantGaramond(
-              fontSize: 24,
-              fontWeight: FontWeight.w300,
+            style: GoogleFonts.outfit(
+              fontSize: 22,
+              fontWeight: FontWeight.w600,
               color: valueColor,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.space8),
-          Text(
-            subtitle,
-            style: GoogleFonts.inter(
-              fontSize: 11,
-              fontWeight: FontWeight.w300,
-              color: AppColors.textMuted,
             ),
           ),
         ],
@@ -492,7 +455,7 @@ class _ScoreItem extends StatelessWidget {
   }
 }
 
-/// Sección con los 2 a 4 factores que más valor aportan (+ $X MXN)
+/// Sección con los 2 a 4 factores destacados con íconos en gris apagado
 class _TopHighlightsSection extends StatelessWidget {
   const _TopHighlightsSection({required this.highlights});
 
@@ -517,7 +480,7 @@ class _TopHighlightsSection extends StatelessWidget {
               children: [
                 const Icon(
                   Icons.trending_up,
-                  color: AppColors.green,
+                  color: AppColors.silverMuted, // Ícono gris más apagado
                   size: 18,
                 ),
                 const SizedBox(width: AppSpacing.space12),
@@ -560,7 +523,7 @@ class _TopHighlightsSection extends StatelessWidget {
   }
 }
 
-/// Desglose de impacto en barras verticales descendentes (% de aporte) (§6.7 UI_GUIDELINES.md)
+/// Desglose de impacto con barra de progreso estilizada en gradiente verde y % en gris
 class _FactorBreakdownSection extends StatelessWidget {
   const _FactorBreakdownSection({required this.breakdown});
 
@@ -596,22 +559,40 @@ class _FactorBreakdownSection extends StatelessWidget {
                       '${item.percentage}%',
                       style: GoogleFonts.jetBrainsMono(
                         fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.silverMuted,
+                        fontWeight: FontWeight.w400,
+                        color: AppColors.silverMuted, // Texto del % en gris
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.space8),
-                // Barra con gradiente plata según §6.7 (skills/desglose neutro)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(2),
-                  child: LinearProgressIndicator(
-                    value: item.percentage / 100,
-                    minHeight: 6,
-                    backgroundColor: AppColors.borderSubtle,
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      AppColors.silverMuted,
+                // Barra estilizada con gradiente greenDim -> green y sutil resplandor
+                Container(
+                  height: 6,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: AppColors.borderSubtle,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                  child: FractionallySizedBox(
+                    alignment: Alignment.centerLeft,
+                    widthFactor: (item.percentage / 100).clamp(0.0, 1.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [
+                            AppColors.greenDim,
+                            AppColors.green,
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(3),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x334ADE80),
+                            blurRadius: 6,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
