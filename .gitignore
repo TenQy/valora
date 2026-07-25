@@ -1,0 +1,72 @@
+# ==========================================
+# Valora - Root .gitignore
+# ==========================================
+
+# Environment & Secret Files (NUNCA subir credenciales)
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+*.pem
+*.key
+
+# ==========================================
+# Flutter / Dart App (app/)
+# ==========================================
+app/.dart_tool/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/.pub-cache/
+app/.pub/
+app/build/
+app/coverage/
+app/app.*.symbols
+app/app.*.map.json
+
+# Android Artifacts
+app/android/.gradle/
+app/android/local.properties
+app/android/app/debug/
+app/android/app/profile/
+app/android/app/release/
+
+# iOS Artifacts
+app/ios/Flutter/Flutter.podspec
+app/ios/Flutter/Generated.xcconfig
+app/ios/Flutter/app.framework
+app/ios/Flutter/flutter_assets
+app/ios/Pods/
+app/ios/.symlinks/
+
+# ==========================================
+# Landing React (landing/)
+# ==========================================
+landing/node_modules/
+landing/dist/
+landing/build/
+node_modules/
+
+# ==========================================
+# Supabase CLI & Local Temp
+# ==========================================
+.temp/
+supabase/.temp/
+supabase/.branches/
+
+# ==========================================
+# OS & IDE Files
+# ==========================================
+.DS_Store
+Thumbs.db
+*.log
+*.class
+*.pyc
+*.swp
+
+# IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+.history/
