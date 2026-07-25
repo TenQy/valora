@@ -1,5 +1,33 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+class HighlightItem {
+  const HighlightItem({required this.label, required this.boost});
+
+  final String label;
+  final String boost;
+
+  factory HighlightItem.fromJson(Map<String, dynamic> json) {
+    return HighlightItem(
+      label: json['label'] as String? ?? '',
+      boost: json['boost'] as String? ?? '',
+    );
+  }
+}
+
+class BreakdownItem {
+  const BreakdownItem({required this.category, required this.percentage});
+
+  final String category;
+  final int percentage;
+
+  factory BreakdownItem.fromJson(Map<String, dynamic> json) {
+    return BreakdownItem(
+      category: json['category'] as String? ?? '',
+      percentage: (json['percentage'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
 /// Resultado de la estimación salarial retornado por la Edge Function `estimate-salary`
 /// (ver API_CONTRACT.md #24 y la tabla `salary_estimations` en DATABASE.md).
 class SalaryEstimation {
@@ -10,6 +38,8 @@ class SalaryEstimation {
     required this.professionalLevel,
     required this.summary,
     required this.influentialFactors,
+    required this.topHighlights,
+    required this.factorBreakdown,
   });
 
   final int estimatedMinSalary;
@@ -18,6 +48,8 @@ class SalaryEstimation {
   final String professionalLevel;
   final String summary;
   final List<String> influentialFactors;
+  final List<HighlightItem> topHighlights;
+  final List<BreakdownItem> factorBreakdown;
 
   factory SalaryEstimation.fromJson(Map<String, dynamic> json) {
     return SalaryEstimation(
@@ -28,6 +60,14 @@ class SalaryEstimation {
       summary: json['summary'] as String? ?? '',
       influentialFactors: (json['influential_factors'] as List?)
               ?.map((e) => e.toString())
+              .toList() ??
+          const [],
+      topHighlights: (json['top_highlights'] as List?)
+              ?.map((e) => HighlightItem.fromJson(Map<String, dynamic>.from(e as Map)))
+              .toList() ??
+          const [],
+      factorBreakdown: (json['factor_breakdown'] as List?)
+              ?.map((e) => BreakdownItem.fromJson(Map<String, dynamic>.from(e as Map)))
               .toList() ??
           const [],
     );
@@ -50,25 +90,5 @@ class SalaryEstimation {
 
     final data = Map<String, dynamic>.from(res.data as Map);
     return SalaryEstimation.fromJson(data);
-  }
-
-  static Future<SalaryEstimation> fetchMock() {
-    return Future.delayed(
-      const Duration(milliseconds: 1400),
-      () => const SalaryEstimation(
-        estimatedMinSalary: 25000,
-        estimatedMaxSalary: 35000,
-        currency: 'MXN',
-        professionalLevel: 'Junior',
-        summary: 'El perfil muestra buena compatibilidad con roles '
-            'iniciales de desarrollo frontend.',
-        influentialFactors: [
-          'React',
-          'Flutter',
-          'Inglés B2',
-          '1 año de experiencia',
-        ],
-      ),
-    );
   }
 }
