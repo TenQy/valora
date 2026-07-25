@@ -55,6 +55,8 @@ class _ProfileTabState extends State<ProfileTab> {
             iconColor: AppColors.colorError,
             message: 'No pudimos cargar tu perfil. Intenta de nuevo.',
             onRetry: _reload,
+            onSignOut: widget.onSignOut,
+            isSigningOut: widget.isSigningOut,
           );
         }
 
@@ -65,6 +67,9 @@ class _ProfileTabState extends State<ProfileTab> {
             iconColor: AppColors.silverMuted,
             message: 'Aún no tienes un perfil profesional creado.',
             onRetry: _reload,
+            onSignOut: widget.onSignOut,
+            isSigningOut: widget.isSigningOut,
+            onCreateProfile: widget.onEditPressed,
           );
         }
 
@@ -85,12 +90,18 @@ class _ProfileTabMessage extends StatelessWidget {
     required this.iconColor,
     required this.message,
     required this.onRetry,
+    this.onSignOut,
+    this.isSigningOut = false,
+    this.onCreateProfile,
   });
 
   final IconData icon;
   final Color iconColor;
   final String message;
   final VoidCallback onRetry;
+  final VoidCallback? onSignOut;
+  final bool isSigningOut;
+  final VoidCallback? onCreateProfile;
 
   @override
   Widget build(BuildContext context) {
@@ -108,7 +119,35 @@ class _ProfileTabMessage extends StatelessWidget {
               style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
             ),
             const SizedBox(height: AppSpacing.space20),
-            OutlinedButton(onPressed: onRetry, child: const Text('Reintentar')),
+            if (onCreateProfile != null) ...[
+              ElevatedButton(
+                onPressed: onCreateProfile,
+                child: const Text('Crear mi perfil ahora'),
+              ),
+              const SizedBox(height: AppSpacing.space16),
+            ],
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: AppSpacing.space12,
+              runSpacing: AppSpacing.space12,
+              children: [
+                OutlinedButton(onPressed: onRetry, child: const Text('Reintentar')),
+                if (onSignOut != null)
+                  TextButton(
+                    onPressed: isSigningOut ? null : onSignOut,
+                    child: isSigningOut
+                        ? const SizedBox(
+                            height: 16,
+                            width: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.textMuted,
+                            ),
+                          )
+                        : const Text('Cerrar sesión'),
+                  ),
+              ],
+            ),
           ],
         ),
       ),

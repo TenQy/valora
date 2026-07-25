@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/catalog_models.dart';
 import '../models/profile_models.dart';
 import 'language_flags.dart';
 
@@ -30,9 +31,6 @@ class ProfileRepository {
 
   /// Devuelve el perfil del usuario autenticado, o `null` si aún no ha
   /// creado uno (ej. justo después de registrarse, antes de llenar datos).
-  ///
-  /// Lanza si no hay sesión activa — el llamador debería garantizar que
-  /// solo se invoque con un usuario logueado.
   Future<ProfessionalProfile?> fetchCurrentProfile() async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return null;
@@ -46,6 +44,137 @@ class ProfileRepository {
     if (row == null) return null;
 
     return _mapProfile(row);
+  }
+
+  /// Consulta el perfil crudo con IDs para pre-poblar el formulario de edición.
+  Future<Map<String, dynamic>?> fetchRawProfileForEditing() async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return null;
+
+    const select = '''
+      id,
+      full_name,
+      professional_area_id,
+      career,
+      professional_level,
+      years_experience,
+      bio,
+      user_competencies ( competency_id, level, competencies ( name ) ),
+      user_languages ( language_id, language_level_id, languages ( name ), language_levels ( name ) ),
+      certifications ( id, name, issuer, issue_date )
+    ''';
+
+    return _client
+        .from('profiles')
+        .select(select)
+        .eq('user_id', userId)
+        .maybeSingle();
+  }
+
+  /// Catálogos
+  Future<List<ProfessionalAreaItem>> fetchProfessionalAreas() async {
+    final data = await _client
+        .from('professional_areas')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name');
+    return _asList(data).map((e) => ProfessionalAreaItem.fromJson(e)).toList();
+  }
+
+  Future<List<CompetencyItem>> fetchCompetencies() async {
+    final data = await _client
+        .from('competencies')
+        .select('id, name, category')
+        .eq('is_active', true)
+        .order('name');
+    return _asList(data).map((e) => CompetencyItem.fromJson(e)).toList();
+  }
+
+  Future<List<LanguageItem>> fetchLanguages() async {
+    final data = await _client
+        .from('languages')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name');
+    return _asList(data).map((e) => LanguageItem.fromJson(e)).toList();
+  }
+
+  Future<List<LanguageLevelItem>> fetchLanguageLevels() async {
+    final data = await _client
+        .from('language_levels')
+        .select('id, name, description')
+        .order('created_at');
+    return _asList(data).map((e) => LanguageLevelItem.fromJson(e)).toList();
+  }
+
+  /// Guarda / Actualiza el perfil completo del usuario y sus relaciones.
+  Future<void> saveProfile({
+    required String fullName,
+    required String? professionalAreaId,
+    required String career,
+    required String professionalLevel,
+    required int? yearsExperience,
+    required String bio,
+    required List<EditableUserCompetency> competencies,
+    required List<EditableUserLanguage> languages,
+    required List<EditableUserCertification> certifications,
+  }) async {
+    final user = _client.auth.currentUser;
+    if (user == null) throw Exception('No hay sesión activa para guardar el perfil.');
+
+    final userFullName = fullName.trim().isNotEmpty
+        ? fullName.trim()
+        : (user.userMetadata?['full_name'] as String? ?? 'Usuario');
+
+    // 1. Upsert en profiles
+    final profileRow = await _client.from('profiles').upsert({
+      'user_id': user.id,
+      'full_name': userFullName,
+      'professional_area_id': professionalAreaId,
+      'career': career.trim(),
+      'professional_level': professionalLevel,
+      'years_experience': yearsExperience,
+      'bio': bio.trim(),
+    }, onConflict: 'user_id').select('id').single();
+
+    final profileId = profileRow['id'] as String;
+
+    // 2. Actualizar competencias
+    await _client.from('user_competencies').delete().eq('profile_id', profileId);
+    if (competencies.isNotEmpty) {
+      await _client.from('user_competencies').insert(
+        competencies.map((c) => {
+          'profile_id': profileId,
+          'competency_id': c.competencyId,
+          'level': c.level,
+        }).toList(),
+      );
+    }
+
+    // 3. Actualizar idiomas
+    await _client.from('user_languages').delete().eq('profile_id', profileId);
+    if (languages.isNotEmpty) {
+      await _client.from('user_languages').insert(
+        languages.map((l) => {
+          'profile_id': profileId,
+          'language_id': l.languageId,
+          'language_level_id': l.languageLevelId,
+        }).toList(),
+      );
+    }
+
+    // 4. Actualizar certificaciones
+    await _client.from('certifications').delete().eq('profile_id', profileId);
+    if (certifications.isNotEmpty) {
+      await _client.from('certifications').insert(
+        certifications.map((cert) => {
+          'profile_id': profileId,
+          'name': cert.name.trim(),
+          'issuer': cert.issuer.trim(),
+          'issue_date': cert.issueDate.isNotEmpty ? cert.issueDate : null,
+        }).toList(),
+      );
+    }
   }
 
   ProfessionalProfile _mapProfile(Map<String, dynamic> row) {
