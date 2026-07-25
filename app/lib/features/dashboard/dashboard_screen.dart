@@ -9,6 +9,7 @@ import '../../shared/widgets/animated_app_background.dart';
 import '../../shared/widgets/nav_bar.dart';
 import '../auth/auth_service.dart';
 import '../welcome/welcome_screen.dart';
+import '../profile/edit_profile_screen.dart';
 import '../profile/profile_tab.dart';
 import '../results/salary_estimation_screen.dart';
 
@@ -31,6 +32,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   int _currentIndex = 0;
   bool _isSigningOut = false;
+  Key _profileTabKey = UniqueKey();
 
   static const _tabs = [
     NavBarItem(icon: Icons.home_outlined, label: 'Inicio'),
@@ -59,6 +61,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Future<void> _openEditProfile() async {
+    final updated = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+    );
+
+    if (updated == true && mounted) {
+      setState(() {
+        _profileTabKey = UniqueKey();
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -73,9 +87,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               _HomeTab(onEstimateSalaryPressed: _openSalaryEstimation),
               ProfileTab(
-                onEditPressed: () {
-                  // TODO: navegar a Editar Perfil.
-                },
+                key: _profileTabKey,
+                onEditPressed: _openEditProfile,
                 onSignOut: _signOut,
                 isSigningOut: _isSigningOut,
               ),
