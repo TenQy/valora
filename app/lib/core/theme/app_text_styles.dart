@@ -7,38 +7,38 @@ class AppFonts {
   const AppFonts._();
 
   static const String body = 'Inter';
-  static const String display = 'Cormorant Garamond';
+  static const String display = 'Outfit';
   static const String mono = 'JetBrains Mono';
 }
 
 class AppTextStyles {
   const AppTextStyles._();
 
-  static TextStyle get salary => GoogleFonts.cormorantGaramond(
-        fontSize: 52,
+  static TextStyle get salary => GoogleFonts.outfit(
+        fontSize: 34,
         height: 1.1,
-        fontWeight: FontWeight.w300,
+        fontWeight: FontWeight.w600,
         color: AppColors.green,
       );
 
-  static TextStyle get currencySymbol => GoogleFonts.cormorantGaramond(
-        fontSize: 28,
+  static TextStyle get currencySymbol => GoogleFonts.outfit(
+        fontSize: 24,
         height: 1.15,
-        fontWeight: FontWeight.w300,
+        fontWeight: FontWeight.w500,
         color: AppColors.greenMuted,
       );
 
-  static TextStyle get h1 => GoogleFonts.cormorantGaramond(
-        fontSize: 32,
+  static TextStyle get h1 => GoogleFonts.outfit(
+        fontSize: 28,
         height: 1.2,
-        fontWeight: FontWeight.w300,
+        fontWeight: FontWeight.w600,
         color: AppColors.textPrimary,
       );
 
-  static TextStyle get score => GoogleFonts.cormorantGaramond(
-        fontSize: 28,
+  static TextStyle get score => GoogleFonts.outfit(
+        fontSize: 24,
         height: 1.2,
-        fontWeight: FontWeight.w300,
+        fontWeight: FontWeight.w500,
         color: AppColors.textPrimary,
       );
 
