@@ -283,9 +283,9 @@ class _HomeTabState extends State<HomeTab> {
 
     // Tip 1: Completitud
     if (data.profileCompleteness < 100) {
-      tips.add('Completa tu perfil al 100% para obtener estimaciones más precisas.');
+      tips.add('Tienes un ${data.profileCompleteness}% de tu perfil completo. Llenar los datos faltantes aumentará la precisión de tu valor.');
     } else {
-      tips.add('¡Tienes un perfil estelar! Mantenlo actualizado.');
+      tips.add('Tu perfil base está impecable. El siguiente paso es diversificar tus conocimientos fuera de tu zona de confort.');
     }
 
     // Tip 2: Basado en el último match
@@ -293,53 +293,55 @@ class _HomeTabState extends State<HomeTab> {
       final topMatch = data.latestMatches.first;
       if (topMatch.missingCompetencies.isNotEmpty) {
         final missing = topMatch.missingCompetencies.take(2).join(', ');
-        tips.add('Para asegurar tu puesto de ${topMatch.jobRoleName}, te sugerimos aprender: $missing.');
+        tips.add('Para asegurar tu puesto ideal como ${topMatch.jobRoleName}, el mercado exige que domines: $missing. ¡Añádelo a tu plan de estudio!');
       } else {
-        tips.add('Cumples con todos los requisitos para ${topMatch.jobRoleName}. ¡Busca oportunidades!');
+        tips.add('Tienes cobertura total para ${topMatch.jobRoleName}. Te sugerimos actualizar tus expectativas salariales o apuntar a roles de liderazgo.');
       }
     } else {
-      tips.add('Genera tu primera Compatibilidad Laboral para recibir recomendaciones.');
+      tips.add('Genera tu primera Compatibilidad Laboral para recibir recomendaciones precisas sobre qué tecnología aprender a continuación.');
     }
 
     // Tip 3: General de nivel
     if (data.professionalLevel == 'Junior' || data.professionalLevel == 'Estudiante') {
-      tips.add('Agrega certificaciones técnicas para dar un salto a nivel Mid/Senior.');
+      tips.add('Las certificaciones oficiales son el atajo más rápido para saltar a un nivel Mid/Senior y destacar entre los candidatos.');
+    } else if (data.professionalLevel == 'Semi Senior' || data.professionalLevel == 'Mid Level') {
+      tips.add('En tu nivel, las habilidades de arquitectura y metodologías ágiles comienzan a tener más peso que el código puro.');
     } else if (data.professionalLevel == 'Senior' || data.professionalLevel == 'Especialista') {
-      tips.add('No olvides incluir idiomas avanzados, son clave para puestos internacionales.');
+      tips.add('Como talento Senior, dominar idiomas adicionales multiplicará tus oportunidades de acceder a salarios internacionales de primer nivel.');
     }
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.bgSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderDefault),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.lightbulb_outline, color: AppColors.colorWarning, size: 20),
-              SizedBox(width: 8),
-              Text('Tu Guía Personalizada', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 16)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          ...tips.map((t) => _buildGuideItem(t)),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Row(
+          children: [
+            Icon(Icons.rocket_launch_outlined, color: AppColors.silver, size: 20),
+            SizedBox(width: 8),
+            Text('Tu Ruta de Crecimiento', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        const SizedBox(height: 16),
+        ...tips.map((t) => _buildGuideItem(t)),
+      ],
     );
   }
 
   Widget _buildGuideItem(String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
+      padding: const EdgeInsets.only(bottom: 12.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('• ', style: TextStyle(color: AppColors.silverMuted, fontSize: 16)),
-          Expanded(child: Text(text, style: const TextStyle(color: AppColors.silverMuted, fontSize: 13, height: 1.4))),
+          Container(
+            margin: const EdgeInsets.only(top: 2, right: 12),
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              color: AppColors.silver.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.arrow_forward_ios, size: 10, color: AppColors.silver),
+          ),
+          Expanded(child: Text(text, style: const TextStyle(color: AppColors.silverMuted, fontSize: 13, height: 1.5))),
         ],
       ),
     );
