@@ -66,6 +66,40 @@ class LanguageLevelItem {
   }
 }
 
+class JobRoleItem {
+  const JobRoleItem({
+    required this.id,
+    required this.name,
+  });
+
+  final String id;
+  final String name;
+
+  factory JobRoleItem.fromJson(Map<String, dynamic> json) {
+    return JobRoleItem(
+      id: json['id'] as String,
+      name: json['name'] as String,
+    );
+  }
+}
+
+class CertificationIssuerItem {
+  const CertificationIssuerItem({
+    required this.id,
+    required this.name,
+  });
+
+  final String id;
+  final String name;
+
+  factory CertificationIssuerItem.fromJson(Map<String, dynamic> json) {
+    return CertificationIssuerItem(
+      id: json['id'] as String,
+      name: json['name'] as String,
+    );
+  }
+}
+
 class EditableUserCompetency {
   EditableUserCompetency({
     required this.competencyId,

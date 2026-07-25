@@ -27,11 +27,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   // Controllers & Form State
   late final TextEditingController _fullNameController;
-  late final TextEditingController _careerController;
   late final TextEditingController _yearsExperienceController;
   late final TextEditingController _bioController;
 
   String? _selectedAreaId;
+  JobRoleItem? _selectedCareerObj;
   String _selectedProfessionalLevel = 'Junior';
 
   // Catalogs
@@ -39,6 +39,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   List<CompetencyItem> _competenciesCatalog = [];
   List<LanguageItem> _languagesCatalog = [];
   List<LanguageLevelItem> _languageLevelsCatalog = [];
+  List<JobRoleItem> _jobRolesCatalog = [];
+  List<CertificationIssuerItem> _certificationIssuersCatalog = [];
 
   // Selected editable items
   List<EditableUserCompetency> _selectedCompetencies = [];
@@ -58,7 +60,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void initState() {
     super.initState();
     _fullNameController = TextEditingController();
-    _careerController = TextEditingController();
     _yearsExperienceController = TextEditingController();
     _bioController = TextEditingController();
 
@@ -68,7 +69,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void dispose() {
     _fullNameController.dispose();
-    _careerController.dispose();
     _yearsExperienceController.dispose();
     _bioController.dispose();
     super.dispose();
@@ -85,6 +85,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       final competencies = await _repository.fetchCompetencies();
       final languages = await _repository.fetchLanguages();
       final levels = await _repository.fetchLanguageLevels();
+      final jobRoles = await _repository.fetchJobRoles();
+      final issuers = await _repository.fetchCertificationIssuers();
       final rawProfile = await _repository.fetchRawProfileForEditing();
 
       if (!mounted) return;
@@ -94,11 +96,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _competenciesCatalog = competencies;
         _languagesCatalog = languages;
         _languageLevelsCatalog = levels;
+        _jobRolesCatalog = jobRoles;
+        _certificationIssuersCatalog = issuers;
 
         if (rawProfile != null) {
           _fullNameController.text = rawProfile['full_name'] as String? ?? '';
           _selectedAreaId = rawProfile['professional_area_id'] as String?;
-          _careerController.text = rawProfile['career'] as String? ?? '';
+          
+          final careerTxt = rawProfile['career'] as String? ?? '';
+          _selectedCareerObj = _jobRolesCatalog.cast<JobRoleItem?>().firstWhere(
+            (r) => r?.name == careerTxt,
+            orElse: () => null,
+          );
 
           final level = rawProfile['professional_level'] as String?;
           if (level != null && _levelOptions.contains(level)) {
@@ -177,7 +186,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       await _repository.saveProfile(
         fullName: _fullNameController.text,
         professionalAreaId: _selectedAreaId,
-        career: _careerController.text,
+        career: _selectedCareerObj?.name ?? '',
         professionalLevel: _selectedProfessionalLevel,
         yearsExperience: yearsExp,
         bio: _bioController.text,
@@ -354,67 +363,138 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   void _showAddCertificationDialog() {
     final nameCtrl = TextEditingController();
-    final issuerCtrl = TextEditingController();
     final dateCtrl = TextEditingController();
+    CertificationIssuerItem? selectedIssuer;
+    bool isValidating = false;
 
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          backgroundColor: AppColors.bgSurface,
-          title: const Text('Agregar Certificación', style: TextStyle(color: Colors.white)),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Nombre de certificación',
-                    hintText: 'ej. AWS Cloud Practitioner',
-                  ),
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: AppColors.bgSurface,
+              title: const Text('Agregar Certificación', style: TextStyle(color: Colors.white)),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: nameCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Nombre de certificación',
+                        hintText: 'ej. AWS Cloud Practitioner',
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.space12),
+                    ValoraSearchableDropdown<CertificationIssuerItem>(
+                      label: 'Institución / Emisor',
+                      value: selectedIssuer,
+                      items: _certificationIssuersCatalog,
+                      itemLabel: (issuer) => issuer.name,
+                      onChanged: (val) => setDialogState(() => selectedIssuer = val),
+                    ),
+                    const SizedBox(height: AppSpacing.space12),
+                    TextFormField(
+                      controller: dateCtrl,
+                      readOnly: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Fecha de obtención (YYYY-MM-DD)',
+                        hintText: '2026-01-15',
+                        suffixIcon: Icon(Icons.calendar_today, size: 20, color: AppColors.textMuted),
+                      ),
+                      onTap: () async {
+                        final now = DateTime.now();
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: now,
+                          firstDate: DateTime(1980),
+                          lastDate: now,
+                          builder: (context, child) {
+                            return Theme(
+                              data: Theme.of(context).copyWith(
+                                colorScheme: const ColorScheme.dark(
+                                  primary: AppColors.silver,
+                                  onPrimary: Colors.black,
+                                  surface: AppColors.bgSurface,
+                                  onSurface: Colors.white,
+                                ),
+                              ),
+                              child: child!,
+                            );
+                          },
+                        );
+                        if (picked != null) {
+                          dateCtrl.text = picked.toIso8601String().split('T').first;
+                        }
+                      },
+                    ),
+                  ],
                 ),
-                const SizedBox(height: AppSpacing.space12),
-                TextField(
-                  controller: issuerCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Institución / Emisor',
-                    hintText: 'ej. Amazon Web Services',
-                  ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancelar'),
                 ),
-                const SizedBox(height: AppSpacing.space12),
-                TextField(
-                  controller: dateCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Fecha de obtención (YYYY-MM-DD)',
-                    hintText: '2026-01-15',
-                  ),
+                ElevatedButton(
+                  onPressed: (selectedIssuer == null || isValidating)
+                      ? null
+                      : () async {
+                          final certName = nameCtrl.text.trim();
+                          if (certName.isEmpty) return;
+                          
+                          setDialogState(() => isValidating = true);
+                          
+                          try {
+                            final res = await Supabase.instance.client.functions.invoke(
+                              'validate-text',
+                              body: {'text': certName, 'type': 'certification'},
+                            );
+                            
+                            final isValid = res.data['isValid'] as bool? ?? true;
+                            
+                            if (!isValid) {
+                              if (!context.mounted) return;
+                              Navigator.of(context).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Ese nombre de certificación no parece válido.'),
+                                  backgroundColor: AppColors.colorError,
+                                ),
+                              );
+                              return;
+                            }
+                            
+                            setState(() {
+                              _selectedCertifications.add(
+                                EditableUserCertification(
+                                  name: certName,
+                                  issuer: selectedIssuer!.name,
+                                  issueDate: dateCtrl.text.trim(),
+                                ),
+                              );
+                            });
+                            if (context.mounted) Navigator.of(context).pop();
+                          } catch (e) {
+                            if (!context.mounted) return;
+                            Navigator.of(context).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Error validando: $e'),
+                                backgroundColor: AppColors.colorError,
+                                duration: const Duration(seconds: 4),
+                              ),
+                            );
+                          }
+                        },
+                  child: isValidating 
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Text('Agregar'),
                 ),
               ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (nameCtrl.text.trim().isEmpty) return;
-                setState(() {
-                  _selectedCertifications.add(
-                    EditableUserCertification(
-                      name: nameCtrl.text.trim(),
-                      issuer: issuerCtrl.text.trim(),
-                      issueDate: dateCtrl.text.trim(),
-                    ),
-                  );
-                });
-                Navigator.of(context).pop();
-              },
-              child: const Text('Agregar'),
-            ),
-          ],
+            );
+          },
         );
       },
     );
@@ -482,12 +562,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           ),
                           const SizedBox(height: AppSpacing.space16),
 
-                          TextFormField(
-                            controller: _careerController,
-                            decoration: const InputDecoration(
-                              labelText: 'Carrera / Profesión',
-                              hintText: 'ej. Ingeniería en Sistemas',
-                            ),
+                          ValoraSearchableDropdown<JobRoleItem>(
+                            label: 'Carrera / Profesión',
+                            value: _selectedCareerObj,
+                            items: _jobRolesCatalog,
+                            itemLabel: (role) => role.name,
+                            onChanged: (role) => setState(() => _selectedCareerObj = role),
+                            validator: (v) => v == null ? 'Selecciona una profesión' : null,
                           ),
                           const SizedBox(height: AppSpacing.space16),
 

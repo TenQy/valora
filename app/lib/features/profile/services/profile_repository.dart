@@ -107,6 +107,24 @@ class ProfileRepository {
     return _asList(data).map((e) => LanguageLevelItem.fromJson(e)).toList();
   }
 
+  Future<List<JobRoleItem>> fetchJobRoles() async {
+    final data = await _client
+        .from('job_roles')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name');
+    return _asList(data).map((e) => JobRoleItem.fromJson(e)).toList();
+  }
+
+  Future<List<CertificationIssuerItem>> fetchCertificationIssuers() async {
+    final data = await _client
+        .from('certification_issuers')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name');
+    return _asList(data).map((e) => CertificationIssuerItem.fromJson(e)).toList();
+  }
+
   /// Guarda / Actualiza el perfil completo del usuario y sus relaciones.
   Future<void> saveProfile({
     required String fullName,

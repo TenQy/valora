@@ -256,7 +256,22 @@ Por ejemplo, una competencia técnica como `JavaScript` puede medirse de forma m
 
 ---
 
-## 6. certifications
+## 6. certification_issuers
+
+Catálogo de instituciones o empresas emisoras de certificaciones (ej. Google, AWS, Microsoft, Udemy).
+
+### Campos sugeridos
+
+```txt
+id
+name
+is_active
+created_at
+```
+
+---
+
+## 7. certifications
 
 Almacena certificaciones registradas por los usuarios.
 
@@ -268,7 +283,7 @@ A diferencia de las competencias, las certificaciones representan validaciones e
 id
 profile_id
 name
-issuer
+issuer (Foreign Key -> certification_issuers.name)
 issue_date
 credential_url
 created_at
