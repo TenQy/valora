@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'edit_profile_screen.dart';
+import 'profile_tab.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -137,8 +140,24 @@ class ProfileContent extends StatelessWidget {
 /// Pantalla de Perfil standalone, con `Scaffold` y `AppBar` propios.
 /// Útil si en el futuro se navega directo a Perfil fuera del bottom nav
 /// del Dashboard (ej. desde un deep link o desde otra pantalla).
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  bool _isSigningOut = false;
+  Key _tabKey = UniqueKey();
+
+  Future<void> _signOut() async {
+    setState(() => _isSigningOut = true);
+    try {
+      await Supabase.instance.client.auth.signOut();
+    } catch (_) {}
+    if (mounted) setState(() => _isSigningOut = false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -146,13 +165,21 @@ class ProfileScreen extends StatelessWidget {
       backgroundColor: AppColors.bgPage,
       appBar: AppBar(title: const Text('Perfil')),
       body: SafeArea(
-        child: ProfileContent(
+        child: ProfileTab(
+          key: _tabKey,
           onEditPressed: () {
-            // TODO: navegar a Editar Perfil.
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const EditProfileScreen(),
+              ),
+            ).then((_) {
+              if (mounted) {
+                setState(() => _tabKey = UniqueKey());
+              }
+            });
           },
-          onSignOut: () {
-            // TODO: cerrar sesión (Supabase Auth signOut).
-          },
+          onSignOut: _signOut,
+          isSigningOut: _isSigningOut,
         ),
       ),
     );

@@ -1,7 +1,7 @@
-/// Modelos simples que reflejan las tablas descritas en DATABASE.md.
-/// Uso temporal con datos mock — al conectar con Supabase, estos modelos
-/// deben mapearse a `profiles`, `user_competencies`, `certifications`,
-/// `user_languages` y `projects` (ver API_CONTRACT.md).
+// Modelos simples que reflejan las tablas descritas en DATABASE.md.
+// Uso temporal con datos mock — al conectar con Supabase, estos modelos
+// deben mapearse a `profiles`, `user_competencies`, `certifications`,
+// `user_languages` y `projects` (ver API_CONTRACT.md).
 
 class UserCompetency {
   const UserCompetency({required this.name, required this.level});

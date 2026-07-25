@@ -125,6 +125,20 @@ class ProfileRepository {
     return _asList(data).map((e) => CertificationIssuerItem.fromJson(e)).toList();
   }
 
+  /// Valida mediante IA si un texto ingresado por el usuario es razonable.
+  Future<bool> validateText(String text, String type) async {
+    final res = await _client.functions.invoke(
+      'validate-text',
+      body: {'text': text, 'type': type},
+    );
+    
+    if (res.status != 200 || res.data == null) {
+      throw Exception('Fallo en el servicio de validación');
+    }
+    
+    return res.data['isValid'] as bool? ?? true;
+  }
+
   /// Guarda / Actualiza el perfil completo del usuario y sus relaciones.
   Future<void> saveProfile({
     required String fullName,

@@ -89,7 +89,7 @@ class _BackgroundPainter extends CustomPainter {
       Paint()
         ..shader = RadialGradient(
           colors: [
-            const Color(0xFF4ADE80).withOpacity(0.09),
+            const Color(0xFF4ADE80).withValues(alpha: 0.09),
             Colors.transparent,
           ],
         ).createShader(
@@ -109,7 +109,7 @@ class _BackgroundPainter extends CustomPainter {
       Paint()
         ..shader = RadialGradient(
           colors: [
-            const Color(0xFF9A9A9A).withOpacity(0.07),
+            const Color(0xFF9A9A9A).withValues(alpha: 0.07),
             Colors.transparent,
           ],
         ).createShader(
@@ -128,7 +128,7 @@ class _BackgroundPainter extends CustomPainter {
       Paint()
         ..shader = RadialGradient(
           colors: [
-            const Color(0xFFE8E8E8).withOpacity(0.03),
+            const Color(0xFFE8E8E8).withValues(alpha: 0.03),
             Colors.transparent,
           ],
         ).createShader(
@@ -162,7 +162,7 @@ class _BackgroundPainter extends CustomPainter {
     final double c3x = size.width * (0.62 + 0.04 * cos1);
     final double c3y = size.height * (0.08 + 0.03 * sin1);
     strokePaint
-      ..color = const Color(0xFF4ADE80).withOpacity(0.12)
+      ..color = const Color(0xFF4ADE80).withValues(alpha: 0.12)
       ..strokeWidth = 0.8;
     canvas.drawCircle(Offset(c3x, c3y), r3, strokePaint);
 
@@ -237,7 +237,7 @@ class _BackgroundPainter extends CustomPainter {
       Offset(size.width * 0.80, size.height * 0.13),
       3.5,
       Paint()
-        ..color = const Color(0xFF4ADE80).withOpacity(dotGreenOpacity)
+        ..color = const Color(0xFF4ADE80).withValues(alpha: dotGreenOpacity)
         ..style = PaintingStyle.fill,
     );
 
@@ -247,7 +247,7 @@ class _BackgroundPainter extends CustomPainter {
       Offset(size.width * 0.20, size.height * 0.87),
       3,
       Paint()
-        ..color = const Color(0xFFE8E8E8).withOpacity(dotSilverOpacity)
+        ..color = const Color(0xFFE8E8E8).withValues(alpha: dotSilverOpacity)
         ..style = PaintingStyle.fill,
     );
   }
