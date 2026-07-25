@@ -10,8 +10,17 @@ interface EstimateSalaryRequest {
   profile_id?: string;
 }
 
+interface HighlightItem {
+  label: string;
+  boost: string;
+}
+
+interface BreakdownItem {
+  category: string;
+  percentage: number;
+}
+
 Deno.serve(async (req: Request) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -32,7 +41,6 @@ Deno.serve(async (req: Request) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    // 1. Get authenticated user
     const {
       data: { user },
       error: userError,
@@ -52,7 +60,6 @@ Deno.serve(async (req: Request) => {
       // Body can be empty
     }
 
-    // 2. Fetch profile with competencies, languages, certifications, and professional area
     let query = supabase
       .from("profiles")
       .select(`
@@ -87,57 +94,69 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // 3. Calculation Algorithm (Ajustado al mercado mexicano realista en MXN / mes)
+    // =========================================================================
+    // RANGOS SALARIALES CALIBRADOS AL MERCADO NACIONAL MEXICANO (MXN / mes)
+    // =========================================================================
     const level = profileRow.professional_level ?? "Junior";
     const yearsExp = profileRow.years_experience ?? 0;
     const areaName = (profileRow.professional_areas as Record<string, unknown> | null)?.name as string ?? "Tecnología";
 
-    // Rangos salariales base realistas (MXN / mes)
-    let baseMin = 14000;
-    let baseMax = 22000;
+    // 1. Rangos base realistas por nivel
+    let baseMin = 13000;
+    let baseMax = 20000;
+    let maxLevelCap = 25000; // Tope máximo realista para este nivel
 
     switch (level) {
       case "Estudiante":
         baseMin = 6000;
         baseMax = 9000;
+        maxLevelCap = 11000;
         break;
       case "Practicante":
         baseMin = 8000;
         baseMax = 12000;
+        maxLevelCap = 14000;
         break;
       case "Junior":
-        baseMin = 14000;
-        baseMax = 22000;
+        baseMin = 13000;
+        baseMax = 19000;
+        maxLevelCap = 24000;
         break;
       case "Semi Senior":
         baseMin = 22000;
-        baseMax = 35000;
+        baseMax = 32000;
+        maxLevelCap = 40000;
         break;
       case "Senior":
         baseMin = 35000;
-        baseMax = 55000;
+        baseMax = 52000;
+        maxLevelCap = 65000;
         break;
       case "Especialista":
         baseMin = 48000;
-        baseMax = 75000;
+        baseMax = 72000;
+        maxLevelCap = 88000;
         break;
     }
 
-    // Ligero ajuste según área profesional (Tecnología / Ingenierías +5%)
     if (["Tecnología", "Ingenierías"].includes(areaName)) {
-      baseMin = Math.round(baseMin * 1.05);
-      baseMax = Math.round(baseMax * 1.05);
+      baseMin = Math.round(baseMin * 1.04);
+      baseMax = Math.round(baseMax * 1.04);
+      maxLevelCap = Math.round(maxLevelCap * 1.04);
     }
 
     const influentialFactors: string[] = [];
+    const highlightCandidates: { label: string; rawBonus: number }[] = [];
 
-    // Factor 1: Años de Experiencia (+2% por año, tope +15%)
-    const expBonus = Math.min(yearsExp * 0.02, 0.15);
+    // 2. Experiencia (+3.5% por año, tope +18%)
+    const expBonus = Math.min(yearsExp * 0.035, 0.18);
     if (yearsExp > 0) {
-      influentialFactors.push(`${yearsExp} año${yearsExp > 1 ? "s" : ""} de experiencia`);
+      const label = `${yearsExp} año${yearsExp > 1 ? "s" : ""} de experiencia laboral`;
+      influentialFactors.push(label);
+      highlightCandidates.push({ label, rawBonus: expBonus });
     }
 
-    // Factor 2: Competencias dominadas (+2% por avanzada, +1% por intermedia, tope +15%)
+    // 3. Competencias (+2% avanzada, +1% intermedia, tope +12%)
     let compBonus = 0;
     const userComps = (profileRow.user_competencies as Array<Record<string, unknown>>) || [];
     for (const comp of userComps) {
@@ -146,18 +165,16 @@ Deno.serve(async (req: Request) => {
       const compLevel = comp.level as string | undefined;
 
       if (name) {
-        if (compLevel === "Avanzado") {
-          compBonus += 0.02;
-          influentialFactors.push(`${name} (Avanzado)`);
-        } else if (compLevel === "Intermedio") {
-          compBonus += 0.01;
-          influentialFactors.push(`${name} (Intermedio)`);
-        }
+        const bonus = compLevel === "Avanzado" ? 0.02 : compLevel === "Intermedio" ? 0.01 : 0.005;
+        compBonus += bonus;
+        const label = `${name} (${compLevel ?? "Básico"})`;
+        influentialFactors.push(label);
+        highlightCandidates.push({ label, rawBonus: bonus });
       }
     }
-    compBonus = Math.min(compBonus, 0.15);
+    compBonus = Math.min(compBonus, 0.12);
 
-    // Factor 3: Idiomas (Inglés B2 +8%, C1/C2/Nativo +12%)
+    // 4. Idiomas (Inglés B2 +10%, C1/C2 +18%)
     let langBonus = 0;
     const userLangs = (profileRow.user_languages as Array<Record<string, unknown>>) || [];
     for (const lang of userLangs) {
@@ -167,43 +184,81 @@ Deno.serve(async (req: Request) => {
       const lvlName = (levelObj?.name as string) ?? "";
 
       if (langName.toLowerCase().includes("ingl") || langName.toLowerCase().includes("engl")) {
-        if (["B2"].includes(lvlName)) {
-          langBonus += 0.08;
-          influentialFactors.push(`Inglés ${lvlName}`);
-        } else if (["C1", "C2", "Nativo"].includes(lvlName)) {
-          langBonus += 0.12;
-          influentialFactors.push(`Inglés ${lvlName}`);
-        } else if (["A2", "B1"].includes(lvlName)) {
-          langBonus += 0.04;
-          influentialFactors.push(`Inglés ${lvlName}`);
-        }
+        const bonus = ["C1", "C2", "Nativo"].includes(lvlName) ? 0.18 : ["B2"].includes(lvlName) ? 0.10 : 0.04;
+        langBonus += bonus;
+        const label = `Inglés ${lvlName}`;
+        influentialFactors.push(label);
+        highlightCandidates.push({ label, rawBonus: bonus });
       }
     }
 
-    // Factor 4: Certificaciones (+3% por certificación, tope +10%)
+    // 5. Certificaciones (+3% cada una, tope +8%)
     const certs = (profileRow.certifications as Array<Record<string, unknown>>) || [];
     let certBonus = 0;
     for (const cert of certs) {
       certBonus += 0.03;
       if (cert.name) {
-        influentialFactors.push(`Certificación: ${cert.name}`);
+        const label = `Certificación: ${cert.name}`;
+        influentialFactors.push(label);
+        highlightCandidates.push({ label, rawBonus: 0.03 });
       }
     }
-    certBonus = Math.min(certBonus, 0.10);
+    certBonus = Math.min(certBonus, 0.08);
 
-    // Multiplicador total topeado a máximo +35% de incremento sobre la base
     const rawMultiplier = 1 + expBonus + compBonus + langBonus + certBonus;
-    const finalMultiplier = Math.min(rawMultiplier, 1.35);
+    const finalMultiplier = Math.min(rawMultiplier, 1.25); // Máximo 25% de incremento total sobre la base
 
-    const estimatedMinSalary = Math.round(baseMin * finalMultiplier);
-    const estimatedMaxSalary = Math.round(baseMax * finalMultiplier);
+    let estimatedMinSalary = Math.round(baseMin * finalMultiplier);
+    let estimatedMaxSalary = Math.round(baseMax * finalMultiplier);
+
+    // Aplicar tope máximo del nivel para no inflar salarios en perfiles Junior
+    if (estimatedMaxSalary > maxLevelCap) {
+      estimatedMaxSalary = maxLevelCap;
+    }
+    if (estimatedMinSalary >= estimatedMaxSalary) {
+      estimatedMinSalary = Math.round(estimatedMaxSalary * 0.75);
+    }
+
+    // 6. Factores Destacados con incremento exacto en MXN
+    highlightCandidates.sort((a, b) => b.rawBonus - a.rawBonus);
+    const topHighlights: HighlightItem[] = highlightCandidates.slice(0, 4).map((c) => {
+      const mxnBoost = Math.round(baseMin * c.rawBonus);
+      return {
+        label: c.label,
+        boost: `+ \$${mxnBoost.toLocaleString("en-US")} MXN`,
+      };
+    });
+
+    // 7. Desglose de Impacto Ponderado
+    const expWeight = 0.52 + expBonus;
+    const compWeight = 0.24 + compBonus;
+    const langWeight = 0.16 + langBonus;
+    const certWeight = 0.08 + certBonus;
+
+    const grandTotalWeight = expWeight + compWeight + langWeight + (certs.length > 0 ? certWeight : 0);
+
+    const expPct = Math.round((expWeight / grandTotalWeight) * 100);
+    const compPct = Math.round((compWeight / grandTotalWeight) * 100);
+    const langPct = Math.round((langWeight / grandTotalWeight) * 100);
+    const certPct = certs.length > 0 ? Math.round((certWeight / grandTotalWeight) * 100) : 0;
+
+    const factorBreakdown: BreakdownItem[] = [
+      { category: "Experiencia y Trayectoria", percentage: expPct },
+      { category: "Competencias Técnicas", percentage: compPct },
+      { category: "Dominio de Idiomas", percentage: langPct },
+    ];
+
+    if (certPct > 0) {
+      factorBreakdown.push({ category: "Certificaciones Oficiales", percentage: certPct });
+    }
+
+    factorBreakdown.sort((a, b) => b.percentage - a.percentage);
 
     const summary =
-      `Estimación salarial aproximada para el área de ${areaName} (Nivel ${level}). ` +
-      `Evaluación basada en experiencia (${yearsExp} años), ${userComps.length} competencias ` +
-      `y nivel de idioma registrado.`;
+      `Estimación salarial para ${areaName} en nivel ${level}. ` +
+      `Evaluación ponderada por trayectoria (${yearsExp} años), ${userComps.length} competencias ` +
+      `e idiomas.`;
 
-    // 4. Guardar estimación en la tabla salary_estimations
     if (profileRow.id && profileRow.professional_area_id) {
       await supabase.from("salary_estimations").insert({
         profile_id: profileRow.id,
@@ -216,7 +271,6 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // 5. Retornar respuesta estructurada
     return new Response(
       JSON.stringify({
         estimated_min_salary: estimatedMinSalary,
@@ -225,6 +279,8 @@ Deno.serve(async (req: Request) => {
         professional_level: level,
         summary: summary,
         influential_factors: influentialFactors,
+        top_highlights: topHighlights,
+        factor_breakdown: factorBreakdown,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

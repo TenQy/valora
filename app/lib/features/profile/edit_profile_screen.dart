@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../shared/widgets/animated_app_background.dart';
 import '../../shared/widgets/section_label.dart';
 import '../../shared/widgets/valora_app_bar.dart';
 import '../../shared/widgets/valora_searchable_dropdown.dart';
@@ -430,28 +431,30 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.bgPage,
+      extendBodyBehindAppBar: true,
       appBar: const ValoraAppBar(
         showBackButton: true,
         title: 'Editar Perfil',
       ),
-      body: SafeArea(
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () => FocusScope.of(context).unfocus(),
-          child: _isLoading
-              ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
-              : _errorMessage != null
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(_errorMessage!, style: const TextStyle(color: AppColors.colorError)),
-                          const SizedBox(height: AppSpacing.space16),
-                          OutlinedButton(onPressed: _loadData, child: const Text('Reintentar')),
-                        ],
-                      ),
-                    )
-                  : Form(
+      body: AnimatedAppBackground(
+        child: SafeArea(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => FocusScope.of(context).unfocus(),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+                : _errorMessage != null
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(_errorMessage!, style: const TextStyle(color: AppColors.colorError)),
+                            const SizedBox(height: AppSpacing.space16),
+                            OutlinedButton(onPressed: _loadData, child: const Text('Reintentar')),
+                          ],
+                        ),
+                      )
+                    : Form(
                       key: _formKey,
                       child: ListView(
                         padding: const EdgeInsets.all(AppSpacing.space24),
@@ -653,6 +656,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ],
                       ),
                     ),
+          ),
         ),
       ),
     );
