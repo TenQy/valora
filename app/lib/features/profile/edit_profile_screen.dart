@@ -5,8 +5,11 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../shared/widgets/animated_app_background.dart';
 import '../../shared/widgets/section_label.dart';
-import '../../shared/widgets/valora_app_bar.dart';
-import '../../shared/widgets/valora_searchable_dropdown.dart';
+import '../../../shared/widgets/valora_app_bar.dart';
+import '../../../shared/widgets/valora_searchable_dropdown.dart';
+import 'widgets/add_certification_dialog.dart';
+import 'widgets/add_competency_dialog.dart';
+import 'widgets/add_language_dialog.dart';
 import 'models/catalog_models.dart';
 import 'services/profile_repository.dart';
 
@@ -220,284 +223,53 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   // --- Dialogs ---
 
-  void _showAddCompetencyDialog() {
-    CompetencyItem? selectedComp;
-    String selectedLevel = 'Básico';
+  void _showAddCompetencyDialog() async {
+    final availableCompetencies = _competenciesCatalog.where((cat) {
+      return !_selectedCompetencies.any((sc) => sc.competencyId == cat.id);
+    }).toList();
 
-    showDialog(
+    final result = await showDialog<EditableUserCompetency>(
       context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            final availableCompetencies = _competenciesCatalog.where((cat) {
-              return !_selectedCompetencies
-                  .any((sc) => sc.competencyId == cat.id);
-            }).toList();
-
-            return AlertDialog(
-              backgroundColor: AppColors.bgSurface,
-              title: const Text('Agregar Competencia', style: TextStyle(color: Colors.white)),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ValoraSearchableDropdown<CompetencyItem>(
-                      label: 'Competencia',
-                      value: selectedComp,
-                      items: availableCompetencies,
-                      itemLabel: (comp) => comp.name,
-                      itemSubLabel: (comp) => comp.category ?? '',
-                      onChanged: (val) => setDialogState(() => selectedComp = val),
-                    ),
-                    const SizedBox(height: AppSpacing.space16),
-                    ValoraSearchableDropdown<String>(
-                      label: 'Nivel de dominio',
-                      value: selectedLevel,
-                      items: const ['Básico', 'Intermedio', 'Avanzado'],
-                      itemLabel: (lvl) => lvl,
-                      onChanged: (val) => setDialogState(() => selectedLevel = val ?? 'Básico'),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancelar'),
-                ),
-                ElevatedButton(
-                  onPressed: selectedComp == null
-                      ? null
-                      : () {
-                          setState(() {
-                            _selectedCompetencies.add(
-                              EditableUserCompetency(
-                                competencyId: selectedComp!.id,
-                                name: selectedComp!.name,
-                                level: selectedLevel,
-                              ),
-                            );
-                          });
-                          Navigator.of(context).pop();
-                        },
-                  child: const Text('Agregar'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      builder: (context) => AddCompetencyDialog(
+        availableCompetencies: availableCompetencies,
+      ),
     );
+
+    if (result != null) {
+      setState(() => _selectedCompetencies.add(result));
+    }
   }
 
-  void _showAddLanguageDialog() {
-    LanguageItem? selectedLang;
-    LanguageLevelItem? selectedLevel;
+  void _showAddLanguageDialog() async {
+    final availableLangs = _languagesCatalog.where((cat) {
+      return !_selectedLanguages.any((sl) => sl.languageId == cat.id);
+    }).toList();
 
-    showDialog(
+    final result = await showDialog<EditableUserLanguage>(
       context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            final availableLangs = _languagesCatalog.where((cat) {
-              return !_selectedLanguages
-                  .any((sl) => sl.languageId == cat.id);
-            }).toList();
-
-            return AlertDialog(
-              backgroundColor: AppColors.bgSurface,
-              title: const Text('Agregar Idioma', style: TextStyle(color: Colors.white)),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ValoraSearchableDropdown<LanguageItem>(
-                      label: 'Idioma',
-                      value: selectedLang,
-                      items: availableLangs,
-                      itemLabel: (lang) => lang.name,
-                      onChanged: (val) => setDialogState(() => selectedLang = val),
-                    ),
-                    const SizedBox(height: AppSpacing.space16),
-                    ValoraSearchableDropdown<LanguageLevelItem>(
-                      label: 'Nivel',
-                      value: selectedLevel,
-                      items: _languageLevelsCatalog,
-                      itemLabel: (lvl) => lvl.name,
-                      itemSubLabel: (lvl) => lvl.description ?? '',
-                      onChanged: (val) => setDialogState(() => selectedLevel = val),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancelar'),
-                ),
-                ElevatedButton(
-                  onPressed: (selectedLang == null || selectedLevel == null)
-                      ? null
-                      : () {
-                          setState(() {
-                            _selectedLanguages.add(
-                              EditableUserLanguage(
-                                languageId: selectedLang!.id,
-                                languageName: selectedLang!.name,
-                                languageLevelId: selectedLevel!.id,
-                                levelName: selectedLevel!.name,
-                              ),
-                            );
-                          });
-                          Navigator.of(context).pop();
-                        },
-                  child: const Text('Agregar'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      builder: (context) => AddLanguageDialog(
+        availableLanguages: availableLangs,
+        levelsCatalog: _languageLevelsCatalog,
+      ),
     );
+
+    if (result != null) {
+      setState(() => _selectedLanguages.add(result));
+    }
   }
 
-  void _showAddCertificationDialog() {
-    final nameCtrl = TextEditingController();
-    final dateCtrl = TextEditingController();
-    CertificationIssuerItem? selectedIssuer;
-    bool isValidating = false;
-
-    showDialog(
+  void _showAddCertificationDialog() async {
+    final result = await showDialog<EditableUserCertification>(
       context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              backgroundColor: AppColors.bgSurface,
-              title: const Text('Agregar Certificación', style: TextStyle(color: Colors.white)),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: nameCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Nombre de certificación',
-                        hintText: 'ej. AWS Cloud Practitioner',
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.space12),
-                    ValoraSearchableDropdown<CertificationIssuerItem>(
-                      label: 'Institución / Emisor',
-                      value: selectedIssuer,
-                      items: _certificationIssuersCatalog,
-                      itemLabel: (issuer) => issuer.name,
-                      onChanged: (val) => setDialogState(() => selectedIssuer = val),
-                    ),
-                    const SizedBox(height: AppSpacing.space12),
-                    TextFormField(
-                      controller: dateCtrl,
-                      readOnly: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Fecha de obtención (YYYY-MM-DD)',
-                        hintText: '2026-01-15',
-                        suffixIcon: Icon(Icons.calendar_today, size: 20, color: AppColors.textMuted),
-                      ),
-                      onTap: () async {
-                        final now = DateTime.now();
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: now,
-                          firstDate: DateTime(1980),
-                          lastDate: now,
-                          builder: (context, child) {
-                            return Theme(
-                              data: Theme.of(context).copyWith(
-                                colorScheme: const ColorScheme.dark(
-                                  primary: AppColors.silver,
-                                  onPrimary: Colors.black,
-                                  surface: AppColors.bgSurface,
-                                  onSurface: Colors.white,
-                                ),
-                              ),
-                              child: child!,
-                            );
-                          },
-                        );
-                        if (picked != null) {
-                          dateCtrl.text = picked.toIso8601String().split('T').first;
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancelar'),
-                ),
-                ElevatedButton(
-                  onPressed: (selectedIssuer == null || isValidating)
-                      ? null
-                      : () async {
-                          final certName = nameCtrl.text.trim();
-                          if (certName.isEmpty) return;
-                          
-                          setDialogState(() => isValidating = true);
-                          
-                          try {
-                            final res = await Supabase.instance.client.functions.invoke(
-                              'validate-text',
-                              body: {'text': certName, 'type': 'certification'},
-                            );
-                            
-                            final isValid = res.data['isValid'] as bool? ?? true;
-                            
-                            if (!isValid) {
-                              if (!context.mounted) return;
-                              Navigator.of(context).pop();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Ese nombre de certificación no parece válido.'),
-                                  backgroundColor: AppColors.colorError,
-                                ),
-                              );
-                              return;
-                            }
-                            
-                            setState(() {
-                              _selectedCertifications.add(
-                                EditableUserCertification(
-                                  name: certName,
-                                  issuer: selectedIssuer!.name,
-                                  issueDate: dateCtrl.text.trim(),
-                                ),
-                              );
-                            });
-                            if (context.mounted) Navigator.of(context).pop();
-                          } catch (e) {
-                            if (!context.mounted) return;
-                            Navigator.of(context).pop();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Error validando: $e'),
-                                backgroundColor: AppColors.colorError,
-                                duration: const Duration(seconds: 4),
-                              ),
-                            );
-                          }
-                        },
-                  child: isValidating 
-                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Text('Agregar'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      builder: (context) => AddCertificationDialog(
+        issuersCatalog: _certificationIssuersCatalog,
+        repository: _repository,
+      ),
     );
+
+    if (result != null) {
+      setState(() => _selectedCertifications.add(result));
+    }
   }
 
   @override

@@ -16,7 +16,7 @@ class SectionLabel extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(text.toUpperCase(), style: AppTextStyles.sectionLabel),
-        if (trailing != null) trailing!,
+        ?trailing,
       ],
     );
   }

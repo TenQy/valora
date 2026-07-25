@@ -201,7 +201,7 @@ class _SearchBottomSheetState<T> extends State<_SearchBottomSheet<T>> {
                 : ListView.separated(
                     shrinkWrap: true,
                     itemCount: filtered.length,
-                    separatorBuilder: (_, __) =>
+                    separatorBuilder: (_, _) =>
                         const Divider(color: AppColors.borderSubtle, height: 1),
                     itemBuilder: (context, index) {
                       final item = filtered[index];
