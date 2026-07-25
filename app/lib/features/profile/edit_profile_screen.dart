@@ -5,6 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../shared/widgets/section_label.dart';
 import '../../shared/widgets/valora_app_bar.dart';
+import '../../shared/widgets/valora_searchable_dropdown.dart';
 import 'models/catalog_models.dart';
 import 'services/profile_repository.dart';
 
@@ -79,13 +80,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     });
 
     try {
-      // 1. Load Catalogs
       final areas = await _repository.fetchProfessionalAreas();
       final competencies = await _repository.fetchCompetencies();
       final languages = await _repository.fetchLanguages();
       final levels = await _repository.fetchLanguageLevels();
-
-      // 2. Load Raw Profile Data if available
       final rawProfile = await _repository.fetchRawProfileForEditing();
 
       if (!mounted) return;
@@ -110,7 +108,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _yearsExperienceController.text = yrs != null ? yrs.toString() : '';
           _bioController.text = rawProfile['bio'] as String? ?? '';
 
-          // Raw competencies
           if (rawProfile['user_competencies'] is List) {
             final rawCompList = rawProfile['user_competencies'] as List;
             _selectedCompetencies = rawCompList.map((item) {
@@ -123,7 +120,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             }).toList();
           }
 
-          // Raw languages
           if (rawProfile['user_languages'] is List) {
             final rawLangList = rawProfile['user_languages'] as List;
             _selectedLanguages = rawLangList.map((item) {
@@ -138,7 +134,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             }).toList();
           }
 
-          // Raw certifications
           if (rawProfile['certifications'] is List) {
             final rawCertList = rawProfile['certifications'] as List;
             _selectedCertifications = rawCertList.map((item) {
@@ -151,7 +146,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             }).toList();
           }
         } else {
-          // Pre-fill user's metadata name if new profile
           final currentUser = Supabase.instance.client.auth.currentUser;
           if (currentUser != null) {
             _fullNameController.text =
@@ -214,10 +208,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  // --- Dialogs to add items ---
+  // --- Dialogs ---
 
   void _showAddCompetencyDialog() {
-    String? selectedCompId;
+    CompetencyItem? selectedComp;
     String selectedLevel = 'Básico';
 
     showDialog(
@@ -237,32 +231,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    DropdownButtonFormField<String>(
-                      dropdownColor: AppColors.bgSurface,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(labelText: 'Competencia'),
-                      value: selectedCompId,
-                      items: availableCompetencies.map((comp) {
-                        return DropdownMenuItem(
-                          value: comp.id,
-                          child: Text(comp.name),
-                        );
-                      }).toList(),
-                      onChanged: (val) => setDialogState(() => selectedCompId = val),
+                    ValoraSearchableDropdown<CompetencyItem>(
+                      label: 'Competencia',
+                      value: selectedComp,
+                      items: availableCompetencies,
+                      itemLabel: (comp) => comp.name,
+                      itemSubLabel: (comp) => comp.category ?? '',
+                      onChanged: (val) => setDialogState(() => selectedComp = val),
                     ),
                     const SizedBox(height: AppSpacing.space16),
-                    DropdownButtonFormField<String>(
-                      dropdownColor: AppColors.bgSurface,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(labelText: 'Nivel de dominio'),
+                    ValoraSearchableDropdown<String>(
+                      label: 'Nivel de dominio',
                       value: selectedLevel,
-                      items: const [
-                        DropdownMenuItem(value: 'Básico', child: Text('Básico')),
-                        DropdownMenuItem(value: 'Intermedio', child: Text('Intermedio')),
-                        DropdownMenuItem(value: 'Avanzado', child: Text('Avanzado')),
-                      ],
-                      onChanged: (val) =>
-                          setDialogState(() => selectedLevel = val ?? 'Básico'),
+                      items: const ['Básico', 'Intermedio', 'Avanzado'],
+                      itemLabel: (lvl) => lvl,
+                      onChanged: (val) => setDialogState(() => selectedLevel = val ?? 'Básico'),
                     ),
                   ],
                 ),
@@ -273,16 +256,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   child: const Text('Cancelar'),
                 ),
                 ElevatedButton(
-                  onPressed: selectedCompId == null
+                  onPressed: selectedComp == null
                       ? null
                       : () {
-                          final compObj = _competenciesCatalog
-                              .firstWhere((c) => c.id == selectedCompId);
                           setState(() {
                             _selectedCompetencies.add(
                               EditableUserCompetency(
-                                competencyId: compObj.id,
-                                name: compObj.name,
+                                competencyId: selectedComp!.id,
+                                name: selectedComp!.name,
                                 level: selectedLevel,
                               ),
                             );
@@ -300,8 +281,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   void _showAddLanguageDialog() {
-    String? selectedLangId;
-    String? selectedLevelId;
+    LanguageItem? selectedLang;
+    LanguageLevelItem? selectedLevel;
 
     showDialog(
       context: context,
@@ -320,32 +301,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    DropdownButtonFormField<String>(
-                      dropdownColor: AppColors.bgSurface,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(labelText: 'Idioma'),
-                      value: selectedLangId,
-                      items: availableLangs.map((lang) {
-                        return DropdownMenuItem(
-                          value: lang.id,
-                          child: Text(lang.name),
-                        );
-                      }).toList(),
-                      onChanged: (val) => setDialogState(() => selectedLangId = val),
+                    ValoraSearchableDropdown<LanguageItem>(
+                      label: 'Idioma',
+                      value: selectedLang,
+                      items: availableLangs,
+                      itemLabel: (lang) => lang.name,
+                      onChanged: (val) => setDialogState(() => selectedLang = val),
                     ),
                     const SizedBox(height: AppSpacing.space16),
-                    DropdownButtonFormField<String>(
-                      dropdownColor: AppColors.bgSurface,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: const InputDecoration(labelText: 'Nivel'),
-                      value: selectedLevelId,
-                      items: _languageLevelsCatalog.map((lvl) {
-                        return DropdownMenuItem(
-                          value: lvl.id,
-                          child: Text('${lvl.name} ${lvl.description != null ? '(${lvl.description})' : ''}'),
-                        );
-                      }).toList(),
-                      onChanged: (val) => setDialogState(() => selectedLevelId = val),
+                    ValoraSearchableDropdown<LanguageLevelItem>(
+                      label: 'Nivel',
+                      value: selectedLevel,
+                      items: _languageLevelsCatalog,
+                      itemLabel: (lvl) => lvl.name,
+                      itemSubLabel: (lvl) => lvl.description ?? '',
+                      onChanged: (val) => setDialogState(() => selectedLevel = val),
                     ),
                   ],
                 ),
@@ -356,20 +326,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   child: const Text('Cancelar'),
                 ),
                 ElevatedButton(
-                  onPressed: (selectedLangId == null || selectedLevelId == null)
+                  onPressed: (selectedLang == null || selectedLevel == null)
                       ? null
                       : () {
-                          final langObj = _languagesCatalog
-                              .firstWhere((l) => l.id == selectedLangId);
-                          final levelObj = _languageLevelsCatalog
-                              .firstWhere((l) => l.id == selectedLevelId);
                           setState(() {
                             _selectedLanguages.add(
                               EditableUserLanguage(
-                                languageId: langObj.id,
-                                languageName: langObj.name,
-                                languageLevelId: levelObj.id,
-                                levelName: levelObj.name,
+                                languageId: selectedLang!.id,
+                                languageName: selectedLang!.name,
+                                languageLevelId: selectedLevel!.id,
+                                levelName: selectedLevel!.name,
                               ),
                             );
                           });
@@ -455,6 +421,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final selectedAreaObj = _selectedAreaId != null
+        ? _areas.cast<ProfessionalAreaItem?>().firstWhere(
+              (a) => a?.id == _selectedAreaId,
+              orElse: () => null,
+            )
+        : null;
+
     return Scaffold(
       backgroundColor: AppColors.bgPage,
       appBar: const ValoraAppBar(
@@ -462,235 +435,225 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         title: 'Editar Perfil',
       ),
       body: SafeArea(
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
-            : _errorMessage != null
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(_errorMessage!, style: const TextStyle(color: AppColors.colorError)),
-                        const SizedBox(height: AppSpacing.space16),
-                        OutlinedButton(onPressed: _loadData, child: const Text('Reintentar')),
-                      ],
-                    ),
-                  )
-                : Form(
-                    key: _formKey,
-                    child: ListView(
-                      padding: const EdgeInsets.all(AppSpacing.space24),
-                      children: [
-                        SectionLabel('Información General'),
-                        const SizedBox(height: AppSpacing.space16),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+              : _errorMessage != null
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(_errorMessage!, style: const TextStyle(color: AppColors.colorError)),
+                          const SizedBox(height: AppSpacing.space16),
+                          OutlinedButton(onPressed: _loadData, child: const Text('Reintentar')),
+                        ],
+                      ),
+                    )
+                  : Form(
+                      key: _formKey,
+                      child: ListView(
+                        padding: const EdgeInsets.all(AppSpacing.space24),
+                        children: [
+                          SectionLabel('Información General'),
+                          const SizedBox(height: AppSpacing.space16),
 
-                        TextFormField(
-                          controller: _fullNameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Nombre Completo',
+                          TextFormField(
+                            controller: _fullNameController,
+                            decoration: const InputDecoration(
+                              labelText: 'Nombre Completo',
+                            ),
+                            validator: (v) =>
+                                (v == null || v.trim().isEmpty) ? 'Ingresa tu nombre' : null,
                           ),
-                          validator: (v) =>
-                              (v == null || v.trim().isEmpty) ? 'Ingresa tu nombre' : null,
-                        ),
-                        const SizedBox(height: AppSpacing.space16),
+                          const SizedBox(height: AppSpacing.space16),
 
-                        DropdownButtonFormField<String>(
-                          dropdownColor: AppColors.bgSurface,
-                          style: const TextStyle(color: Colors.white),
-                          value: _selectedAreaId,
-                          decoration: const InputDecoration(
-                            labelText: 'Área Profesional',
+                          ValoraSearchableDropdown<ProfessionalAreaItem>(
+                            label: 'Área Profesional',
+                            value: selectedAreaObj,
+                            items: _areas,
+                            itemLabel: (area) => area.name,
+                            onChanged: (area) => setState(() => _selectedAreaId = area?.id),
+                            validator: (v) => v == null ? 'Selecciona un área profesional' : null,
                           ),
-                          items: _areas.map((area) {
-                            return DropdownMenuItem(
-                              value: area.id,
-                              child: Text(area.name),
-                            );
-                          }).toList(),
-                          onChanged: (val) => setState(() => _selectedAreaId = val),
-                          validator: (v) => v == null ? 'Selecciona un área profesional' : null,
-                        ),
-                        const SizedBox(height: AppSpacing.space16),
+                          const SizedBox(height: AppSpacing.space16),
 
-                        TextFormField(
-                          controller: _careerController,
-                          decoration: const InputDecoration(
-                            labelText: 'Carrera / Profesión',
-                            hintText: 'ej. Ingeniería en Sistemas',
+                          TextFormField(
+                            controller: _careerController,
+                            decoration: const InputDecoration(
+                              labelText: 'Carrera / Profesión',
+                              hintText: 'ej. Ingeniería en Sistemas',
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: AppSpacing.space16),
+                          const SizedBox(height: AppSpacing.space16),
 
-                        DropdownButtonFormField<String>(
-                          dropdownColor: AppColors.bgSurface,
-                          style: const TextStyle(color: Colors.white),
-                          value: _selectedProfessionalLevel,
-                          decoration: const InputDecoration(
-                            labelText: 'Nivel Profesional',
+                          ValoraSearchableDropdown<String>(
+                            label: 'Nivel Profesional',
+                            value: _selectedProfessionalLevel,
+                            items: _levelOptions,
+                            itemLabel: (lvl) => lvl,
+                            onChanged: (lvl) =>
+                                setState(() => _selectedProfessionalLevel = lvl ?? 'Junior'),
                           ),
-                          items: _levelOptions.map((level) {
-                            return DropdownMenuItem(
-                              value: level,
-                              child: Text(level),
-                            );
-                          }).toList(),
-                          onChanged: (val) =>
-                              setState(() => _selectedProfessionalLevel = val ?? 'Junior'),
-                        ),
-                        const SizedBox(height: AppSpacing.space16),
+                          const SizedBox(height: AppSpacing.space16),
 
-                        TextFormField(
-                          controller: _yearsExperienceController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'Años de Experiencia',
-                            hintText: 'ej. 2',
+                          TextFormField(
+                            controller: _yearsExperienceController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              labelText: 'Años de Experiencia',
+                              hintText: 'ej. 2',
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: AppSpacing.space16),
+                          const SizedBox(height: AppSpacing.space16),
 
-                        TextFormField(
-                          controller: _bioController,
-                          maxLines: 3,
-                          decoration: const InputDecoration(
-                            labelText: 'Bio corta',
-                            hintText: 'Describe tu perfil profesional...',
+                          TextFormField(
+                            controller: _bioController,
+                            maxLines: 3,
+                            decoration: const InputDecoration(
+                              labelText: 'Bio corta',
+                              hintText: 'Describe tu perfil profesional...',
+                            ),
                           ),
-                        ),
 
-                        const SizedBox(height: AppSpacing.space32),
-                        SectionLabel('Competencias'),
-                        const SizedBox(height: AppSpacing.space12),
+                          const SizedBox(height: AppSpacing.space32),
+                          SectionLabel('Competencias'),
+                          const SizedBox(height: AppSpacing.space12),
 
-                        if (_selectedCompetencies.isEmpty)
-                          const Text(
-                            'No has agregado competencias aún.',
-                            style: TextStyle(color: AppColors.textMuted, fontSize: 13),
-                          )
-                        else
-                          Wrap(
-                            spacing: AppSpacing.space8,
-                            runSpacing: AppSpacing.space8,
-                            children: [
-                              for (final comp in _selectedCompetencies)
-                                Chip(
-                                  backgroundColor: AppColors.bgSurface,
-                                  side: const BorderSide(color: AppColors.borderSubtle),
-                                  label: Text(
-                                    '${comp.name} (${comp.level})',
-                                    style: const TextStyle(color: Colors.white, fontSize: 13),
-                                  ),
-                                  onDeleted: () {
-                                    setState(() {
-                                      _selectedCompetencies.remove(comp);
-                                    });
-                                  },
-                                  deleteIconColor: AppColors.textMuted,
-                                ),
-                            ],
-                          ),
-                        const SizedBox(height: AppSpacing.space12),
-
-                        OutlinedButton.icon(
-                          onPressed: _showAddCompetencyDialog,
-                          icon: const Icon(Icons.add, size: 18),
-                          label: const Text('Agregar competencia'),
-                        ),
-
-                        const SizedBox(height: AppSpacing.space32),
-                        SectionLabel('Idiomas'),
-                        const SizedBox(height: AppSpacing.space12),
-
-                        if (_selectedLanguages.isEmpty)
-                          const Text(
-                            'No has agregado idiomas aún.',
-                            style: TextStyle(color: AppColors.textMuted, fontSize: 13),
-                          )
-                        else
-                          Wrap(
-                            spacing: AppSpacing.space8,
-                            runSpacing: AppSpacing.space8,
-                            children: [
-                              for (final lang in _selectedLanguages)
-                                Chip(
-                                  backgroundColor: AppColors.bgSurface,
-                                  side: const BorderSide(color: AppColors.borderSubtle),
-                                  label: Text(
-                                    '${lang.languageName} — ${lang.levelName}',
-                                    style: const TextStyle(color: Colors.white, fontSize: 13),
-                                  ),
-                                  onDeleted: () {
-                                    setState(() {
-                                      _selectedLanguages.remove(lang);
-                                    });
-                                  },
-                                  deleteIconColor: AppColors.textMuted,
-                                ),
-                            ],
-                          ),
-                        const SizedBox(height: AppSpacing.space12),
-
-                        OutlinedButton.icon(
-                          onPressed: _showAddLanguageDialog,
-                          icon: const Icon(Icons.add, size: 18),
-                          label: const Text('Agregar idioma'),
-                        ),
-
-                        const SizedBox(height: AppSpacing.space32),
-                        SectionLabel('Certificaciones'),
-                        const SizedBox(height: AppSpacing.space12),
-
-                        if (_selectedCertifications.isEmpty)
-                          const Text(
-                            'No has agregado certificaciones aún.',
-                            style: TextStyle(color: AppColors.textMuted, fontSize: 13),
-                          )
-                        else
-                          Column(
-                            children: [
-                              for (final cert in _selectedCertifications)
-                                ListTile(
-                                  contentPadding: EdgeInsets.zero,
-                                  title: Text(cert.name, style: const TextStyle(color: Colors.white)),
-                                  subtitle: Text('${cert.issuer} ${cert.issueDate.isNotEmpty ? '• ${cert.issueDate}' : ''}',
-                                      style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
-                                  trailing: IconButton(
-                                    icon: const Icon(Icons.delete_outline, color: AppColors.colorError),
-                                    onPressed: () {
+                          if (_selectedCompetencies.isEmpty)
+                            const Text(
+                              'No has agregado competencias aún.',
+                              style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                            )
+                          else
+                            Wrap(
+                              spacing: AppSpacing.space8,
+                              runSpacing: AppSpacing.space8,
+                              children: [
+                                for (final comp in _selectedCompetencies)
+                                  Chip(
+                                    backgroundColor: AppColors.bgSurface,
+                                    side: const BorderSide(color: AppColors.borderSubtle),
+                                    label: Text(
+                                      '${comp.name} (${comp.level})',
+                                      style: const TextStyle(color: Colors.white, fontSize: 13),
+                                    ),
+                                    onDeleted: () {
                                       setState(() {
-                                        _selectedCertifications.remove(cert);
+                                        _selectedCompetencies.remove(comp);
                                       });
                                     },
+                                    deleteIconColor: AppColors.textMuted,
                                   ),
-                                ),
-                            ],
+                              ],
+                            ),
+                          const SizedBox(height: AppSpacing.space12),
+
+                          OutlinedButton.icon(
+                            onPressed: _showAddCompetencyDialog,
+                            icon: const Icon(Icons.add, size: 18),
+                            label: const Text('Agregar competencia'),
                           ),
-                        const SizedBox(height: AppSpacing.space12),
 
-                        OutlinedButton.icon(
-                          onPressed: _showAddCertificationDialog,
-                          icon: const Icon(Icons.add, size: 18),
-                          label: const Text('Agregar certificación'),
-                        ),
+                          const SizedBox(height: AppSpacing.space32),
+                          SectionLabel('Idiomas'),
+                          const SizedBox(height: AppSpacing.space12),
 
-                        const SizedBox(height: AppSpacing.space32),
-
-                        ElevatedButton(
-                          onPressed: _isSaving ? null : _saveProfile,
-                          child: _isSaving
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
+                          if (_selectedLanguages.isEmpty)
+                            const Text(
+                              'No has agregado idiomas aún.',
+                              style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                            )
+                          else
+                            Wrap(
+                              spacing: AppSpacing.space8,
+                              runSpacing: AppSpacing.space8,
+                              children: [
+                                for (final lang in _selectedLanguages)
+                                  Chip(
+                                    backgroundColor: AppColors.bgSurface,
+                                    side: const BorderSide(color: AppColors.borderSubtle),
+                                    label: Text(
+                                      '${lang.languageName} — ${lang.levelName}',
+                                      style: const TextStyle(color: Colors.white, fontSize: 13),
+                                    ),
+                                    onDeleted: () {
+                                      setState(() {
+                                        _selectedLanguages.remove(lang);
+                                      });
+                                    },
+                                    deleteIconColor: AppColors.textMuted,
                                   ),
-                                )
-                              : const Text('Guardar Perfil'),
-                        ),
-                        const SizedBox(height: AppSpacing.space24),
-                      ],
+                              ],
+                            ),
+                          const SizedBox(height: AppSpacing.space12),
+
+                          OutlinedButton.icon(
+                            onPressed: _showAddLanguageDialog,
+                            icon: const Icon(Icons.add, size: 18),
+                            label: const Text('Agregar idioma'),
+                          ),
+
+                          const SizedBox(height: AppSpacing.space32),
+                          SectionLabel('Certificaciones'),
+                          const SizedBox(height: AppSpacing.space12),
+
+                          if (_selectedCertifications.isEmpty)
+                            const Text(
+                              'No has agregado certificaciones aún.',
+                              style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                            )
+                          else
+                            Column(
+                              children: [
+                                for (final cert in _selectedCertifications)
+                                  ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    title: Text(cert.name, style: const TextStyle(color: Colors.white)),
+                                    subtitle: Text(
+                                      '${cert.issuer} ${cert.issueDate.isNotEmpty ? '• ${cert.issueDate}' : ''}',
+                                      style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                                    ),
+                                    trailing: IconButton(
+                                      icon: const Icon(Icons.delete_outline, color: AppColors.colorError),
+                                      onPressed: () {
+                                        setState(() {
+                                          _selectedCertifications.remove(cert);
+                                        });
+                                      },
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          const SizedBox(height: AppSpacing.space12),
+
+                          OutlinedButton.icon(
+                            onPressed: _showAddCertificationDialog,
+                            icon: const Icon(Icons.add, size: 18),
+                            label: const Text('Agregar certificación'),
+                          ),
+
+                          const SizedBox(height: AppSpacing.space32),
+
+                          ElevatedButton(
+                            onPressed: _isSaving ? null : _saveProfile,
+                            child: _isSaving
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text('Guardar Perfil'),
+                          ),
+                          const SizedBox(height: AppSpacing.space24),
+                        ],
+                      ),
                     ),
-                  ),
+        ),
       ),
     );
   }
