@@ -15,8 +15,6 @@ Deno.serve(async (req: Request) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
-    // DISABLED AUTH FOR DEBUGGING
-    /*
     const authHeader = req.headers.get("Authorization");
 
     if (!authHeader) {
@@ -41,7 +39,6 @@ Deno.serve(async (req: Request) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    */
 
     const { text, type } = await req.json();
 
@@ -77,7 +74,7 @@ Si el texto parece un nombre realista, válido o posible (incluso si está escri
 Si es claramente inválido, falso, broma o basura, responde "false". 
 Responde ÚNICAMENTE con la palabra "true" o "false", sin ningún otro texto.`;
 
-    const modelsToTry = ["gemini-3.1-flash", "gemini-3.1-flash-lite", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
+    const modelsToTry = ["gemini-3.5-flash-lite", "gemini-3.1-flash", "gemini-3.1-flash-lite", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
     let lastError: any = null;
 
     for (const modelName of modelsToTry) {

@@ -231,23 +231,27 @@ Deno.serve(async (req: Request) => {
 
     // 7. Desglose de Impacto Ponderado
     const expWeight = 0.52 + expBonus;
-    const compWeight = 0.24 + compBonus;
-    const langWeight = 0.16 + langBonus;
-    const certWeight = 0.08 + certBonus;
+    const compWeight = userComps.length > 0 ? 0.24 + compBonus : 0;
+    const langWeight = userLangs.length > 0 ? 0.16 + langBonus : 0;
+    const certWeight = certs.length > 0 ? 0.08 + certBonus : 0;
 
-    const grandTotalWeight = expWeight + compWeight + langWeight + (certs.length > 0 ? certWeight : 0);
+    const grandTotalWeight = expWeight + compWeight + langWeight + certWeight;
 
     const expPct = Math.round((expWeight / grandTotalWeight) * 100);
-    const compPct = Math.round((compWeight / grandTotalWeight) * 100);
-    const langPct = Math.round((langWeight / grandTotalWeight) * 100);
-    const certPct = certs.length > 0 ? Math.round((certWeight / grandTotalWeight) * 100) : 0;
+    const compPct = compWeight > 0 ? Math.round((compWeight / grandTotalWeight) * 100) : 0;
+    const langPct = langWeight > 0 ? Math.round((langWeight / grandTotalWeight) * 100) : 0;
+    const certPct = certWeight > 0 ? Math.round((certWeight / grandTotalWeight) * 100) : 0;
 
     const factorBreakdown: BreakdownItem[] = [
       { category: "Experiencia y Trayectoria", percentage: expPct },
-      { category: "Competencias Técnicas", percentage: compPct },
-      { category: "Dominio de Idiomas", percentage: langPct },
     ];
-
+    
+    if (compPct > 0) {
+      factorBreakdown.push({ category: "Competencias Técnicas", percentage: compPct });
+    }
+    if (langPct > 0) {
+      factorBreakdown.push({ category: "Dominio de Idiomas", percentage: langPct });
+    }
     if (certPct > 0) {
       factorBreakdown.push({ category: "Certificaciones Oficiales", percentage: certPct });
     }
