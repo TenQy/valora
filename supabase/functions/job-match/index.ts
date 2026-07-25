@@ -223,13 +223,12 @@ Instrucciones:
       matched_competencies: match.matched_competencies || [],
       missing_competencies: match.missing_competencies || [],
       summary: match.summary || "",
+      search_query: match.search_query || match.job_role_name,
     }));
 
-    // Agregar el search_query al resultado parseado para mandarlo al frontend
-    // (no se guarda en DB para no cambiar schema si no es necesario)
     const recordsToReturn = parsedResult.map((match: any) => ({
       ...match,
-      search_query: match.search_query || match.job_role_name
+      search_query: match.search_query || match.job_role_name,
     }));
 
     const { error: insertError } = await supabase
@@ -240,10 +239,10 @@ Instrucciones:
       console.error("Error saving job matches:", insertError);
     }
 
-    return new Response(JSON.stringify(recordsToReturn), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify(recordsToReturn),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
 
   } catch (error: any) {
     console.error("Job Match Error:", error.message);

@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
-import '../../core/theme/app_text_styles.dart';
 import '../../shared/widgets/valora_app_bar.dart';
 import '../../shared/widgets/animated_app_background.dart';
 import '../../shared/widgets/nav_bar.dart';
@@ -13,6 +12,7 @@ import '../profile/edit_profile_screen.dart';
 import '../profile/profile_tab.dart';
 import '../results/job_match_screen.dart';
 import '../results/salary_estimation_screen.dart';
+import 'home_tab.dart';
 
 /// Dashboard con navegación inferior (ver ROADMAP.md Fase 7).
 ///
@@ -34,6 +34,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _currentIndex = 0;
   bool _isSigningOut = false;
   Key _profileTabKey = UniqueKey();
+  Key _homeTabKey = UniqueKey();
 
   static const _tabs = [
     NavBarItem(icon: Icons.home_outlined, label: 'Inicio'),
@@ -56,10 +57,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  void _openSalaryEstimation() {
-    Navigator.of(context).push(
+  Future<void> _openSalaryEstimation() async {
+    await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const SalaryEstimationScreen()),
     );
+    if (mounted) {
+      setState(() {
+        _homeTabKey = UniqueKey();
+      });
+    }
   }
 
   Future<void> _openEditProfile() async {
@@ -70,6 +76,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (updated == true && mounted) {
       setState(() {
         _profileTabKey = UniqueKey();
+        _homeTabKey = UniqueKey();
       });
     }
   }
@@ -86,12 +93,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: IndexedStack(
             index: _currentIndex,
             children: [
-              _HomeTab(
+              HomeTab(
+                key: _homeTabKey,
                 onEstimateSalaryPressed: _openSalaryEstimation,
-                onJobMatchPressed: () {
-                  Navigator.of(context).push(
+                onJobMatchPressed: () async {
+                  await Navigator.of(context).push(
                     MaterialPageRoute(builder: (context) => const JobMatchScreen()),
                   );
+                  if (mounted) {
+                    setState(() {
+                      _homeTabKey = UniqueKey();
+                    });
+                  }
                 },
               ),
               ProfileTab(
@@ -112,68 +125,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         items: _tabs,
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
-      ),
-    );
-  }
-}
-
-/// Tab "Inicio" del Dashboard. Placeholder mientras se construye el
-/// resumen completo (valor estimado, compatibilidad, historial — ver
-/// ARCHITECTURE.md "dashboard/"). Ya incluye el acceso a la estimación
-/// salarial.
-class _HomeTab extends StatelessWidget {
-  const _HomeTab({
-    required this.onEstimateSalaryPressed,
-    required this.onJobMatchPressed,
-  });
-
-  final VoidCallback onEstimateSalaryPressed;
-  final VoidCallback onJobMatchPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.space24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Descubre tu valor profesional',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.h1,
-            ),
-            const SizedBox(height: AppSpacing.space12),
-            Text(
-              'Calcula un rango salarial aproximado con base en tu perfil.',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.subtitle,
-            ),
-            const SizedBox(height: AppSpacing.space24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: onEstimateSalaryPressed,
-                icon: const Icon(Icons.monetization_on_outlined),
-                label: const Text('Estimar salario'),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.space16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: onJobMatchPressed,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.bgSurface,
-                  foregroundColor: AppColors.silver,
-                  side: const BorderSide(color: AppColors.borderDefault),
-                ),
-                icon: const Icon(Icons.work_outline),
-                label: const Text('Compatibilidad Laboral'),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
