@@ -112,7 +112,7 @@ class _AddCertificationDialogState extends State<AddCertificationDialog> {
                     
                     if (!isValid) {
                       if (!context.mounted) return;
-                      setState(() => _isValidating = false);
+                      Navigator.of(context).pop();
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Ese nombre de certificación no parece válido.'),
@@ -130,7 +130,7 @@ class _AddCertificationDialogState extends State<AddCertificationDialog> {
                     if (context.mounted) Navigator.of(context).pop(result);
                   } catch (e) {
                     if (!context.mounted) return;
-                    setState(() => _isValidating = false);
+                    Navigator.of(context).pop();
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Error validando: $e'),
