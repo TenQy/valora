@@ -548,6 +548,7 @@ currency
 matched_competencies
 missing_competencies
 summary
+search_query
 created_at
 ```
 

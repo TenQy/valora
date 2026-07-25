@@ -6,11 +6,14 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/widgets/valora_app_bar.dart';
+import '../../../shared/widgets/match_badge.dart';
 import 'models/job_match_model.dart';
 import 'services/results_service.dart';
 
 class JobMatchScreen extends StatefulWidget {
-  const JobMatchScreen({super.key});
+  final List<JobMatchResult>? savedMatches;
+
+  const JobMatchScreen({super.key, this.savedMatches});
 
   @override
   State<JobMatchScreen> createState() => _JobMatchScreenState();
@@ -23,7 +26,11 @@ class _JobMatchScreenState extends State<JobMatchScreen> {
   @override
   void initState() {
     super.initState();
-    _future = _service.fetchJobMatches();
+    if (widget.savedMatches != null) {
+      _future = Future.value(widget.savedMatches!);
+    } else {
+      _future = _service.fetchJobMatches();
+    }
   }
 
   void _retry() {
@@ -197,7 +204,7 @@ class JobMatchCard extends StatelessWidget {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: match.matchedCompetencies.map((c) => _buildChip(c, true)).toList(),
+              children: match.matchedCompetencies.map((c) => MatchBadge(label: c, hasIt: true)).toList(),
             ),
             const SizedBox(height: AppSpacing.space16),
           ],
@@ -207,7 +214,7 @@ class JobMatchCard extends StatelessWidget {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: match.missingCompetencies.map((c) => _buildChip(c, false)).toList(),
+              children: match.missingCompetencies.map((c) => MatchBadge(label: c, hasIt: false)).toList(),
             ),
             const SizedBox(height: AppSpacing.space16),
           ],
@@ -234,36 +241,5 @@ class JobMatchCard extends StatelessWidget {
     if (percentage >= 80) return AppColors.colorSuccess;
     if (percentage >= 60) return AppColors.colorWarning;
     return AppColors.colorError;
-  }
-
-  Widget _buildChip(String label, bool hasIt) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: hasIt ? AppColors.colorSuccess.withValues(alpha: 0.1) : AppColors.colorError.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: hasIt ? AppColors.colorSuccess.withValues(alpha: 0.2) : AppColors.colorError.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            hasIt ? Icons.check_circle : Icons.arrow_upward,
-            size: 14,
-            color: hasIt ? AppColors.colorSuccess : AppColors.colorError,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: hasIt ? AppColors.colorSuccess : AppColors.colorError,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

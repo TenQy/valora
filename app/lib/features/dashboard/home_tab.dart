@@ -1,0 +1,416 @@
+import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_text_styles.dart';
+import '../../core/utils/formatters.dart';
+import '../results/models/job_match_model.dart';
+import '../results/models/salary_estimation.dart';
+import '../results/history_screen.dart';
+import '../results/job_match_screen.dart';
+import '../../shared/widgets/match_badge.dart';
+import 'services/dashboard_service.dart';
+
+class HomeTab extends StatefulWidget {
+  const HomeTab({
+    super.key,
+    required this.onEstimateSalaryPressed,
+    required this.onJobMatchPressed,
+  });
+
+  final VoidCallback onEstimateSalaryPressed;
+  final VoidCallback onJobMatchPressed;
+
+  @override
+  State<HomeTab> createState() => _HomeTabState();
+}
+
+class _HomeTabState extends State<HomeTab> {
+  final _service = DashboardService();
+  late Future<DashboardData> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  void _loadData() {
+    setState(() {
+      _future = _service.fetchDashboardData();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: () async => _loadData(),
+      child: FutureBuilder<DashboardData>(
+        future: _future,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.silver),
+            );
+          }
+
+          if (snapshot.hasError) {
+            return _buildError(snapshot.error.toString());
+          }
+
+          final data = snapshot.data;
+          if (data == null) {
+            return _buildError('No se encontraron datos.');
+          }
+
+          return ListView(
+            padding: const EdgeInsets.all(AppSpacing.space24),
+            children: [
+              _buildHeader(data),
+              const SizedBox(height: AppSpacing.space24),
+              _buildCompleteness(data),
+              const SizedBox(height: AppSpacing.space32),
+              _buildActions(),
+              const SizedBox(height: AppSpacing.space32),
+              if (data.latestEstimation != null) ...[
+                _buildLatestEstimation(data.latestEstimation!),
+                const SizedBox(height: AppSpacing.space32),
+              ],
+              if (data.latestMatches.isNotEmpty) ...[
+                _buildLatestMatches(data.latestMatches),
+                const SizedBox(height: AppSpacing.space32),
+              ],
+              _buildImprovementGuide(data),
+              const SizedBox(height: 64),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildError(String error) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.error_outline, size: 48, color: AppColors.colorError),
+          const SizedBox(height: 16),
+          Text(error, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textPrimary)),
+          const SizedBox(height: 16),
+          ElevatedButton(onPressed: _loadData, child: const Text('Reintentar')),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(DashboardData data) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Hola, ${data.userName}', style: AppTextStyles.h1),
+        const SizedBox(height: 4),
+        Text(
+          data.professionalLevel != '—' ? 'Nivel: ${data.professionalLevel}' : 'Completa tu perfil para empezar',
+          style: const TextStyle(color: AppColors.silverMuted, fontSize: 16),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCompleteness(DashboardData data) {
+    final color = data.profileCompleteness == 100 ? AppColors.colorSuccess : AppColors.colorWarning;
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.space16),
+      decoration: BoxDecoration(
+        color: AppColors.bgSurface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderDefault),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Perfil completado', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+              Text('${data.profileCompleteness}%', style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          LinearProgressIndicator(
+            value: data.profileCompleteness / 100,
+            backgroundColor: AppColors.bgInput,
+            color: color,
+            minHeight: 8,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActions() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Acciones Rápidas', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 18)),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: widget.onEstimateSalaryPressed,
+                icon: const Icon(Icons.monetization_on_outlined, size: 18),
+                label: const Text('Estimar salario'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: widget.onJobMatchPressed,
+                icon: const Icon(Icons.work_outline, size: 18),
+                label: const Text('Match Laboral'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.bgSurface,
+                  foregroundColor: AppColors.silver,
+                  side: const BorderSide(color: AppColors.borderDefault),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLatestEstimation(SalaryEstimation est) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.space20),
+      decoration: BoxDecoration(
+        color: AppColors.silver.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.silver.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Última estimación', style: TextStyle(color: AppColors.silver, fontSize: 14)),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => const HistoryScreen()));
+                },
+                child: const Text('Historial', style: TextStyle(fontSize: 13, color: AppColors.silver)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '\$${Formatters.formatThousands(est.estimatedMinSalary)} - \$${Formatters.formatThousands(est.estimatedMaxSalary)} ${est.currency}',
+            style: const TextStyle(color: AppColors.silver, fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          Text(est.summary, style: const TextStyle(color: AppColors.silverMuted, fontSize: 13, height: 1.3)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLatestMatches(List<JobMatchResult> matches) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Último Match', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 18)),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => JobMatchScreen(savedMatches: matches)),
+                );
+              },
+              child: const Text('Ver todos', style: TextStyle(fontSize: 13)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        ...matches.map((m) => Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: InkWell(
+            onTap: () => _showMatchDetails(context, m),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.bgSurface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.borderDefault),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(m.jobRoleName, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      Text('${m.matchPercentage}% de compatibilidad', style: const TextStyle(color: AppColors.silverMuted, fontSize: 12)),
+                    ],
+                  ),
+                ),
+                Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.silverMuted),
+              ],
+            ),
+          ),
+          ),
+        )),
+      ],
+    );
+  }
+
+  Widget _buildImprovementGuide(DashboardData data) {
+    final List<String> tips = [];
+
+    // Tip 1: Completitud
+    if (data.profileCompleteness < 100) {
+      tips.add('Completa tu perfil al 100% para obtener estimaciones más precisas.');
+    } else {
+      tips.add('¡Tienes un perfil estelar! Mantenlo actualizado.');
+    }
+
+    // Tip 2: Basado en el último match
+    if (data.latestMatches.isNotEmpty) {
+      final topMatch = data.latestMatches.first;
+      if (topMatch.missingCompetencies.isNotEmpty) {
+        final missing = topMatch.missingCompetencies.take(2).join(', ');
+        tips.add('Para asegurar tu puesto de ${topMatch.jobRoleName}, te sugerimos aprender: $missing.');
+      } else {
+        tips.add('Cumples con todos los requisitos para ${topMatch.jobRoleName}. ¡Busca oportunidades!');
+      }
+    } else {
+      tips.add('Genera tu primera Compatibilidad Laboral para recibir recomendaciones.');
+    }
+
+    // Tip 3: General de nivel
+    if (data.professionalLevel == 'Junior' || data.professionalLevel == 'Estudiante') {
+      tips.add('Agrega certificaciones técnicas para dar un salto a nivel Mid/Senior.');
+    } else if (data.professionalLevel == 'Senior' || data.professionalLevel == 'Especialista') {
+      tips.add('No olvides incluir idiomas avanzados, son clave para puestos internacionales.');
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.bgSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderDefault),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.lightbulb_outline, color: AppColors.colorWarning, size: 20),
+              SizedBox(width: 8),
+              Text('Tu Guía Personalizada', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 16)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...tips.map((t) => _buildGuideItem(t)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGuideItem(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('• ', style: TextStyle(color: AppColors.silverMuted, fontSize: 16)),
+          Expanded(child: Text(text, style: const TextStyle(color: AppColors.silverMuted, fontSize: 13, height: 1.4))),
+        ],
+      ),
+    );
+  }
+
+  void _showMatchDetails(BuildContext context, JobMatchResult match) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.bgSurface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(match.jobRoleName, style: AppTextStyles.h1.copyWith(fontSize: 20)),
+            const SizedBox(height: 8),
+            Text(
+              '${match.matchPercentage}% de compatibilidad',
+              style: const TextStyle(color: AppColors.colorSuccess, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            Text(match.summary, style: const TextStyle(color: AppColors.silverMuted, fontSize: 14, height: 1.4)),
+            const SizedBox(height: 24),
+            if (match.matchedCompetencies.isNotEmpty) ...[
+              const Text('Habilidades fuertes:', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: match.matchedCompetencies.map((c) => MatchBadge(label: c, hasIt: true)).toList(),
+              ),
+              const SizedBox(height: 16),
+            ],
+            if (match.missingCompetencies.isNotEmpty) ...[
+              const Text('Áreas de oportunidad:', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: match.missingCompetencies.map((c) => MatchBadge(label: c, hasIt: false)).toList(),
+              ),
+              const SizedBox(height: 32),
+            ],
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  final query = Uri.encodeComponent(match.searchQuery);
+                  final url = Uri.parse('https://www.google.com/search?q=$query&ibp=htl;jobs');
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                  } else {
+                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                  }
+                },
+                icon: const Icon(Icons.search),
+                label: const Text('Ver ofertas reales'),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+        ),
+      ),
+    );
+  }
+}

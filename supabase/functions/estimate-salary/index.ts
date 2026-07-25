@@ -258,21 +258,34 @@ Deno.serve(async (req: Request) => {
 
     factorBreakdown.sort((a, b) => b.percentage - a.percentage);
 
-    const summary =
-      `Estimación salarial para ${areaName} en nivel ${level}. ` +
-      `Evaluación ponderada por trayectoria (${yearsExp} años), ${userComps.length} competencias ` +
-      `e idiomas.`;
+    const summary = `Basado en tu experiencia de ${yearsExp} años y tus ${userComps.length} habilidades principales, tienes un perfil sólido de nivel ${level} en el área de ${areaName}. Este rango refleja el valor actual que las empresas están dispuestas a pagar por tu combinación de conocimientos e idiomas en el mercado.`;
 
     if (profileRow.id && profileRow.professional_area_id) {
-      await supabase.from("salary_estimations").insert({
-        profile_id: profileRow.id,
-        professional_area_id: profileRow.professional_area_id,
-        estimated_min_salary: estimatedMinSalary,
-        estimated_max_salary: estimatedMaxSalary,
-        currency: "MXN",
-        professional_level: level,
-        summary: summary,
-      });
+      // Evitar guardar historial si el valor es exactamente el mismo que el anterior
+      const { data: lastEst } = await supabase
+        .from("salary_estimations")
+        .select("estimated_min_salary, estimated_max_salary, summary")
+        .eq("profile_id", profileRow.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const isDuplicate = lastEst &&
+        lastEst.estimated_min_salary === estimatedMinSalary &&
+        lastEst.estimated_max_salary === estimatedMaxSalary &&
+        lastEst.summary === summary;
+
+      if (!isDuplicate) {
+        await supabase.from("salary_estimations").insert({
+          profile_id: profileRow.id,
+          professional_area_id: profileRow.professional_area_id,
+          estimated_min_salary: estimatedMinSalary,
+          estimated_max_salary: estimatedMaxSalary,
+          currency: "MXN",
+          professional_level: level,
+          summary: summary,
+        });
+      }
     }
 
     return new Response(
