@@ -38,9 +38,7 @@ class _SalaryEstimationScreenState extends State<SalaryEstimationScreen> {
   Future<void> _fetchEstimation() async {
     setState(() => _state = _LoadState.loading);
     try {
-      // TODO: sustituir por la llamada real a la Edge Function
-      // `estimate-salary` (ver API_CONTRACT.md #24) cuando esté disponible.
-      final result = await SalaryEstimation.fetchMock();
+      final result = await SalaryEstimation.fetchFromEdgeFunction();
       if (!mounted) return;
       setState(() {
         _result = result;
