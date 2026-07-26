@@ -8,7 +8,7 @@ import '../../../core/theme/app_spacing.dart';
 import 'models/profile_models.dart';
 import 'widgets/certification_tile.dart';
 import 'widgets/profile_header.dart';
-import 'widgets/project_tile.dart';
+
 import '../../../shared/widgets/language_chip.dart';
 import '../../../shared/widgets/section_label.dart';
 import '../../../shared/widgets/skill_chip.dart';
@@ -99,21 +99,6 @@ class ProfileContent extends StatelessWidget {
           ),
         const SizedBox(height: AppSpacing.space20),
         _Divider(),
-        const SizedBox(height: AppSpacing.space32),
-
-        SectionLabel('Proyectos'),
-        const SizedBox(height: AppSpacing.space16),
-        if (profile.projects.isEmpty)
-          _EmptyState(text: 'Aún no has agregado proyectos.')
-        else
-          Column(
-            children: [
-              for (final project in profile.projects) ...[
-                ProjectTile(project: project),
-                const SizedBox(height: AppSpacing.space12),
-              ],
-            ],
-          ),
         const SizedBox(height: AppSpacing.space32),
 
         Center(

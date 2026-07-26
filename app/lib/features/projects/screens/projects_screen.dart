@@ -73,6 +73,28 @@ class _ProjectsTabState extends State<ProjectsTab> {
   }
 
   Future<void> _deleteProject(String id) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.bgSurface,
+        title: const Text('Eliminar Proyecto', style: TextStyle(color: Colors.white)),
+        content: const Text('¿Estás seguro de que deseas eliminar este proyecto? Esta acción no se puede deshacer.', style: TextStyle(color: AppColors.textPrimary)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar', style: TextStyle(color: AppColors.textMuted)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.colorError),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
     try {
       await _repository.deleteProject(id);
       _loadProjects();
@@ -80,6 +102,25 @@ class _ProjectsTabState extends State<ProjectsTab> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.colorError),
+        );
+      }
+    }
+  }
+
+  Future<void> _calculateValue(String projectId) async {
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Calculando valor...'), backgroundColor: AppColors.silver),
+      );
+      await Supabase.instance.client.functions.invoke(
+        'project-value',
+        body: {'project_id': projectId},
+      );
+      _loadProjects(); // Recargar para ver la estimación
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error calculando: $e'), backgroundColor: AppColors.colorError),
         );
       }
     }
@@ -108,15 +149,21 @@ class _ProjectsTabState extends State<ProjectsTab> {
               final project = _projects![index];
               return Card(
                 color: AppColors.bgSurface,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                margin: const EdgeInsets.only(bottom: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  side: BorderSide(color: AppColors.silver.withValues(alpha: 0.1), width: 1),
+                ),
+                elevation: 8,
+                shadowColor: Colors.black.withValues(alpha: 0.2),
+                margin: const EdgeInsets.only(bottom: 20),
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(20.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
                             child: Column(
@@ -126,58 +173,137 @@ class _ProjectsTabState extends State<ProjectsTab> {
                                   project.name,
                                   style: const TextStyle(
                                     color: Colors.white,
-                                    fontSize: 16,
+                                    fontSize: 18,
                                     fontWeight: FontWeight.bold,
+                                    letterSpacing: -0.5,
                                   ),
                                 ),
+                                const SizedBox(height: 4),
                                 if (project.estimatedValueMin != null && project.estimatedValueMax != null)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 4.0),
-                                    child: Text(
-                                      'Valor AI: \$${project.estimatedValueMin} - \$${project.estimatedValueMax} ${project.currency}',
-                                      style: const TextStyle(
-                                        color: AppColors.green,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.green.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: AppColors.green.withValues(alpha: 0.3)),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.attach_money, color: AppColors.green, size: 14),
+                                        Text(
+                                          '${project.estimatedValueMin} - ${project.estimatedValueMax} ${project.currency}',
+                                          style: const TextStyle(
+                                            color: AppColors.green,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                else
+                                  GestureDetector(
+                                    onTap: () => _calculateValue(project.id),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        gradient: const LinearGradient(colors: [AppColors.silver, AppColors.silverMuted]),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.auto_awesome, color: AppColors.bgBase, size: 14),
+                                          SizedBox(width: 4),
+                                          Text('Calcular Valor', style: TextStyle(color: AppColors.bgBase, fontSize: 12, fontWeight: FontWeight.bold)),
+                                        ],
                                       ),
                                     ),
                                   ),
                               ],
                             ),
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline, color: AppColors.colorError),
-                            onPressed: () => _deleteProject(project.id),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.bgPage,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: IconButton(
+                              icon: const Icon(Icons.delete_outline, color: AppColors.colorError, size: 20),
+                              onPressed: () => _deleteProject(project.id),
+                              tooltip: 'Eliminar',
+                            ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 16),
                       Text(
                         project.description,
-                        style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, height: 1.5),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 20),
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
                         children: [
-                          Chip(
-                            backgroundColor: AppColors.silver.withValues(alpha: 0.2),
-                            label: Text(project.projectType, style: const TextStyle(color: AppColors.silver, fontSize: 11)),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.silver.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: AppColors.silver.withValues(alpha: 0.2)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.category_outlined, color: AppColors.silver, size: 12),
+                                const SizedBox(width: 4),
+                                Text(project.projectType, style: const TextStyle(color: AppColors.silver, fontSize: 12, fontWeight: FontWeight.w500)),
+                              ],
+                            ),
                           ),
-                          Chip(
-                            backgroundColor: AppColors.bgPage,
-                            label: Text(project.complexity, style: const TextStyle(color: AppColors.silver, fontSize: 11)),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.bgPage,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: AppColors.silver.withValues(alpha: 0.1)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.bar_chart, color: AppColors.textMuted, size: 12),
+                                const SizedBox(width: 4),
+                                Text(project.complexity, style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w500)),
+                              ],
+                            ),
                           ),
                         ],
                       ),
-                      if (project.competencies.isNotEmpty) ...[
-                        const SizedBox(height: 12),
+                      if (project.platforms.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        const Text('Entregables:', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 8),
                         Wrap(
-                          spacing: 4,
-                          runSpacing: 4,
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: project.platforms.split(',').map((p) => Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(color: AppColors.silver.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(4)),
+                            child: Text(p.trim(), style: const TextStyle(color: Colors.white, fontSize: 11)),
+                          )).toList(),
+                        ),
+                      ],
+                      if (project.competencies.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        const Text('Herramientas:', style: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
                           children: project.competencies
-                              .map<Widget>((c) => Text('#$c', style: const TextStyle(color: AppColors.silverMuted, fontSize: 11)))
+                              .map<Widget>((c) => Text('#$c', style: const TextStyle(color: AppColors.silver, fontSize: 12, fontWeight: FontWeight.w500)))
                               .toList(),
                         )
                       ],

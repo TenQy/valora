@@ -119,13 +119,6 @@ class _ProfileTabMessage extends StatelessWidget {
               style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
             ),
             const SizedBox(height: AppSpacing.space20),
-            if (onCreateProfile != null) ...[
-              ElevatedButton(
-                onPressed: onCreateProfile,
-                child: const Text('Crear mi perfil ahora'),
-              ),
-              const SizedBox(height: AppSpacing.space16),
-            ],
             Wrap(
               alignment: WrapAlignment.center,
               spacing: AppSpacing.space12,

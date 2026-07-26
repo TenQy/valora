@@ -31,10 +31,15 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _timeController = TextEditingController();
-  final _platformsController = TextEditingController();
 
   String _projectType = 'Personal';
   String _complexity = 'Media';
+
+  final List<String> _availablePlatforms = [
+    'App Móvil', 'Sitio Web', 'API / Backend', 'Dashboard',
+    'Identidad Visual', 'Diseño UI/UX', 'Campaña', 'Reporte', 'Plano / 3D', 'Otro'
+  ];
+  final List<String> _selectedPlatforms = [];
 
   bool _isLoading = true;
   bool _isSaving = false;
@@ -75,7 +80,7 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
         projectType: _projectType,
         complexity: _complexity,
         estimatedTime: _timeController.text.trim(),
-        platforms: _platformsController.text.trim(),
+        platforms: _selectedPlatforms.join(', '),
         selectedCompetencies: _selectedCompetencies,
       );
       
@@ -112,26 +117,19 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.bgSurface,
+      isScrollControlled: true,
       builder: (context) {
-        return ListView.builder(
-          itemCount: _availableCompetencies.length,
-          itemBuilder: (context, index) {
-            final comp = _availableCompetencies[index];
-            final isSelected = _selectedCompetencies.contains(comp);
-            return ListTile(
-              title: Text(comp.name, style: const TextStyle(color: Colors.white)),
-              trailing: isSelected ? const Icon(Icons.check, color: AppColors.silver) : null,
-              onTap: () {
-                setState(() {
-                  if (isSelected) {
-                    _selectedCompetencies.remove(comp);
-                  } else {
-                    _selectedCompetencies.add(comp);
-                  }
-                });
-                Navigator.pop(context);
-              },
-            );
+        return _CompetenciesPickerModal(
+          available: _availableCompetencies,
+          selected: _selectedCompetencies,
+          onSelectionChanged: (comp, isSelected) {
+            setState(() {
+              if (isSelected) {
+                _selectedCompetencies.add(comp);
+              } else {
+                _selectedCompetencies.remove(comp);
+              }
+            });
           },
         );
       },
@@ -140,8 +138,10 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.bgPage,
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        backgroundColor: AppColors.bgPage,
       extendBodyBehindAppBar: true,
       appBar: const ValoraAppBar(
         title: 'Agregar Proyecto',
@@ -172,7 +172,7 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
                       ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<String>(
-                        value: _projectType,
+                        initialValue: _projectType,
                         decoration: const InputDecoration(labelText: 'Tipo de Proyecto'),
                         dropdownColor: AppColors.bgSurface,
                         items: ['Personal', 'Académico', 'Empresa', 'Freelance', 'Open Source']
@@ -182,7 +182,7 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
                       ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<String>(
-                        value: _complexity,
+                        initialValue: _complexity,
                         decoration: const InputDecoration(labelText: 'Nivel de Complejidad'),
                         dropdownColor: AppColors.bgSurface,
                         items: ['Baja', 'Media', 'Alta']
@@ -195,10 +195,31 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
                         controller: _timeController,
                         decoration: const InputDecoration(labelText: 'Tiempo Estimado (ej. 3 meses)'),
                       ),
+                      const SizedBox(height: 32),
+                      SectionLabel('Entregables o Plataformas'),
                       const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _platformsController,
-                        decoration: const InputDecoration(labelText: 'Entregables o Plataformas (ej. Web, iOS, Identidad Visual, Reporte)'),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _availablePlatforms.map((plat) {
+                          final isSelected = _selectedPlatforms.contains(plat);
+                          return FilterChip(
+                            label: Text(plat, style: TextStyle(color: isSelected ? Colors.white : AppColors.textPrimary)),
+                            selected: isSelected,
+                            selectedColor: AppColors.silver.withValues(alpha: 0.3),
+                            backgroundColor: AppColors.bgSurface,
+                            checkmarkColor: Colors.white,
+                            onSelected: (val) {
+                              setState(() {
+                                if (val) {
+                                  _selectedPlatforms.add(plat);
+                                } else {
+                                  _selectedPlatforms.remove(plat);
+                                }
+                              });
+                            },
+                          );
+                        }).toList(),
                       ),
                       const SizedBox(height: 32),
                       SectionLabel('Competencias / Herramientas Aplicadas'),
@@ -233,6 +254,89 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
                   ),
                 ),
         ),
+      ),
+    ),
+    );
+  }
+}
+
+class _CompetenciesPickerModal extends StatefulWidget {
+  final List<CompetencyItem> available;
+  final List<CompetencyItem> selected;
+  final Function(CompetencyItem, bool) onSelectionChanged;
+
+  const _CompetenciesPickerModal({
+    required this.available,
+    required this.selected,
+    required this.onSelectionChanged,
+  });
+
+  @override
+  State<_CompetenciesPickerModal> createState() => _CompetenciesPickerModalState();
+}
+
+class _CompetenciesPickerModalState extends State<_CompetenciesPickerModal> {
+  final _searchController = TextEditingController();
+  List<CompetencyItem> _filtered = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _filtered = widget.available;
+    _searchController.addListener(_filter);
+  }
+
+  void _filter() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      _filtered = widget.available.where((c) => c.name.toLowerCase().contains(query)).toList();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+        top: 24,
+        left: 24,
+        right: 24,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextFormField(
+            controller: _searchController,
+            decoration: const InputDecoration(
+              labelText: 'Buscar competencia...',
+              prefixIcon: Icon(Icons.search, color: AppColors.textMuted),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Flexible(
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _filtered.length,
+              itemBuilder: (context, index) {
+                final comp = _filtered[index];
+                final isSelected = widget.selected.contains(comp);
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(comp.name, style: const TextStyle(color: Colors.white)),
+                  trailing: isSelected ? const Icon(Icons.check, color: AppColors.silver) : null,
+                  onTap: () => widget.onSelectionChanged(comp, !isSelected),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
       ),
     );
   }
