@@ -212,7 +212,7 @@ class ProfileRepository {
   ProfessionalProfile _mapProfile(Map<String, dynamic> row) {
     final professionalArea = row['professional_areas'] as Map<String, dynamic>?;
 
-    final competencies = _asList(row['user_competencies']).map((raw) {
+    final competencies = _asList(row['user_competencies']).map<UserCompetency>((raw) {
       final competency = raw['competencies'] as Map<String, dynamic>?;
       return UserCompetency(
         name: competency?['name'] as String? ?? '—',
@@ -220,7 +220,7 @@ class ProfileRepository {
       );
     }).toList();
 
-    final languages = _asList(row['user_languages']).map((raw) {
+    final languages = _asList(row['user_languages']).map<UserLanguage>((raw) {
       final language = raw['languages'] as Map<String, dynamic>?;
       final level = raw['language_levels'] as Map<String, dynamic>?;
       final name = language?['name'] as String? ?? '—';
@@ -231,7 +231,7 @@ class ProfileRepository {
       );
     }).toList();
 
-    final certifications = _asList(row['certifications']).map((raw) {
+    final certifications = _asList(row['certifications']).map<UserCertification>((raw) {
       return UserCertification(
         name: raw['name'] as String? ?? '—',
         issuer: raw['issuer'] as String? ?? '—',
@@ -239,9 +239,9 @@ class ProfileRepository {
       );
     }).toList();
 
-    final projects = _asList(row['projects']).map((raw) {
+    final projects = _asList(row['projects']).map<UserProject>((raw) {
       final projectCompetencies = _asList(raw['project_competencies'])
-          .map((pc) {
+          .map<String>((pc) {
             final competency = pc['competencies'] as Map<String, dynamic>?;
             return competency?['name'] as String? ?? '—';
           })
@@ -268,7 +268,8 @@ class ProfileRepository {
   }
 
   List<Map<String, dynamic>> _asList(dynamic value) {
-    if (value is! List) return const [];
-    return value.cast<Map<String, dynamic>>();
+    if (value == null) return <Map<String, dynamic>>[];
+    if (value is List) return value.cast<Map<String, dynamic>>().toList();
+    return <Map<String, dynamic>>[];
   }
 }

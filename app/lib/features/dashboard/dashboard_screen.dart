@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_spacing.dart';
 import '../../shared/widgets/valora_app_bar.dart';
 import '../../shared/widgets/animated_app_background.dart';
 import '../../shared/widgets/nav_bar.dart';
@@ -10,6 +9,7 @@ import '../auth/auth_service.dart';
 import '../welcome/welcome_screen.dart';
 import '../profile/edit_profile_screen.dart';
 import '../profile/profile_tab.dart';
+import '../projects/screens/projects_screen.dart';
 import '../results/job_match_screen.dart';
 import '../results/salary_estimation_screen.dart';
 import 'home_tab.dart';
@@ -113,10 +113,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 onSignOut: _signOut,
                 isSigningOut: _isSigningOut,
               ),
-              const _ComingSoonTab(
-                icon: Icons.folder_outlined,
-                message: 'Próximamente podrás registrar tus proyectos aquí.',
-              ),
+              const ProjectsTab(),
             ],
           ),
         ),
@@ -125,36 +122,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         items: _tabs,
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
-      ),
-    );
-  }
-}
-
-/// Placeholder genérico para tabs aún no construidos (ej. Proyectos, ver
-/// ROADMAP.md Fase 9 — funcionalidad posterior al MVP).
-class _ComingSoonTab extends StatelessWidget {
-  const _ComingSoonTab({required this.icon, required this.message});
-
-  final IconData icon;
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.space24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 32, color: AppColors.silverMuted),
-            const SizedBox(height: AppSpacing.space16),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
-            ),
-          ],
-        ),
       ),
     );
   }

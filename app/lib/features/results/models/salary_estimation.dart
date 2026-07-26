@@ -57,18 +57,18 @@ class SalaryEstimation {
       currency: json['currency'] as String? ?? 'MXN',
       professionalLevel: json['professional_level'] as String? ?? '—',
       summary: json['summary'] as String? ?? '',
-      influentialFactors: (json['influential_factors'] as List?)
-              ?.map((e) => e.toString())
+      influentialFactors: (json['influential_factors'] as List<dynamic>?)
+              ?.map<String>((e) => e.toString())
               .toList() ??
-          const [],
-      topHighlights: (json['top_highlights'] as List?)
-              ?.map((e) => HighlightItem.fromJson(Map<String, dynamic>.from(e as Map)))
+          <String>[],
+      topHighlights: (json['top_highlights'] as List<dynamic>?)
+              ?.map<HighlightItem>((e) => HighlightItem.fromJson(Map<String, dynamic>.from(e as Map)))
               .toList() ??
-          const [],
-      factorBreakdown: (json['factor_breakdown'] as List?)
-              ?.map((e) => BreakdownItem.fromJson(Map<String, dynamic>.from(e as Map)))
+          <HighlightItem>[],
+      factorBreakdown: (json['factor_breakdown'] as List<dynamic>?)
+              ?.map<BreakdownItem>((e) => BreakdownItem.fromJson(Map<String, dynamic>.from(e as Map)))
               .toList() ??
-          const [],
+          <BreakdownItem>[],
     );
   }
 

@@ -80,9 +80,9 @@ class DashboardService {
         currency: salaryRes['currency'] ?? 'MXN',
         professionalLevel: salaryRes['professional_level'] ?? '',
         summary: salaryRes['summary'] ?? '',
-        influentialFactors: [], // No guardados en BD, solo en memoria
-        topHighlights: [],
-        factorBreakdown: [],
+        influentialFactors: <String>[], // No guardados en BD, solo en memoria
+        topHighlights: <HighlightItem>[],
+        factorBreakdown: <BreakdownItem>[],
       );
     }
 
