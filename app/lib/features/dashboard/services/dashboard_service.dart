@@ -98,7 +98,7 @@ class DashboardService {
     for (final matchRow in matchesRes) {
       // En job_matches no guardamos el nombre directo, pero sí el id
       // Supabase join con job_roles(name)
-      final roleName = matchRow['job_roles'] != null ? matchRow['job_roles']['name'] : 'Rol';
+      final String roleName = matchRow['job_role_title'] ?? (matchRow['job_roles'] != null ? matchRow['job_roles']['name'] : 'Rol Profesional');
       matches.add(JobMatchResult.fromJson({
         ...matchRow,
         'job_role_name': roleName,

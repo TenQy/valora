@@ -165,8 +165,7 @@ Instrucciones:
    - Si el nivel es "Semi Senior", usa el término "mid level" al final (ej. "Desarrollador Frontend mid level").
    - Si el nivel es "Senior", ponlo después (ej. "Desarrollador Frontend senior").
    - Si el nivel es "Especialista", ponlo después (ej. "Desarrollador Frontend especialista").
-6. Modifica el campo "job_role_name" para que incluya el nivel del usuario. Para mantener la gramática perfecta, agrega el nivel al final (puedes usar paréntesis o guiones si suena mejor). Ejemplos: "Desarrollador Frontend (Practicante)", "Desarrollador Frontend Junior", "Ingeniero de Datos - Mid Level".
-7. Retorna ÚNICAMENTE un arreglo JSON con el siguiente formato exacto y sin markdown extra:
+6. Retorna ÚNICAMENTE un arreglo JSON con el siguiente formato exacto y sin markdown extra:
 [
   {
     "job_role_id": "UUID del rol seleccionado",
@@ -231,22 +230,31 @@ Instrucciones:
     }
 
     // 4. Save to Database
-    const recordsToInsert = parsedResult.map((match: any) => ({
-      profile_id: profileRow.id,
-      job_role_id: match.job_role_id,
-      match_percentage: match.match_percentage,
-      estimated_min_salary: match.estimated_min_salary,
-      estimated_max_salary: match.estimated_max_salary,
-      currency: match.currency || "MXN",
-      matched_competencies: match.matched_competencies || [],
-      missing_competencies: match.missing_competencies || [],
-      summary: match.summary || "",
-      search_query: match.search_query || match.job_role_name,
-    }));
+    const recordsToInsert = parsedResult.map((match: any) => {
+      const roleDef = jobRoles?.find((r) => r.id === match.job_role_id);
+      const baseName = roleDef?.name || match.job_role_name || "Rol Profesional";
+      const customTitle = profileRow.professional_level 
+        ? `${baseName} (${profileRow.professional_level})`
+        : baseName;
+        
+      return {
+        profile_id: profileRow.id,
+        job_role_id: match.job_role_id,
+        match_percentage: match.match_percentage,
+        estimated_min_salary: match.estimated_min_salary,
+        estimated_max_salary: match.estimated_max_salary,
+        currency: match.currency || "MXN",
+        matched_competencies: match.matched_competencies || [],
+        missing_competencies: match.missing_competencies || [],
+        summary: match.summary || "",
+        search_query: match.search_query || baseName,
+        job_role_title: customTitle,
+      };
+    });
 
-    const recordsToReturn = parsedResult.map((match: any) => ({
+    const recordsToReturn = recordsToInsert.map((match: any) => ({
       ...match,
-      search_query: match.search_query || match.job_role_name,
+      job_role_name: match.job_role_title,
     }));
 
     const { error: insertError } = await supabase
