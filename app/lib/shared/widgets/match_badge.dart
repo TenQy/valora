@@ -7,9 +7,9 @@ class MatchBadge extends StatelessWidget {
 
   const MatchBadge({super.key, required this.label, required this.hasIt});
 
-  @override
   Widget build(BuildContext context) {
     return Container(
+      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width - 64),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: hasIt ? AppColors.colorSuccess.withValues(alpha: 0.1) : AppColors.colorWarning.withValues(alpha: 0.1),
@@ -27,11 +27,15 @@ class MatchBadge extends StatelessWidget {
             color: hasIt ? AppColors.colorSuccess : AppColors.colorWarning,
           ),
           const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: hasIt ? AppColors.colorSuccess : AppColors.colorWarning,
+          Flexible(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: hasIt ? AppColors.colorSuccess : AppColors.colorWarning,
+              ),
+              softWrap: true,
+              overflow: TextOverflow.visible,
             ),
           ),
         ],
