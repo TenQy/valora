@@ -91,6 +91,19 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // 1.5 Fetch latest salary estimation to anchor the job match
+    const { data: lastEstimation } = await supabase
+      .from("salary_estimations")
+      .select("estimated_min_salary, estimated_max_salary")
+      .eq("profile_id", profileRow.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const currentValuationText = lastEstimation 
+      ? `$${lastEstimation.estimated_min_salary} - $${lastEstimation.estimated_max_salary} MXN` 
+      : 'Desconocido';
+
     // 2. Fetch Job Roles for the area
     const { data: jobRoles, error: rolesError } = await supabase
       .from("job_roles")
@@ -134,11 +147,15 @@ ${profileJson}
 Catálogo de Roles Disponibles:
 ${rolesJson}
 
+Valoración Monetaria Actual del Usuario (Su Valor en el Mercado):
+${currentValuationText}
+
 Instrucciones:
 1. Analiza el nivel, carrera, años de experiencia, lenguajes, certificaciones y competencias del usuario.
 2. Compara esto con la descripción de cada rol en el catálogo.
 3. Selecciona los 3 roles con mayor compatibilidad.
-4. Ajusta el salario estimado dentro del rango del rol basándote en la experiencia del usuario (Junior vs Senior).
+4. Ajusta el salario estimado (min/max) dentro del rango del rol, pero ANCLADO estrechamente al mercado real en México y a su "Valoración Monetaria Actual". 
+   - REGLA ESTRICTA: Un "Practicante", "Estudiante" o "Junior" rara vez supera los 15,000 a 25,000 MXN en México, sin importar cuán alto sea el rango del catálogo. ¡NUNCA inventes salarios de 45k-70k para roles iniciales! Sé realista y conservador.
 5. Genera una cadena de búsqueda (search_query) altamente optimizada para Google Jobs, siguiendo estas reglas estrictas:
    - NO incluyas palabras como "trabajo de" o "empleo de", busca el rol directo.
    - NO incluyas habilidades técnicas en la cadena.
@@ -148,7 +165,8 @@ Instrucciones:
    - Si el nivel es "Semi Senior", usa el término "mid level" al final (ej. "Desarrollador Frontend mid level").
    - Si el nivel es "Senior", ponlo después (ej. "Desarrollador Frontend senior").
    - Si el nivel es "Especialista", ponlo después (ej. "Desarrollador Frontend especialista").
-6. Retorna ÚNICAMENTE un arreglo JSON con el siguiente formato exacto y sin markdown extra:
+6. Modifica el campo "job_role_name" para que incluya el nivel del usuario. Para mantener la gramática perfecta, agrega el nivel al final (puedes usar paréntesis o guiones si suena mejor). Ejemplos: "Desarrollador Frontend (Practicante)", "Desarrollador Frontend Junior", "Ingeniero de Datos - Mid Level".
+7. Retorna ÚNICAMENTE un arreglo JSON con el siguiente formato exacto y sin markdown extra:
 [
   {
     "job_role_id": "UUID del rol seleccionado",
