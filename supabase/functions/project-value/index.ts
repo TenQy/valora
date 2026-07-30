@@ -62,6 +62,7 @@ serve(async (req) => {
     const systemPrompt = `
 Eres un experto estimador de proyectos freelance y corporativos en el área de ${areaName}.
 Analiza el siguiente proyecto y estima su valor económico aproximado estrictamente en Pesos Mexicanos (MXN), basándote en la complejidad técnica, tiempo de desarrollo y tecnologías.
+Debes ser extremadamente preciso. El rango entre el valor mínimo y máximo NO debe superar el 20% de diferencia para dar una cifra más certera.
 Regresa la respuesta ÚNICAMENTE en JSON válido con el siguiente formato:
 {
   "estimated_min_value": 15000,

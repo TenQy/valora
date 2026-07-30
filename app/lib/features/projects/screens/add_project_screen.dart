@@ -84,18 +84,6 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
         selectedCompetencies: _selectedCompetencies,
       );
       
-      // Trigger Fase 10: Calcular Valor Económico del Proyecto
-      try {
-        await Supabase.instance.client.functions.invoke(
-          'project-value',
-          body: {'project_id': projectId},
-        );
-      } catch (e) {
-        debugPrint('Error calculando valor del proyecto: $e');
-        // Ignoramos el error para no bloquear el flujo, 
-        // el usuario igual guardó su proyecto.
-      }
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Proyecto guardado. ¡Ahora calcula su valor!'), backgroundColor: AppColors.colorSuccess),

@@ -5,6 +5,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../models/project_model.dart';
 import '../services/projects_repository.dart';
 import 'add_project_screen.dart';
+import 'project_estimation_screen.dart';
 
 class ProjectsTab extends StatefulWidget {
   const ProjectsTab({super.key});
@@ -107,23 +108,13 @@ class _ProjectsTabState extends State<ProjectsTab> {
     }
   }
 
-  Future<void> _calculateValue(String projectId) async {
-    try {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Calculando valor...'), backgroundColor: AppColors.silver),
-      );
-      await Supabase.instance.client.functions.invoke(
-        'project-value',
-        body: {'project_id': projectId},
-      );
-      _loadProjects(); // Recargar para ver la estimación
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error calculando: $e'), backgroundColor: AppColors.colorError),
-        );
-      }
-    }
+  void _openEstimation(String projectId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProjectEstimationScreen(projectId: projectId),
+      ),
+    ).then((_) => _loadProjects()); // Recargar proyectos al volver
   }
 
   @override
@@ -180,31 +171,34 @@ class _ProjectsTabState extends State<ProjectsTab> {
                                 ),
                                 const SizedBox(height: 4),
                                 if (project.estimatedValueMin != null && project.estimatedValueMax != null)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.green.withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: AppColors.green.withValues(alpha: 0.3)),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(Icons.attach_money, color: AppColors.green, size: 14),
-                                        Text(
-                                          '${project.estimatedValueMin} - ${project.estimatedValueMax} ${project.currency}',
-                                          style: const TextStyle(
-                                            color: AppColors.green,
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
+                                  GestureDetector(
+                                    onTap: () => _openEstimation(project.id),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.green.withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(color: AppColors.green.withValues(alpha: 0.3)),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.attach_money, color: AppColors.green, size: 14),
+                                          Text(
+                                            '${project.estimatedValueMin} - ${project.estimatedValueMax} ${project.currency}',
+                                            style: const TextStyle(
+                                              color: AppColors.green,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   )
                                 else
                                   GestureDetector(
-                                    onTap: () => _calculateValue(project.id),
+                                    onTap: () => _openEstimation(project.id),
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                       decoration: BoxDecoration(

@@ -10,7 +10,7 @@ class ProjectsRepository {
   Future<List<ProjectModel>> fetchProjects(String profileId) async {
     final res = await _client
         .from('projects')
-        .select('*, project_competencies(competencies(name)), project_estimations(estimated_min_value, estimated_max_value, currency)')
+        .select('*, project_competencies(competencies(name)), project_estimations(estimated_min_value, estimated_max_value, currency, complexity_result, summary)')
         .eq('profile_id', profileId)
         .order('created_at', ascending: false);
     
@@ -35,8 +35,42 @@ class ProjectsRepository {
         estimatedValueMin: (est?['estimated_min_value'] as num?)?.toInt(),
         estimatedValueMax: (est?['estimated_max_value'] as num?)?.toInt(),
         currency: est?['currency'],
+        complexityResult: est?['complexity_result'],
+        summary: est?['summary'],
       );
     }).toList();
+  }
+
+  Future<ProjectModel> fetchProject(String projectId) async {
+    final res = await _client
+        .from('projects')
+        .select('*, project_competencies(competencies(name)), project_estimations(estimated_min_value, estimated_max_value, currency, complexity_result, summary)')
+        .eq('id', projectId)
+        .single();
+    
+    final estimations = res['project_estimations'] as List?;
+    final est = estimations != null && estimations.isNotEmpty ? estimations.first : null;
+    
+    return ProjectModel(
+      id: res['id'] ?? '',
+      profileId: res['profile_id'] ?? '',
+      professionalAreaId: res['professional_area_id'] ?? '',
+      name: res['name'] ?? '',
+      description: res['description'] ?? '',
+      projectType: res['project_type'] ?? '',
+      complexity: res['complexity'] ?? '',
+      estimatedTime: res['estimated_time'] ?? '',
+      platforms: (res['platforms'] as List<dynamic>?)?.join(', ') ?? '',
+      competencies: (res['project_competencies'] as List<dynamic>?)
+          ?.map<String>((c) => (c['competencies']?['name'] as String?) ?? '')
+          .where((name) => name.isNotEmpty)
+          .toList() ?? <String>[],
+      estimatedValueMin: (est?['estimated_min_value'] as num?)?.toInt(),
+      estimatedValueMax: (est?['estimated_max_value'] as num?)?.toInt(),
+      currency: est?['currency'],
+      complexityResult: est?['complexity_result'],
+      summary: est?['summary'],
+    );
   }
 
   Future<String> addProject({

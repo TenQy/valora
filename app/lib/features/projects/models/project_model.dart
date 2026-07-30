@@ -12,6 +12,8 @@ class ProjectModel {
   final int? estimatedValueMin;
   final int? estimatedValueMax;
   final String? currency;
+  final String? complexityResult;
+  final String? summary;
 
   ProjectModel({
     required this.id,
@@ -27,6 +29,8 @@ class ProjectModel {
     this.estimatedValueMin,
     this.estimatedValueMax,
     this.currency,
+    this.complexityResult,
+    this.summary,
   });
 
   factory ProjectModel.fromJson(Map<String, dynamic> json) {
