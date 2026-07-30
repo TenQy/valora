@@ -61,12 +61,12 @@ serve(async (req) => {
     // 2. Prompt para Gemini
     const systemPrompt = `
 Eres un experto estimador de proyectos freelance y corporativos en el área de ${areaName}.
-Analiza el siguiente proyecto y estima su valor económico aproximado en dólares (USD) o moneda local, basándote en la complejidad técnica, tiempo de desarrollo y tecnologías.
+Analiza el siguiente proyecto y estima su valor económico aproximado estrictamente en Pesos Mexicanos (MXN), basándote en la complejidad técnica, tiempo de desarrollo y tecnologías.
 Regresa la respuesta ÚNICAMENTE en JSON válido con el siguiente formato:
 {
-  "estimated_min_value": 1000,
-  "estimated_max_value": 2500,
-  "currency": "USD",
+  "estimated_min_value": 15000,
+  "estimated_max_value": 30000,
+  "currency": "MXN",
   "complexity_result": "Nivel alto",
   "summary": "Breve explicación de por qué vale esto..."
 }`;
@@ -85,7 +85,7 @@ Nivel del desarrollador: ${profileData.professional_level} con ${profileData.yea
     const apiKey = Deno.env.get("GEMINI_API_KEY");
     if (!apiKey) throw new Error("API Key de Gemini no configurada");
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
 
     const response = await fetch(geminiUrl, {
       method: "POST",
@@ -103,10 +103,12 @@ Nivel del desarrollador: ${profileData.professional_level} con ${profileData.yea
 
     const aiData = await response.json();
     if (!aiData.candidates || aiData.candidates.length === 0) {
-      throw new Error("No hay candidatos en la respuesta de Gemini");
+      throw new Error(`Gemini API Error: ${JSON.stringify(aiData)}`);
     }
 
-    const responseText = aiData.candidates[0].content.parts[0].text;
+    let responseText = aiData.candidates[0].content.parts[0].text;
+    // Remove markdown code block if present
+    responseText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
     const parsedResult = JSON.parse(responseText);
 
     // 3. Guardar en Base de Datos
@@ -115,7 +117,7 @@ Nivel del desarrollador: ${profileData.professional_level} con ${profileData.yea
       profile_id: profileData.id,
       estimated_min_value: parsedResult.estimated_min_value,
       estimated_max_value: parsedResult.estimated_max_value,
-      currency: parsedResult.currency || "USD",
+      currency: parsedResult.currency || "MXN",
       complexity_result: parsedResult.complexity_result,
       summary: parsedResult.summary,
     };
@@ -134,7 +136,7 @@ Nivel del desarrollador: ${profileData.professional_level} con ${profileData.yea
     });
   } catch (error: any) {
     console.error("Error Edge Function:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: error.message || String(error), stack: error.stack }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

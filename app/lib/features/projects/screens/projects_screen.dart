@@ -132,18 +132,18 @@ class _ProjectsTabState extends State<ProjectsTab> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return Stack(
+    return Column(
       children: [
-        if (_projects == null || _projects!.isEmpty)
-          const Center(
-            child: Text(
-              'No has agregado proyectos aún.',
-              style: TextStyle(color: AppColors.textMuted),
-            ),
-          )
-        else
-          ListView.builder(
-            padding: const EdgeInsets.all(AppSpacing.space24),
+        Expanded(
+          child: _projects == null || _projects!.isEmpty
+              ? const Center(
+                  child: Text(
+                    'No has agregado proyectos aún.',
+                    style: TextStyle(color: AppColors.textMuted),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(AppSpacing.space24),
             itemCount: _projects!.length,
             itemBuilder: (context, index) {
               final project = _projects![index];
@@ -303,7 +303,15 @@ class _ProjectsTabState extends State<ProjectsTab> {
                           spacing: 6,
                           runSpacing: 6,
                           children: project.competencies
-                              .map<Widget>((c) => Text('#$c', style: const TextStyle(color: AppColors.silver, fontSize: 12, fontWeight: FontWeight.w500)))
+                              .map<Widget>((c) => Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.silver.withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: AppColors.silver.withValues(alpha: 0.2)),
+                                ),
+                                child: Text(c, style: const TextStyle(color: AppColors.silver, fontSize: 12, fontWeight: FontWeight.w500)),
+                              ))
                               .toList(),
                         )
                       ],
@@ -313,30 +321,36 @@ class _ProjectsTabState extends State<ProjectsTab> {
               );
             },
           ),
-        Positioned(
-          bottom: AppSpacing.space24,
-          right: AppSpacing.space24,
-          child: FloatingActionButton(
-            backgroundColor: AppColors.silver,
-            onPressed: _profileId == null
-                ? null
-                : () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AddProjectScreen(
-                          profileId: _profileId!,
-                          professionalAreaId: _professionalAreaId ?? '',
-                        ),
-                      ),
-                    );
-                    if (result == true) {
-                      _loadProjects();
-                    }
-                  },
-            child: const Icon(Icons.add, color: AppColors.bgBase),
-          ),
         ),
+        if (_profileId != null)
+          Padding(
+            padding: const EdgeInsets.only(
+              left: AppSpacing.space24,
+              right: AppSpacing.space24,
+              bottom: AppSpacing.space24,
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AddProjectScreen(
+                        profileId: _profileId!,
+                        professionalAreaId: _professionalAreaId ?? '',
+                      ),
+                    ),
+                  );
+                  if (result == true) {
+                    _loadProjects();
+                  }
+                },
+                icon: const Icon(Icons.add, size: 20),
+                label: const Text('Agregar Proyecto'),
+              ),
+            ),
+          ),
       ],
     );
   }

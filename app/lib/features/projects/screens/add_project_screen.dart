@@ -125,11 +125,78 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
           onSelectionChanged: (comp, isSelected) {
             setState(() {
               if (isSelected) {
-                _selectedCompetencies.add(comp);
+                // Prevenir duplicados
+                if (!_selectedCompetencies.any((c) => c.id == comp.id)) {
+                  _selectedCompetencies.add(comp);
+                }
               } else {
-                _selectedCompetencies.remove(comp);
+                _selectedCompetencies.removeWhere((c) => c.id == comp.id);
               }
             });
+            Navigator.pop(context);
+          },
+        );
+      },
+    );
+  }
+
+  void _showPlatformsPicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.bgSurface,
+      builder: (context) {
+        return _PlatformsPickerModal(
+          available: _availablePlatforms,
+          selected: _selectedPlatforms,
+          onSelectionChanged: (plat, isSelected) {
+            setState(() {
+              if (isSelected) {
+                if (!_selectedPlatforms.contains(plat)) {
+                  _selectedPlatforms.add(plat);
+                }
+              } else {
+                _selectedPlatforms.remove(plat);
+              }
+            });
+            Navigator.pop(context);
+          },
+        );
+      },
+    );
+  }
+
+  void _showProjectTypePicker() {
+    final types = ['Personal', 'Académico', 'Empresa', 'Freelance', 'Open Source'];
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.bgSurface,
+      builder: (context) {
+        return _SingleSelectModal(
+          title: 'Seleccionar Tipo',
+          options: types,
+          selectedValue: _projectType,
+          onSelected: (val) {
+            setState(() => _projectType = val);
+            Navigator.pop(context);
+          },
+        );
+      },
+    );
+  }
+
+  void _showComplexityPicker() {
+    final complexities = ['Baja', 'Media', 'Alta'];
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.bgSurface,
+      builder: (context) {
+        return _SingleSelectModal(
+          title: 'Nivel de Complejidad',
+          options: complexities,
+          selectedValue: _complexity,
+          onSelected: (val) {
+            setState(() => _complexity = val);
+            Navigator.pop(context);
           },
         );
       },
@@ -171,24 +238,24 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
                         validator: (v) => v!.isEmpty ? 'Requerido' : null,
                       ),
                       const SizedBox(height: 16),
-                      DropdownButtonFormField<String>(
-                        initialValue: _projectType,
-                        decoration: const InputDecoration(labelText: 'Tipo de Proyecto'),
-                        dropdownColor: AppColors.bgSurface,
-                        items: ['Personal', 'Académico', 'Empresa', 'Freelance', 'Open Source']
-                            .map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(color: Colors.white))))
-                            .toList(),
-                        onChanged: (v) => setState(() => _projectType = v!),
+                      TextFormField(
+                        readOnly: true,
+                        controller: TextEditingController(text: _projectType),
+                        decoration: const InputDecoration(
+                          labelText: 'Tipo de Proyecto',
+                          suffixIcon: Icon(Icons.arrow_drop_down, color: AppColors.textMuted),
+                        ),
+                        onTap: _showProjectTypePicker,
                       ),
                       const SizedBox(height: 16),
-                      DropdownButtonFormField<String>(
-                        initialValue: _complexity,
-                        decoration: const InputDecoration(labelText: 'Nivel de Complejidad'),
-                        dropdownColor: AppColors.bgSurface,
-                        items: ['Baja', 'Media', 'Alta']
-                            .map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(color: Colors.white))))
-                            .toList(),
-                        onChanged: (v) => setState(() => _complexity = v!),
+                      TextFormField(
+                        readOnly: true,
+                        controller: TextEditingController(text: _complexity),
+                        decoration: const InputDecoration(
+                          labelText: 'Nivel de Complejidad',
+                          suffixIcon: Icon(Icons.arrow_drop_down, color: AppColors.textMuted),
+                        ),
+                        onTap: _showComplexityPicker,
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
@@ -201,25 +268,21 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
-                        children: _availablePlatforms.map((plat) {
-                          final isSelected = _selectedPlatforms.contains(plat);
-                          return FilterChip(
-                            label: Text(plat, style: TextStyle(color: isSelected ? Colors.white : AppColors.textPrimary)),
-                            selected: isSelected,
-                            selectedColor: AppColors.silver.withValues(alpha: 0.3),
-                            backgroundColor: AppColors.bgSurface,
-                            checkmarkColor: Colors.white,
-                            onSelected: (val) {
-                              setState(() {
-                                if (val) {
-                                  _selectedPlatforms.add(plat);
-                                } else {
-                                  _selectedPlatforms.remove(plat);
-                                }
-                              });
-                            },
-                          );
-                        }).toList(),
+                        children: [
+                          for (final plat in _selectedPlatforms)
+                            Chip(
+                              backgroundColor: AppColors.bgSurface,
+                              label: Text(plat, style: const TextStyle(color: Colors.white, fontSize: 13)),
+                              deleteIconColor: AppColors.textMuted,
+                              onDeleted: () => setState(() => _selectedPlatforms.remove(plat)),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: _showPlatformsPicker,
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Text('Agregar Entregable / Plataforma'),
                       ),
                       const SizedBox(height: 32),
                       SectionLabel('Competencias / Herramientas Aplicadas'),
@@ -325,12 +388,100 @@ class _CompetenciesPickerModalState extends State<_CompetenciesPickerModal> {
               itemCount: _filtered.length,
               itemBuilder: (context, index) {
                 final comp = _filtered[index];
-                final isSelected = widget.selected.contains(comp);
+                final isSelected = widget.selected.any((c) => c.id == comp.id);
                 return ListTile(
                   contentPadding: EdgeInsets.zero,
                   title: Text(comp.name, style: const TextStyle(color: Colors.white)),
                   trailing: isSelected ? const Icon(Icons.check, color: AppColors.silver) : null,
-                  onTap: () => widget.onSelectionChanged(comp, !isSelected),
+                  onTap: () => widget.onSelectionChanged(comp, true),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlatformsPickerModal extends StatelessWidget {
+  final List<String> available;
+  final List<String> selected;
+  final Function(String, bool) onSelectionChanged;
+
+  const _PlatformsPickerModal({
+    required this.available,
+    required this.selected,
+    required this.onSelectionChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('Seleccionar Plataforma', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          Flexible(
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: available.length,
+              itemBuilder: (context, index) {
+                final plat = available[index];
+                final isSelected = selected.contains(plat);
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(plat, style: const TextStyle(color: Colors.white)),
+                  trailing: isSelected ? const Icon(Icons.check, color: AppColors.silver) : null,
+                  onTap: () => onSelectionChanged(plat, true),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+}
+
+class _SingleSelectModal extends StatelessWidget {
+  final String title;
+  final List<String> options;
+  final String selectedValue;
+  final Function(String) onSelected;
+
+  const _SingleSelectModal({
+    required this.title,
+    required this.options,
+    required this.selectedValue,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          Flexible(
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: options.length,
+              itemBuilder: (context, index) {
+                final opt = options[index];
+                final isSelected = opt == selectedValue;
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(opt, style: const TextStyle(color: Colors.white)),
+                  trailing: isSelected ? const Icon(Icons.check, color: AppColors.silver) : null,
+                  onTap: () => onSelected(opt),
                 );
               },
             ),

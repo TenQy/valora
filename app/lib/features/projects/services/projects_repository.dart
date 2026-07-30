@@ -32,8 +32,8 @@ class ProjectsRepository {
             ?.map<String>((c) => (c['competencies']?['name'] as String?) ?? '')
             .where((name) => name.isNotEmpty)
             .toList() ?? <String>[],
-        estimatedValueMin: est?['estimated_min_value'],
-        estimatedValueMax: est?['estimated_max_value'],
+        estimatedValueMin: (est?['estimated_min_value'] as num?)?.toInt(),
+        estimatedValueMax: (est?['estimated_max_value'] as num?)?.toInt(),
         currency: est?['currency'],
       );
     }).toList();

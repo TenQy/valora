@@ -100,8 +100,8 @@ Deno.serve(async (req: Request) => {
       .limit(1)
       .maybeSingle();
 
-    const currentValuationText = lastEstimation 
-      ? `$${lastEstimation.estimated_min_salary} - $${lastEstimation.estimated_max_salary} MXN` 
+    const currentValuationText = lastEstimation
+      ? `$${lastEstimation.estimated_min_salary} - $${lastEstimation.estimated_max_salary} MXN`
       : 'Desconocido';
 
     // 2. Fetch Job Roles for the area
@@ -131,7 +131,6 @@ Deno.serve(async (req: Request) => {
       "gemini-3.1-flash-lite",
       "gemini-2.5-flash",
       "gemini-2.5-flash-lite",
-      "gemini-1.5-flash",
     ];
 
     const profileJson = JSON.stringify(profileRow, null, 2);
@@ -195,7 +194,7 @@ Instrucciones:
           }
         });
         responseText = result.response.text();
-        break; 
+        break;
       } catch (e) {
         lastError = e;
         console.warn(`Model ${modelName} failed:`, e);
@@ -233,10 +232,10 @@ Instrucciones:
     const recordsToInsert = parsedResult.map((match: any) => {
       const roleDef = jobRoles?.find((r) => r.id === match.job_role_id);
       const baseName = roleDef?.name || match.job_role_name || "Rol Profesional";
-      const customTitle = profileRow.professional_level 
+      const customTitle = profileRow.professional_level
         ? `${baseName} (${profileRow.professional_level})`
         : baseName;
-        
+
       return {
         profile_id: profileRow.id,
         job_role_id: match.job_role_id,
