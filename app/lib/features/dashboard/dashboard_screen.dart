@@ -12,6 +12,8 @@ import '../profile/profile_tab.dart';
 import '../projects/screens/projects_screen.dart';
 import '../results/job_match_screen.dart';
 import '../results/salary_estimation_screen.dart';
+import '../onboarding/screens/tutorial_screen.dart';
+import '../profile/services/profile_repository.dart';
 import 'home_tab.dart';
 
 /// Dashboard con navegación inferior (ver ROADMAP.md Fase 7).
@@ -41,6 +43,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
     NavBarItem(icon: Icons.person_outline, label: 'Perfil'),
     NavBarItem(icon: Icons.folder_outlined, label: 'Proyectos'),
   ];
+
+  bool _checkingProfile = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkProfileCompletion();
+  }
+
+  Future<void> _checkProfileCompletion() async {
+    try {
+      final repo = ProfileRepository(Supabase.instance.client);
+      final profile = await repo.fetchCurrentProfile();
+      if (profile == null || profile.professionalArea == 'Sin área') {
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const TutorialScreen()),
+          );
+        }
+        return;
+      }
+    } catch (_) {}
+    
+    if (mounted) {
+      setState(() {
+        _checkingProfile = false;
+      });
+    }
+  }
 
   Future<void> _signOut() async {
     setState(() => _isSigningOut = true);
@@ -83,6 +114,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_checkingProfile) {
+      return const Scaffold(
+        backgroundColor: AppColors.bgPage,
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.silver, strokeWidth: 2),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.bgPage,
       extendBodyBehindAppBar: true,

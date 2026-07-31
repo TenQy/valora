@@ -13,9 +13,11 @@ import 'widgets/add_competency_dialog.dart';
 import 'widgets/add_language_dialog.dart';
 import 'models/catalog_models.dart';
 import 'services/profile_repository.dart';
+import '../dashboard/dashboard_screen.dart';
 
 class EditProfileScreen extends StatefulWidget {
-  const EditProfileScreen({super.key});
+  final bool isInitialSetup;
+  const EditProfileScreen({super.key, this.isInitialSetup = false});
 
   @override
   State<EditProfileScreen> createState() => _EditProfileScreenState();
@@ -200,6 +202,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) {
+      if (widget.isInitialSetup && (_selectedAreaId == null || _selectedCompetencies.isEmpty)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Por favor, ingresa al menos tu área profesional y una competencia para poder calcular tu valor.'),
+            backgroundColor: AppColors.colorWarning,
+          ),
+        );
+      }
       final yrsText = _yearsExperienceController.text.trim();
       if (yrsText.isNotEmpty) {
         final yrs = int.tryParse(yrsText);
@@ -240,7 +250,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         ),
       );
 
-      Navigator.of(context).pop(true);
+      if (widget.isInitialSetup) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+          (route) => false,
+        );
+      } else {
+        Navigator.of(context).pop(true);
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -320,12 +337,25 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             )
         : null;
 
-    return Scaffold(
+    return PopScope(
+      canPop: !widget.isInitialSetup,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (widget.isInitialSetup) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Configura tu perfil básico para poder usar la app.'),
+              backgroundColor: AppColors.colorWarning,
+            ),
+          );
+        }
+      },
+      child: Scaffold(
       backgroundColor: AppColors.bgPage,
       extendBodyBehindAppBar: true,
-      appBar: const ValoraAppBar(
-        showBackButton: true,
-        title: 'Editar Perfil',
+      appBar: ValoraAppBar(
+        showBackButton: !widget.isInitialSetup,
+        title: widget.isInitialSetup ? 'Configura tu Perfil' : 'Editar Perfil',
       ),
       body: AnimatedAppBackground(
         child: SafeArea(
@@ -572,6 +602,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 }
