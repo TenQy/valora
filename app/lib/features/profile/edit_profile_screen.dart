@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -39,7 +41,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   String? _selectedAreaId;
   JobRoleItem? _selectedCareerObj;
-  String _selectedProfessionalLevel = 'Junior';
+  String _selectedProfessionalLevel = 'Estudiante';
 
   // Catalogs
   List<ProfessionalAreaItem> _areas = [];
@@ -115,6 +117,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       final issuers = await _repository.fetchCertificationIssuers();
       final rawProfile = await _repository.fetchRawProfileForEditing();
 
+      String? guestAreaId;
+      String? guestLevel;
+      List<EditableUserCompetency> guestCompetencies = [];
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final guestResultJson = prefs.getString('guest_estimation_result');
+        if (guestResultJson != null) {
+          final guestData = jsonDecode(guestResultJson) as Map<String, dynamic>;
+          guestAreaId = guestData['professional_area_id'] as String?;
+          guestLevel = guestData['professional_level'] as String?;
+          if (guestData['competencies'] != null) {
+            final rawComps = guestData['competencies'] as List;
+            for (final rc in rawComps) {
+              final comp = rc as Map<String, dynamic>;
+              guestCompetencies.add(EditableUserCompetency(
+                competencyId: comp['competency_id'] as String,
+                name: comp['name'] as String,
+                level: comp['level'] as String,
+              ));
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('Error loading guest data for prefill: $e');
+      }
+
       if (!mounted) return;
 
       setState(() {
@@ -189,6 +217,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           }
         }
 
+        if (guestAreaId != null && _selectedAreaId == null) {
+          _selectedAreaId = guestAreaId;
+        }
+        if (guestLevel != null && _selectedProfessionalLevel == 'Estudiante') {
+          if (_levelOptions.contains(guestLevel)) {
+            _selectedProfessionalLevel = guestLevel;
+          }
+        }
+        if (guestCompetencies.isNotEmpty && _selectedCompetencies.isEmpty) {
+          _selectedCompetencies = List.from(guestCompetencies);
+        }
+
         _isLoading = false;
       });
     } catch (e) {
@@ -229,7 +269,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       final yrsText = _yearsExperienceController.text.trim();
       final yearsExp = yrsText.isNotEmpty ? int.tryParse(yrsText) : null;
 
-      await _repository.saveProfile(
+      final profileId = await _repository.saveProfile(
         fullName: _fullNameController.text,
         professionalAreaId: _selectedAreaId,
         career: _selectedCareerObj?.name ?? '',
@@ -240,6 +280,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         languages: _selectedLanguages,
         certifications: _selectedCertifications,
       );
+
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final guestResultJson = prefs.getString('guest_estimation_result');
+        if (guestResultJson != null) {
+          final guestData = jsonDecode(guestResultJson) as Map<String, dynamic>;
+          await _repository.saveGuestEstimation(profileId, guestData);
+          await prefs.remove('guest_estimation_result');
+        }
+      } catch (e) {
+        debugPrint('Error al migrar datos de invitado: $e');
+      }
 
       if (!mounted) return;
 
@@ -420,8 +472,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             value: _selectedProfessionalLevel,
                             items: _levelOptions,
                             itemLabel: (lvl) => lvl,
-                            onChanged: (lvl) =>
-                                setState(() => _selectedProfessionalLevel = lvl ?? 'Junior'),
+                                onChanged: (lvl) =>
+                                  setState(() => _selectedProfessionalLevel = lvl ?? 'Estudiante'),
                           ),
                           const SizedBox(height: AppSpacing.space16),
 

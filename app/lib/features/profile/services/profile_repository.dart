@@ -140,7 +140,8 @@ class ProfileRepository {
   }
 
   /// Guarda / Actualiza el perfil completo del usuario y sus relaciones.
-  Future<void> saveProfile({
+  /// Retorna el ID del perfil creado o actualizado.
+  Future<String> saveProfile({
     required String fullName,
     required String? professionalAreaId,
     required String career,
@@ -207,6 +208,21 @@ class ProfileRepository {
         }).toList(),
       );
     }
+
+    return profileId;
+  }
+
+  /// Migra los datos de estimación del invitado a su nuevo perfil
+  Future<void> saveGuestEstimation(String profileId, Map<String, dynamic> guestData) async {
+    await _client.from('salary_estimations').insert({
+      'profile_id': profileId,
+      'professional_area_id': guestData['professional_area_id'],
+      'estimated_min_salary': guestData['estimated_min_salary'],
+      'estimated_max_salary': guestData['estimated_max_salary'],
+      'currency': guestData['currency'],
+      'professional_level': guestData['professional_level'],
+      'summary': guestData['summary'],
+    });
   }
 
   ProfessionalProfile _mapProfile(Map<String, dynamic> row) {

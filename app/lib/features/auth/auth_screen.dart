@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -12,6 +13,7 @@ import '../../shared/widgets/secondary_button.dart';
 import '../../shared/widgets/valora_app_bar.dart';
 
 import '../dashboard/dashboard_screen.dart';
+import '../onboarding/screens/tutorial_screen.dart';
 import 'auth_service.dart';
 import 'auth_validators.dart';
 import 'widgets/auth_mode_toggle.dart';

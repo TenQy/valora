@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/animated_app_background.dart';
 import '../../../shared/widgets/primary_button.dart';
-import '../../profile/edit_profile_screen.dart';
+import '../../dashboard/dashboard_screen.dart';
+import '../../guest/screens/guest_dashboard_screen.dart';
 
 class TutorialScreen extends StatefulWidget {
   const TutorialScreen({super.key});
@@ -43,6 +46,20 @@ class _TutorialScreenState extends State<TutorialScreen> {
     super.dispose();
   }
 
+  Future<void> _completeTutorial() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('has_seen_tutorial', true);
+
+    if (!mounted) return;
+
+    final session = Supabase.instance.client.auth.currentSession;
+    final hasValidSession = session != null && !session.isExpired;
+
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => hasValidSession ? const DashboardScreen() : const GuestDashboardScreen()),
+    );
+  }
+
   void _nextPage() {
     if (_currentPage < _pages.length - 1) {
       _pageController.nextPage(
@@ -50,10 +67,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
         curve: Curves.easeInOut,
       );
     } else {
-      // Ir a llenar perfil
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const EditProfileScreen(isInitialSetup: true)),
-      );
+      _completeTutorial();
     }
   }
 
@@ -71,11 +85,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
                 child: Padding(
                   padding: const EdgeInsets.all(AppSpacing.space16),
                   child: TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const EditProfileScreen(isInitialSetup: true)),
-                      );
-                    },
+                    onPressed: _completeTutorial,
                     child: const Text('Saltar', style: TextStyle(color: AppColors.textMuted)),
                   ),
                 ),

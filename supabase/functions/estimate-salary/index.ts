@@ -20,6 +20,20 @@ interface BreakdownItem {
   percentage: number;
 }
 
+interface GuestProfile {
+  level: string;
+  years_experience: number;
+  area_name: string;
+  competencies: Array<{ name: string; level: string }>;
+  languages: Array<{ name: string; level: string }>;
+  certifications: Array<{ name: string }>;
+}
+
+interface EstimateSalaryRequest {
+  profile_id?: string;
+  guest_profile?: GuestProfile;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -41,18 +55,6 @@ Deno.serve(async (req: Request) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized user session" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     let requestBody: EstimateSalaryRequest = {};
     try {
       requestBody = await req.json();
@@ -60,46 +62,97 @@ Deno.serve(async (req: Request) => {
       // Body can be empty
     }
 
-    let query = supabase
-      .from("profiles")
-      .select(`
-        id,
-        user_id,
-        full_name,
-        career,
-        professional_level,
-        years_experience,
-        bio,
-        professional_area_id,
-        professional_areas ( name ),
-        user_competencies ( level, competencies ( name, category ) ),
-        user_languages ( languages ( name ), language_levels ( name ) ),
-        certifications ( name, issuer )
-      `);
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (requestBody.profile_id) {
-      query = query.eq("id", requestBody.profile_id);
-    } else {
-      query = query.eq("user_id", user.id);
+    // Si no hay usuario y no hay guest_profile, denegar
+    if ((userError || !user) && !requestBody.guest_profile) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized user session" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    const { data: profileRow, error: profileError } = await query.single();
+    let level = "Junior";
+    let yearsExp = 0;
+    let areaName = "Tecnología";
+    let userComps: Array<any> = [];
+    let userLangs: Array<any> = [];
+    let certs: Array<any> = [];
+    let profileId: string | null = null;
+    let profileAreaId: string | null = null;
 
-    if (profileError || !profileRow) {
-      return new Response(
-        JSON.stringify({
-          error: "No se encontró un perfil profesional para calcular el salario.",
-        }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (requestBody.guest_profile) {
+      // Usar datos del invitado
+      const guest = requestBody.guest_profile;
+      level = guest.level || "Junior";
+      yearsExp = guest.years_experience || 0;
+      areaName = guest.area_name || "Tecnología";
+
+      userComps = (guest.competencies || []).map(c => ({
+        level: c.level,
+        competencies: { name: c.name }
+      }));
+
+      userLangs = (guest.languages || []).map(l => ({
+        language_levels: { name: l.level },
+        languages: { name: l.name }
+      }));
+
+      certs = (guest.certifications || []).map(c => ({
+        name: c.name
+      }));
+    } else if (user) {
+      // Usar base de datos
+      let query = supabase
+        .from("profiles")
+        .select(`
+          id,
+          user_id,
+          full_name,
+          career,
+          professional_level,
+          years_experience,
+          bio,
+          professional_area_id,
+          professional_areas ( name ),
+          user_competencies ( level, competencies ( name, category ) ),
+          user_languages ( languages ( name ), language_levels ( name ) ),
+          certifications ( name, issuer )
+        `);
+
+      if (requestBody.profile_id) {
+        query = query.eq("id", requestBody.profile_id);
+      } else {
+        query = query.eq("user_id", user.id);
+      }
+
+      const { data: profileRow, error: profileError } = await query.single();
+
+      if (profileError || !profileRow) {
+        return new Response(
+          JSON.stringify({
+            error: "No se encontró un perfil profesional para calcular el salario.",
+          }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      level = profileRow.professional_level ?? "Junior";
+      yearsExp = profileRow.years_experience ?? 0;
+      areaName = (profileRow.professional_areas as Record<string, unknown> | null)?.name as string ?? "Tecnología";
+      userComps = (profileRow.user_competencies as Array<Record<string, unknown>>) || [];
+      userLangs = (profileRow.user_languages as Array<Record<string, unknown>>) || [];
+      certs = (profileRow.certifications as Array<Record<string, unknown>>) || [];
+      profileId = profileRow.id;
+      profileAreaId = profileRow.professional_area_id;
     }
 
     // =========================================================================
     // RANGOS SALARIALES CALIBRADOS AL MERCADO NACIONAL MEXICANO (MXN / mes)
     // =========================================================================
-    const level = profileRow.professional_level ?? "Junior";
-    const yearsExp = profileRow.years_experience ?? 0;
-    const areaName = (profileRow.professional_areas as Record<string, unknown> | null)?.name as string ?? "Tecnología";
 
     // 1. Rangos base realistas por nivel
     let baseMin = 13000;
@@ -158,7 +211,6 @@ Deno.serve(async (req: Request) => {
 
     // 3. Competencias (+2% avanzada, +1% intermedia, tope +12%)
     let compBonus = 0;
-    const userComps = (profileRow.user_competencies as Array<Record<string, unknown>>) || [];
     for (const comp of userComps) {
       const compObj = comp.competencies as Record<string, unknown> | null;
       const name = compObj?.name as string | undefined;
@@ -176,7 +228,6 @@ Deno.serve(async (req: Request) => {
 
     // 4. Idiomas (Inglés B2 +10%, C1/C2 +18%)
     let langBonus = 0;
-    const userLangs = (profileRow.user_languages as Array<Record<string, unknown>>) || [];
     for (const lang of userLangs) {
       const langObj = lang.languages as Record<string, unknown> | null;
       const levelObj = lang.language_levels as Record<string, unknown> | null;
@@ -193,7 +244,6 @@ Deno.serve(async (req: Request) => {
     }
 
     // 5. Certificaciones (+3% cada una, tope +8%)
-    const certs = (profileRow.certifications as Array<Record<string, unknown>>) || [];
     let certBonus = 0;
     for (const cert of certs) {
       certBonus += 0.03;
@@ -245,7 +295,7 @@ Deno.serve(async (req: Request) => {
     const factorBreakdown: BreakdownItem[] = [
       { category: "Experiencia y Trayectoria", percentage: expPct },
     ];
-    
+
     if (compPct > 0) {
       factorBreakdown.push({ category: "Competencias Técnicas", percentage: compPct });
     }
@@ -258,14 +308,25 @@ Deno.serve(async (req: Request) => {
 
     factorBreakdown.sort((a, b) => b.percentage - a.percentage);
 
-    const summary = `Basado en tu experiencia de ${yearsExp} años y tus ${userComps.length} habilidades principales, tienes un perfil sólido de nivel ${level} en el área de ${areaName}. Este rango refleja el valor actual que las empresas están dispuestas a pagar por tu combinación de conocimientos e idiomas en el mercado.`;
+    let summary = "";
+    if (requestBody.guest_profile) {
+      if (userComps.length > 0) {
+        summary = `¡Excelente inicio! Según el área de ${areaName} y las habilidades que agregaste, estimamos que este es el valor promedio actual en el mercado para un perfil ${level}. Regístrate para afinar este resultado añadiendo tu experiencia real, idiomas y certificaciones.`;
+      } else {
+        summary = `¡Excelente inicio! Según el área de ${areaName}, este es el valor base estimado en el mercado para un ${level}. Regístrate para agregar tus habilidades, experiencia e idiomas, y obtener un cálculo personalizado.`;
+      }
+    } else {
+      const expText = yearsExp > 0 ? `experiencia de ${yearsExp} años` : `trayectoria inicial`;
+      const compText = userComps.length > 0 ? ` y tus ${userComps.length} habilidades registradas` : ``;
+      summary = `Basado en tu ${expText}${compText}, tienes un perfil con potencial de nivel ${level} en el área de ${areaName}. Este rango refleja el valor actual que las empresas están dispuestas a pagar por tu perfil en el mercado.`;
+    }
 
-    if (profileRow.id && profileRow.professional_area_id) {
+    if (profileId && profileAreaId) {
       // Evitar guardar historial si el valor es exactamente el mismo que el anterior
       const { data: lastEst } = await supabase
         .from("salary_estimations")
         .select("estimated_min_salary, estimated_max_salary, summary")
-        .eq("profile_id", profileRow.id)
+        .eq("profile_id", profileId)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -277,8 +338,8 @@ Deno.serve(async (req: Request) => {
 
       if (!isDuplicate) {
         await supabase.from("salary_estimations").insert({
-          profile_id: profileRow.id,
-          professional_area_id: profileRow.professional_area_id,
+          profile_id: profileId,
+          professional_area_id: profileAreaId,
           estimated_min_salary: estimatedMinSalary,
           estimated_max_salary: estimatedMaxSalary,
           currency: "MXN",

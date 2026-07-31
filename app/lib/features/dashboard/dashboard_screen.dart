@@ -1,18 +1,22 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/valora_app_bar.dart';
 import '../../shared/widgets/animated_app_background.dart';
 import '../../shared/widgets/nav_bar.dart';
 import '../auth/auth_service.dart';
-import '../welcome/welcome_screen.dart';
+import '../splash/splash_screen.dart';
+import '../onboarding/screens/tutorial_screen.dart';
 import '../profile/edit_profile_screen.dart';
 import '../profile/profile_tab.dart';
 import '../projects/screens/projects_screen.dart';
 import '../results/job_match_screen.dart';
 import '../results/salary_estimation_screen.dart';
-import '../onboarding/screens/tutorial_screen.dart';
+import '../profile/edit_profile_screen.dart';
 import '../profile/services/profile_repository.dart';
 import 'home_tab.dart';
 
@@ -57,12 +61,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final repo = ProfileRepository(Supabase.instance.client);
       final profile = await repo.fetchCurrentProfile();
       if (profile == null || profile.professionalArea == 'Sin área') {
-        if (mounted) {
+        final prefs = await SharedPreferences.getInstance();
+        final hasSeenTutorial = prefs.getBool('has_seen_tutorial') ?? false;
+
+        if (!mounted) return;
+
+        if (!hasSeenTutorial) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const TutorialScreen()),
           );
+        } else {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const EditProfileScreen(isInitialSetup: true)),
+          );
         }
         return;
+      } else {
+        // El usuario ya tiene un perfil. Verificamos si hay una prueba de invitado por migrar.
+        final prefs = await SharedPreferences.getInstance();
+        final guestResultJson = prefs.getString('guest_estimation_result');
+        if (guestResultJson != null) {
+          final rawProfile = await repo.fetchRawProfileForEditing();
+          if (rawProfile != null) {
+            final profileId = rawProfile['id'] as String;
+            final guestData = jsonDecode(guestResultJson) as Map<String, dynamic>;
+            await repo.saveGuestEstimation(profileId, guestData);
+            await prefs.remove('guest_estimation_result');
+          }
+        }
       }
     } catch (_) {}
     
@@ -79,7 +105,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       await _authService.signOut();
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+          MaterialPageRoute(builder: (_) => const SplashScreen()),
           (route) => false,
         );
       }
