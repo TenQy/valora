@@ -121,7 +121,6 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
                 _selectedCompetencies.removeWhere((c) => c.id == comp.id);
               }
             });
-            Navigator.pop(context);
           },
         );
       },
@@ -132,6 +131,7 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.bgSurface,
+      isScrollControlled: true,
       builder: (context) {
         return _PlatformsPickerModal(
           available: _availablePlatforms,
@@ -146,7 +146,6 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
                 _selectedPlatforms.remove(plat);
               }
             });
-            Navigator.pop(context);
           },
         );
       },
@@ -359,41 +358,65 @@ class _CompetenciesPickerModalState extends State<_CompetenciesPickerModal> {
         left: 24,
         right: 24,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextFormField(
-            controller: _searchController,
-            decoration: const InputDecoration(
-              labelText: 'Buscar competencia...',
-              prefixIcon: Icon(Icons.search, color: AppColors.textMuted),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Competencias', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Listo', style: TextStyle(color: AppColors.silver)),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 16),
-          Flexible(
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: _filtered.length,
-              itemBuilder: (context, index) {
-                final comp = _filtered[index];
-                final isSelected = widget.selected.any((c) => c.id == comp.id);
-                return ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(comp.name, style: const TextStyle(color: Colors.white)),
-                  trailing: isSelected ? const Icon(Icons.check, color: AppColors.silver) : null,
-                  onTap: () => widget.onSelectionChanged(comp, true),
-                );
-              },
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _searchController,
+              decoration: const InputDecoration(
+                labelText: 'Buscar competencia...',
+                prefixIcon: Icon(Icons.search, color: AppColors.textMuted),
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
-        ],
+            const SizedBox(height: 16),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _filtered.length,
+                itemBuilder: (context, index) {
+                  final comp = _filtered[index];
+                  final isSelected = widget.selected.any((c) => c.id == comp.id);
+                  return CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(comp.name, style: const TextStyle(color: Colors.white)),
+                    value: isSelected,
+                    activeColor: AppColors.silver,
+                    checkColor: AppColors.bgSurface,
+                    side: const BorderSide(color: AppColors.textMuted),
+                    onChanged: (bool? checked) {
+                      if (checked != null) {
+                        widget.onSelectionChanged(comp, checked);
+                        setState(() {});
+                      }
+                    },
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _PlatformsPickerModal extends StatelessWidget {
+class _PlatformsPickerModal extends StatefulWidget {
   final List<String> available;
   final List<String> selected;
   final Function(String, bool) onSelectionChanged;
@@ -405,32 +428,59 @@ class _PlatformsPickerModal extends StatelessWidget {
   });
 
   @override
+  State<_PlatformsPickerModal> createState() => _PlatformsPickerModalState();
+}
+
+class _PlatformsPickerModalState extends State<_PlatformsPickerModal> {
+  @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text('Seleccionar Plataforma', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
-          Flexible(
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: available.length,
-              itemBuilder: (context, index) {
-                final plat = available[index];
-                final isSelected = selected.contains(plat);
-                return ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(plat, style: const TextStyle(color: Colors.white)),
-                  trailing: isSelected ? const Icon(Icons.check, color: AppColors.silver) : null,
-                  onTap: () => onSelectionChanged(plat, true),
-                );
-              },
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.7,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Plataformas', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Listo', style: TextStyle(color: AppColors.silver)),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 24),
-        ],
+            const SizedBox(height: 16),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: widget.available.length,
+                itemBuilder: (context, index) {
+                  final plat = widget.available[index];
+                  final isSelected = widget.selected.contains(plat);
+                  return CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(plat, style: const TextStyle(color: Colors.white)),
+                    value: isSelected,
+                    activeColor: AppColors.silver,
+                    checkColor: AppColors.bgSurface,
+                    side: const BorderSide(color: AppColors.textMuted),
+                    onChanged: (bool? checked) {
+                      if (checked != null) {
+                        widget.onSelectionChanged(plat, checked);
+                        setState(() {});
+                      }
+                    },
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
       ),
     );
   }

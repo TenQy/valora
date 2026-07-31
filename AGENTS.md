@@ -28,7 +28,7 @@ La primera versión tiene mayor profundidad en el área de Tecnología, aunque l
 
 ## Landing
 
-* React
+* Astro (o React)
 * Tailwind CSS
 
 ## Backend y Base de Datos
@@ -40,16 +40,16 @@ La primera versión tiene mayor profundidad en el área de Tecnología, aunque l
 
 ## Infraestructura
 
-* AWS EC2
-* Ubuntu
-* Nginx
+* Vercel
+* Edge CDN
+* Serverless / Edge Functions
 
 ---
 
 # Arquitectura General
 
 ```txt
-Landing React
+Landing Astro/React
     ↓
 Flutter Web / APK
     ↓
