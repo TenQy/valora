@@ -61,3 +61,17 @@ where c.name in (
 )
 and a.name = 'Administración'
 on conflict (competency_id, professional_area_id) do nothing;
+
+-- Marcar competencias como binarias (no requieren nivel)
+update competencies
+set requires_level = false
+where name in (
+  'Applicant Tracking Systems (ATS)',
+  'Evaluación de Desempeño',
+  'Cultura Corporativa y Clima',
+  'Legislación Laboral',
+  'Capacitación y Onboarding',
+  'Lean Manufacturing / Lean Management',
+  'Six Sigma',
+  'Planificación Estratégica'
+);

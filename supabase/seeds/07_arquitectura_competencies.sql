@@ -42,3 +42,12 @@ where c.name in (
 )
 and a.name = 'Arquitectura'
 on conflict (competency_id, professional_area_id) do nothing;
+
+-- Marcar competencias como binarias (no requieren nivel)
+update competencies
+set requires_level = false
+where name in (
+  'Building Information Modeling (BIM)',
+  'Diseño Sustentable / LEED',
+  'Reglamentos de Construcción'
+);

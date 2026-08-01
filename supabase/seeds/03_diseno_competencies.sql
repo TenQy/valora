@@ -91,3 +91,22 @@ where c.name in (
 )
 and a.name = 'Diseño'
 on conflict (competency_id, professional_area_id) do nothing;
+
+-- Marcar competencias como binarias (no requieren nivel)
+update competencies
+set requires_level = false
+where name in (
+  'Design Thinking',
+  'Wireframing',
+  'Prototipado Interactivo',
+  'Pruebas de Usabilidad',
+  'Arquitectura de la Información',
+  'Teoría del Color',
+  'Tipografía',
+  'Sistemas de Diseño (Design Systems)',
+  'Ergonomía',
+  'Storyboarding',
+  'Pruebas A/B',
+  'Card Sorting',
+  'Microcopy'
+);

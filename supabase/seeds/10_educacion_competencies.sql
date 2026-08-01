@@ -40,3 +40,19 @@ where c.name in (
 )
 and a.name = 'Educación'
 on conflict (competency_id, professional_area_id) do nothing;
+
+-- Marcar competencias como binarias (no requieren nivel)
+update competencies
+set requires_level = false
+where name in (
+  'Pedagogía General',
+  'Didáctica',
+  'Diseño Instruccional',
+  'Aprendizaje Basado en Proyectos (ABP)',
+  'Flipped Classroom (Aula Invertida)',
+  'Gamificación Educativa',
+  'Evaluación del Aprendizaje',
+  'Inclusión Educativa',
+  'Diseño de Currículo',
+  'E-learning / Educación a Distancia'
+);

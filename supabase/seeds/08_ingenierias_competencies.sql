@@ -74,3 +74,21 @@ where c.name in (
 )
 and a.name = 'Ingenierías'
 on conflict (competency_id, professional_area_id) do nothing;
+
+-- Marcar competencias como binarias (no requieren nivel)
+update competencies
+set requires_level = false
+where name in (
+  'Core Tools (APQP, PPAP, FMEA, SPC, MSA)',
+  'ISO 9001 (Gestión de Calidad)',
+  'Control Estadístico de Procesos (CEP/SPC)',
+  'Mecánica de Fluidos',
+  'Termodinámica',
+  'Resistencia de Materiales',
+  'Mantenimiento Productivo Total (TPM)',
+  'Operaciones Unitarias',
+  'Evaluación de Impacto Ambiental (EIA)',
+  'Gestión de Residuos',
+  'Tratamiento de Aguas',
+  'Energías Renovables'
+);

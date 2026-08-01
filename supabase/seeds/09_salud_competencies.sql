@@ -47,3 +47,18 @@ where c.name in (
 )
 and a.name = 'Salud'
 on conflict (competency_id, professional_area_id) do nothing;
+
+-- Marcar competencias como binarias (no requieren nivel)
+update competencies
+set requires_level = false
+where name in (
+  'Soporte Vital Básico (BLS)',
+  'Soporte Vital Cardiovascular Avanzado (ACLS)',
+  'Primeros Auxilios',
+  'Reanimación Cardiopulmonar (RCP)',
+  'Inmunización / Vacunación',
+  'Control de Infecciones / Bioseguridad',
+  'Anatomía y Fisiología',
+  'Normativas de Salud',
+  'Ética Médica y Bioética'
+);

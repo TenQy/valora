@@ -25,8 +25,8 @@ Este documento detalla las tareas a realizar antes de generar el APK final y des
 - [ ] Añadir feedback visual claro (loaders consistentes).
 
 ### 6. Poblado Total de la Base de Datos 
-- [ ] Generar scripts SQL para las áreas laborales restantes.
-- [ ] Generar las competencias asociadas a cada área.
+- [x] Generar scripts SQL para las áreas laborales restantes.
+- [x] Generar las competencias asociadas a cada área.
 - [ ] Insertar en Supabase.
 
 ### 7. QA y Pruebas Generales

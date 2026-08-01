@@ -171,3 +171,19 @@ where c.name in (
 )
 and a.name = 'Tecnología'
 on conflict (competency_id, professional_area_id) do nothing;
+
+-- Marcar competencias como binarias (no requieren nivel)
+update competencies
+set requires_level = false
+where name in (
+  'Metodologías Ágiles',
+  'Scrum',
+  'Kanban',
+  'OWASP',
+  'Microservicios',
+  'RESTful APIs',
+  'Ethereum',
+  'Smart Contracts',
+  'RTOS',
+  'Microcontroladores'
+);

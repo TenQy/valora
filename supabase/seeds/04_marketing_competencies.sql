@@ -75,3 +75,25 @@ where c.name in (
 )
 and a.name = 'Marketing'
 on conflict (competency_id, professional_area_id) do nothing;
+
+-- Marcar competencias como binarias (no requieren nivel)
+update competencies
+set requires_level = false
+where name in (
+  'Programmatic Advertising',
+  'Estrategia de Redes Sociales',
+  'Gestión de Comunidades',
+  'Gestión de Crisis',
+  'Inbound Marketing',
+  'Lead Nurturing',
+  'Automatización de Marketing',
+  'Optimización de Tasa de Conversión (CRO)',
+  'Storytelling',
+  'Estrategia de Contenido',
+  'Growth Hacking',
+  'Marketing de Afiliados',
+  'Relaciones Públicas (PR)',
+  'Posicionamiento de Marca (Branding)',
+  'Análisis de Competencia',
+  'Marketing de Influencers'
+);

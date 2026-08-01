@@ -48,3 +48,16 @@ where c.name in (
 )
 and a.name = 'Finanzas'
 on conflict (competency_id, professional_area_id) do nothing;
+
+-- Marcar competencias como binarias (no requieren nivel)
+update competencies
+set requires_level = false
+where name in (
+  'NIIF / IFRS',
+  'US GAAP',
+  'Legislación Fiscal',
+  'Declaraciones de Impuestos',
+  'Cuentas por Cobrar (AR)',
+  'Cuentas por Pagar (AP)',
+  'Conciliación Bancaria'
+);

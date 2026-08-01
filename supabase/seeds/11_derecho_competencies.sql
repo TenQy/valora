@@ -38,3 +38,20 @@ where c.name in (
 )
 and a.name = 'Derecho'
 on conflict (competency_id, professional_area_id) do nothing;
+
+-- Marcar competencias como binarias (no requieren nivel)
+update competencies
+set requires_level = false
+where name in (
+  'Derecho Civil',
+  'Derecho Penal',
+  'Derecho Corporativo / Mercantil',
+  'Derecho Laboral',
+  'Derecho Familiar',
+  'Derecho Fiscal',
+  'Derecho Constitucional',
+  'Derecho Internacional',
+  'Juicio de Amparo',
+  'Cumplimiento Normativo (Compliance)',
+  'Propiedad Intelectual'
+);

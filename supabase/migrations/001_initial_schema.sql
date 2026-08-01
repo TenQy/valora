@@ -27,6 +27,7 @@ create table competencies (
       'platform'
     )
   ),
+  requires_level boolean not null default true,
   is_active boolean not null default true,
   created_at timestamptz not null default now()
 );
