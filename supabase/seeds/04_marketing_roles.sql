@@ -1,4 +1,20 @@
 insert into job_roles (professional_area_id, name, description, min_salary, max_salary, currency) values
-  ((select id from professional_areas where name = 'Marketing'), 'Especialista SEO', 'Optimiza contenido y sitios para buscadores.', 15000, 30000, 'MXN'),
-  ((select id from professional_areas where name = 'Marketing'), 'Social Media Manager', 'Gestión de comunidades y estrategias en redes sociales.', 12000, 28000, 'MXN')
+  ((select id from professional_areas where name = 'Marketing'), 'Especialista en Marketing Digital', 'Diseña y ejecuta campañas estratégicas en múltiples canales digitales.', 15000, 35000, 'MXN'),
+  ((select id from professional_areas where name = 'Marketing'), 'Social Media Manager', 'Desarrolla la estrategia de redes sociales y gestiona la imagen de la marca.', 15000, 30000, 'MXN'),
+  ((select id from professional_areas where name = 'Marketing'), 'Community Manager', 'Gestiona las interacciones con la comunidad en redes sociales.', 10000, 20000, 'MXN'),
+  ((select id from professional_areas where name = 'Marketing'), 'Especialista SEO', 'Optimiza de forma orgánica contenido y sitios web para motores de búsqueda.', 15000, 35000, 'MXN'),
+  ((select id from professional_areas where name = 'Marketing'), 'Especialista SEM / Paid Media', 'Gestiona campañas de publicidad pagada y presupuestos (Google Ads, Meta Ads).', 18000, 40000, 'MXN'),
+  ((select id from professional_areas where name = 'Marketing'), 'Content Manager / Creador de Contenido', 'Planifica, crea y gestiona contenidos de valor para la audiencia.', 15000, 30000, 'MXN'),
+  ((select id from professional_areas where name = 'Marketing'), 'Copywriter', 'Redacta textos persuasivos orientados a la conversión y ventas.', 12000, 30000, 'MXN'),
+  ((select id from professional_areas where name = 'Marketing'), 'Analista de Marketing', 'Analiza datos de campañas y mercado para extraer insights de negocio.', 18000, 38000, 'MXN'),
+  ((select id from professional_areas where name = 'Marketing'), 'Growth Hacker', 'Utiliza datos y experimentación ágil para lograr crecimiento acelerado.', 25000, 60000, 'MXN'),
+  ((select id from professional_areas where name = 'Marketing'), 'Email Marketing Specialist', 'Crea y gestiona campañas y automatizaciones por correo electrónico.', 15000, 28000, 'MXN'),
+  ((select id from professional_areas where name = 'Marketing'), 'Especialista en Inbound Marketing', 'Diseña estrategias para atraer clientes de forma no intrusiva.', 18000, 35000, 'MXN'),
+  ((select id from professional_areas where name = 'Marketing'), 'Director de Marketing (CMO)', 'Lidera la estrategia global de marketing y el posicionamiento de la empresa.', 50000, 120000, 'MXN'),
+  ((select id from professional_areas where name = 'Marketing'), 'Brand Manager', 'Asegura la coherencia, reputación y posicionamiento de una marca.', 25000, 50000, 'MXN'),
+  ((select id from professional_areas where name = 'Marketing'), 'Product Marketing Manager (PMM)', 'Conecta el desarrollo del producto con las necesidades del mercado y ventas.', 30000, 65000, 'MXN'),
+  ((select id from professional_areas where name = 'Marketing'), 'Especialista en Relaciones Públicas (PR)', 'Gestiona la comunicación y la imagen pública frente a medios y eventos.', 15000, 35000, 'MXN'),
+  ((select id from professional_areas where name = 'Marketing'), 'Especialista en E-commerce', 'Optimiza tiendas en línea, catálogos y estrategias de conversión (CRO).', 18000, 40000, 'MXN'),
+  ((select id from professional_areas where name = 'Marketing'), 'Gestor de Campañas (Campaign Manager)', 'Planifica, ejecuta y monitorea campañas integrales de principio a fin.', 20000, 40000, 'MXN'),
+  ((select id from professional_areas where name = 'Marketing'), 'Especialista en Influencer Marketing', 'Negocia y gestiona campañas con creadores de contenido e influencers.', 15000, 30000, 'MXN')
 on conflict (professional_area_id, name) do nothing;
