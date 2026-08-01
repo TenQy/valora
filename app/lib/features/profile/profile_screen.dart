@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'edit_profile_screen.dart';
 import 'profile_tab.dart';
+import 'security_settings_screen.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -100,6 +101,24 @@ class ProfileContent extends StatelessWidget {
         const SizedBox(height: AppSpacing.space20),
         _Divider(),
         const SizedBox(height: AppSpacing.space32),
+
+        Center(
+          child: OutlinedButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SecuritySettingsScreen()),
+              );
+            },
+            icon: const Icon(Icons.security, size: 18),
+            label: const Text('Seguridad y Privacidad'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.white,
+              side: const BorderSide(color: Colors.white),
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.space24),
 
         Center(
           child: TextButton(

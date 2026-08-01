@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_colors.dart';
 import '../dashboard/dashboard_screen.dart';
 import '../guest/screens/guest_dashboard_screen.dart';
+import '../auth/screens/lock_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -78,6 +79,10 @@ class _SplashScreenState extends State<SplashScreen>
       final session = Supabase.instance.client.auth.currentSession;
       final hasValidSession = session != null && !session.isExpired;
 
+      final prefs = await SharedPreferences.getInstance();
+      final savedPin = prefs.getString('app_pin');
+      final isLocked = savedPin != null && savedPin.isNotEmpty;
+
       if (!mounted) return;
 
       Widget nextScreen;
@@ -85,6 +90,10 @@ class _SplashScreenState extends State<SplashScreen>
         nextScreen = const DashboardScreen();
       } else {
         nextScreen = const GuestDashboardScreen();
+      }
+
+      if (isLocked) {
+        nextScreen = LockScreen(nextScreen: nextScreen);
       }
 
       Navigator.of(context).pushReplacement(
