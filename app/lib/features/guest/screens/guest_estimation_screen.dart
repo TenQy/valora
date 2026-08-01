@@ -86,6 +86,7 @@ class _GuestEstimationScreenState extends State<GuestEstimationScreen> {
       context: context,
       builder: (context) => AddCompetencyDialog(
         availableCompetencies: availableCompetencies,
+        selectedAreaId: _selectedAreaId,
       ),
     );
     
@@ -122,7 +123,8 @@ class _GuestEstimationScreenState extends State<GuestEstimationScreen> {
         'area_name': selectedAreaObj.name,
         'competencies': _selectedCompetencies.map((c) => {
           'name': c.name,
-          'level': c.level
+          'level': c.level,
+          'requires_level': c.requiresLevel
         }).toList(),
       };
 
@@ -151,6 +153,7 @@ class _GuestEstimationScreenState extends State<GuestEstimationScreen> {
           'competency_id': c.competencyId,
           'name': c.name,
           'level': c.level,
+          'requires_level': c.requiresLevel,
         }).toList(),
       };
       await prefs.setString('guest_estimation_result', jsonEncode(guestResult));
@@ -260,7 +263,9 @@ class _GuestEstimationScreenState extends State<GuestEstimationScreen> {
                                       backgroundColor: AppColors.bgSurface,
                                       side: const BorderSide(color: AppColors.borderSubtle),
                                       label: Text(
-                                        '${comp.name} (${comp.level})',
+                                        comp.requiresLevel
+                                            ? '${comp.name} (${comp.level})'
+                                            : comp.name,
                                         style: const TextStyle(color: Colors.white, fontSize: 13),
                                       ),
                                       onDeleted: () {

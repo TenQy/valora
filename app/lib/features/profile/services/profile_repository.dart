@@ -23,7 +23,7 @@ class ProfileRepository {
     years_experience,
     bio,
     professional_areas ( name ),
-    user_competencies ( level, competencies ( name ) ),
+    user_competencies ( level, competencies ( name, requires_level ) ),
     user_languages ( language_levels ( name ), languages ( name ) ),
     certifications ( name, issuer, issue_date ),
     projects ( name, description, project_competencies ( competencies ( name ) ) )
@@ -59,7 +59,7 @@ class ProfileRepository {
       professional_level,
       years_experience,
       bio,
-      user_competencies ( competency_id, level, competencies ( name ) ),
+      user_competencies ( competency_id, level, competencies ( name, requires_level ) ),
       user_languages ( language_id, language_level_id, languages ( name ), language_levels ( name ) ),
       certifications ( id, name, issuer, issue_date )
     ''';
@@ -84,9 +84,9 @@ class ProfileRepository {
   Future<List<CompetencyItem>> fetchCompetencies() async {
     final data = await _client
         .from('competencies')
-        .select('id, name, category')
+        .select('id, name, category, requires_level, competency_areas(professional_area_id)')
         .eq('is_active', true)
-        .order('name');
+        .order('name', ascending: true);
     return _asList(data).map((e) => CompetencyItem.fromJson(e)).toList();
   }
 
@@ -110,9 +110,9 @@ class ProfileRepository {
   Future<List<JobRoleItem>> fetchJobRoles() async {
     final data = await _client
         .from('job_roles')
-        .select('id, name')
+        .select('id, name, professional_area_id')
         .eq('is_active', true)
-        .order('name');
+        .order('name', ascending: true);
     return _asList(data).map((e) => JobRoleItem.fromJson(e)).toList();
   }
 
@@ -179,7 +179,7 @@ class ProfileRepository {
         competencies.map((c) => {
           'profile_id': profileId,
           'competency_id': c.competencyId,
-          'level': c.level,
+          'level': c.requiresLevel ? c.level : null,
         }).toList(),
       );
     }
@@ -233,6 +233,7 @@ class ProfileRepository {
       return UserCompetency(
         name: competency?['name'] as String? ?? '—',
         level: raw['level'] as String? ?? 'Básico',
+        requiresLevel: competency?['requires_level'] as bool? ?? true,
       );
     }).toList();
 

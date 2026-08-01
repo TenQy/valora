@@ -140,7 +140,7 @@ insert into competencies (name, description, category) values
 
   -- Sistemas Embebidos & IoT
   ('Arduino', 'Plataforma de creación de electrónica de código abierto.', 'tool'),
-  ('Raspberry Pi', 'Ordenadores de placa reducida de bajo costo.', 'hardware'),
+  ('Raspberry Pi', 'Ordenadores de placa reducida de bajo costo.', 'platform'),
   ('RTOS', 'Sistemas operativos de tiempo real para sistemas embebidos.', 'domain_knowledge'),
   ('Microcontroladores', 'Sistemas de computación en un chip.', 'domain_knowledge'),
 

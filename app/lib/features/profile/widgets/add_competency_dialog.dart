@@ -8,9 +8,11 @@ class AddCompetencyDialog extends StatefulWidget {
   const AddCompetencyDialog({
     super.key,
     required this.availableCompetencies,
+    this.selectedAreaId,
   });
 
   final List<CompetencyItem> availableCompetencies;
+  final String? selectedAreaId;
 
   @override
   State<AddCompetencyDialog> createState() => _AddCompetencyDialogState();
@@ -36,15 +38,20 @@ class _AddCompetencyDialogState extends State<AddCompetencyDialog> {
               itemLabel: (comp) => comp.name,
               itemSubLabel: (comp) => comp.category ?? '',
               onChanged: (val) => setState(() => selectedComp = val),
+              defaultFilter: widget.selectedAreaId != null
+                  ? (comp) => comp.relatedAreaIds.contains(widget.selectedAreaId)
+                  : null,
             ),
-            const SizedBox(height: AppSpacing.space16),
-            ValoraSearchableDropdown<String>(
-              label: 'Nivel de dominio',
-              value: selectedLevel,
-              items: const ['Básico', 'Intermedio', 'Avanzado'],
-              itemLabel: (lvl) => lvl,
-              onChanged: (val) => setState(() => selectedLevel = val ?? 'Básico'),
-            ),
+            if (selectedComp == null || selectedComp!.requiresLevel) ...[
+              const SizedBox(height: AppSpacing.space16),
+              ValoraSearchableDropdown<String>(
+                label: 'Nivel de dominio',
+                value: selectedLevel,
+                items: const ['Básico', 'Intermedio', 'Avanzado'],
+                itemLabel: (lvl) => lvl,
+                onChanged: (val) => setState(() => selectedLevel = val ?? 'Básico'),
+              ),
+            ],
           ],
         ),
       ),
@@ -60,7 +67,8 @@ class _AddCompetencyDialogState extends State<AddCompetencyDialog> {
                   final result = EditableUserCompetency(
                     competencyId: selectedComp!.id,
                     name: selectedComp!.name,
-                    level: selectedLevel,
+                    level: selectedComp!.requiresLevel ? selectedLevel : 'N/A',
+                    requiresLevel: selectedComp!.requiresLevel,
                   );
                   Navigator.of(context).pop(result);
                 },

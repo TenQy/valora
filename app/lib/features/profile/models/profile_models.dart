@@ -4,10 +4,11 @@
 // `user_languages` y `projects` (ver API_CONTRACT.md).
 
 class UserCompetency {
-  const UserCompetency({required this.name, required this.level});
+  const UserCompetency({required this.name, required this.level, this.requiresLevel = true});
 
   final String name;
   final String level; // Básico | Intermedio | Avanzado
+  final bool requiresLevel;
 }
 
 class UserLanguage {

@@ -16,6 +16,7 @@ class ValoraSearchableDropdown<T> extends FormField<T> {
     required ValueChanged<T?> onChanged,
     super.validator,
     String? hintText,
+    bool Function(T item)? defaultFilter,
   }) : super(
           initialValue: value,
           builder: (FormFieldState<T> state) {
@@ -47,6 +48,7 @@ class ValoraSearchableDropdown<T> extends FormField<T> {
                           selectedItem: value,
                           itemLabel: itemLabel,
                           itemSubLabel: itemSubLabel,
+                          defaultFilter: defaultFilter,
                         );
                       },
                     );
@@ -92,6 +94,7 @@ class _SearchBottomSheet<T> extends StatefulWidget {
     required this.selectedItem,
     required this.itemLabel,
     this.itemSubLabel,
+    this.defaultFilter,
   });
 
   final String title;
@@ -99,6 +102,7 @@ class _SearchBottomSheet<T> extends StatefulWidget {
   final T? selectedItem;
   final String Function(T item) itemLabel;
   final String Function(T item)? itemSubLabel;
+  final bool Function(T item)? defaultFilter;
 
   @override
   State<_SearchBottomSheet<T>> createState() => _SearchBottomSheetState<T>();
@@ -107,6 +111,15 @@ class _SearchBottomSheet<T> extends StatefulWidget {
 class _SearchBottomSheetState<T> extends State<_SearchBottomSheet<T>> {
   final _searchController = TextEditingController();
   String _query = '';
+
+  String _removeDiacritics(String str) {
+    const withDia = 'ÀÁÂÃÄÅàáâãäåÒÓÔÕÕÖØòóôõöøÈÉÊËèéêëðÇçÐÌÍÎÏìíîïÙÚÛÜùúûüÑñŠšŸÿýŽž';
+    const withoutDia = 'AAAAAAaaaaaaOOOOOOOooooooEEEEeeeeeCcDIIIIiiiiUUUUuuuuNnSsYyyZz';
+    for (int i = 0; i < withDia.length; i++) {
+      str = str.replaceAll(withDia[i], withoutDia[i]);
+    }
+    return str;
+  }
 
   @override
   void dispose() {
@@ -117,10 +130,19 @@ class _SearchBottomSheetState<T> extends State<_SearchBottomSheet<T>> {
   @override
   Widget build(BuildContext context) {
     final filtered = widget.items.where((item) {
-      if (_query.trim().isEmpty) return true;
-      final label = widget.itemLabel(item).toLowerCase();
-      final sub = widget.itemSubLabel?.call(item).toLowerCase() ?? '';
-      final q = _query.trim().toLowerCase();
+      final q = _removeDiacritics(_query.trim().toLowerCase());
+      
+      if (q.isEmpty) {
+        if (widget.defaultFilter != null) {
+          return widget.defaultFilter!(item);
+        }
+        return true;
+      }
+      
+      final label = _removeDiacritics(widget.itemLabel(item).toLowerCase());
+      final sub = widget.itemSubLabel != null 
+          ? _removeDiacritics(widget.itemSubLabel!(item).toLowerCase()) 
+          : '';
       return label.contains(q) || sub.contains(q);
     }).toList();
 

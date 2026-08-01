@@ -110,6 +110,7 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
         return _CompetenciesPickerModal(
           available: _availableCompetencies,
           selected: _selectedCompetencies,
+          professionalAreaId: widget.professionalAreaId,
           onSelectionChanged: (comp, isSelected) {
             setState(() {
               if (isSelected) {
@@ -313,11 +314,13 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
 class _CompetenciesPickerModal extends StatefulWidget {
   final List<CompetencyItem> available;
   final List<CompetencyItem> selected;
+  final String professionalAreaId;
   final Function(CompetencyItem, bool) onSelectionChanged;
 
   const _CompetenciesPickerModal({
     required this.available,
     required this.selected,
+    required this.professionalAreaId,
     required this.onSelectionChanged,
   });
 
@@ -332,14 +335,31 @@ class _CompetenciesPickerModalState extends State<_CompetenciesPickerModal> {
   @override
   void initState() {
     super.initState();
-    _filtered = widget.available;
+    _filter();
     _searchController.addListener(_filter);
   }
 
+  String _removeDiacritics(String str) {
+    const withDia = 'ÀÁÂÃÄÅàáâãäåÒÓÔÕÕÖØòóôõöøÈÉÊËèéêëðÇçÐÌÍÎÏìíîïÙÚÛÜùúûüÑñŠšŸÿýŽž';
+    const withoutDia = 'AAAAAAaaaaaaOOOOOOOooooooEEEEeeeeeCcDIIIIiiiiUUUUuuuuNnSsYyyZz';
+    for (int i = 0; i < withDia.length; i++) {
+      str = str.replaceAll(withDia[i], withoutDia[i]);
+    }
+    return str;
+  }
+
   void _filter() {
-    final query = _searchController.text.toLowerCase();
+    final query = _removeDiacritics(_searchController.text.toLowerCase());
     setState(() {
-      _filtered = widget.available.where((c) => c.name.toLowerCase().contains(query)).toList();
+      if (query.isEmpty) {
+        _filtered = widget.available
+            .where((c) => c.relatedAreaIds.contains(widget.professionalAreaId))
+            .toList();
+      } else {
+        _filtered = widget.available
+            .where((c) => _removeDiacritics(c.name.toLowerCase()).contains(query))
+            .toList();
+      }
     });
   }
 

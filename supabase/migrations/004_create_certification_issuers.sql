@@ -5,6 +5,8 @@ create table certification_issuers (
   created_at timestamptz not null default now()
 );
 
+alter table certification_issuers enable row level security;
+
 
 
 -- Finalmente, agregamos la restricción (Foreign Key) a la tabla certifications 

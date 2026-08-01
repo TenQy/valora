@@ -135,6 +135,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 competencyId: comp['competency_id'] as String,
                 name: comp['name'] as String,
                 level: comp['level'] as String,
+                requiresLevel: comp['requires_level'] as bool? ?? true,
               ));
             }
           }
@@ -180,6 +181,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 competencyId: item['competency_id'] as String,
                 name: compObj?['name'] as String? ?? '—',
                 level: item['level'] as String? ?? 'Básico',
+                requiresLevel: compObj?['requires_level'] as bool? ?? true,
               );
             }).toList();
           }
@@ -334,6 +336,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       context: context,
       builder: (context) => AddCompetencyDialog(
         availableCompetencies: availableCompetencies,
+        selectedAreaId: _selectedAreaId,
       ),
     );
     if (!mounted) return;
@@ -458,12 +461,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           const SizedBox(height: AppSpacing.space16),
 
                           ValoraSearchableDropdown<JobRoleItem>(
-                            label: 'Carrera / Profesión',
+                            label: 'Carrera / Profesión (Opcional)',
                             value: _selectedCareerObj,
                             items: _jobRolesCatalog,
                             itemLabel: (role) => role.name,
                             onChanged: (role) => setState(() => _selectedCareerObj = role),
-                            validator: (v) => v == null ? 'Selecciona una profesión' : null,
+                            defaultFilter: _selectedAreaId != null 
+                                ? (role) => role.professionalAreaId == _selectedAreaId
+                                : null,
+                            validator: (v) => null, // Opcional
                           ),
                           const SizedBox(height: AppSpacing.space16),
 
@@ -533,7 +539,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     backgroundColor: AppColors.bgSurface,
                                     side: const BorderSide(color: AppColors.borderSubtle),
                                     label: Text(
-                                      '${comp.name} (${comp.level})',
+                                      comp.requiresLevel 
+                                          ? '${comp.name} (${comp.level})'
+                                          : comp.name,
                                       style: const TextStyle(color: Colors.white, fontSize: 13),
                                     ),
                                     onDeleted: () {

@@ -17,17 +17,30 @@ class CompetencyItem {
     required this.id,
     required this.name,
     this.category,
+    this.relatedAreaIds = const [],
+    this.requiresLevel = true,
   });
 
   final String id;
   final String name;
   final String? category;
+  final List<String> relatedAreaIds;
+  final bool requiresLevel;
 
   factory CompetencyItem.fromJson(Map<String, dynamic> json) {
+    final areaIds = <String>[];
+    if (json['competency_areas'] != null) {
+      final list = json['competency_areas'] as List<dynamic>;
+      for (final a in list) {
+        areaIds.add(a['professional_area_id'] as String);
+      }
+    }
     return CompetencyItem(
       id: json['id'] as String,
       name: json['name'] as String,
       category: json['category'] as String?,
+      relatedAreaIds: areaIds,
+      requiresLevel: json['requires_level'] as bool? ?? true,
     );
   }
 }
@@ -70,15 +83,18 @@ class JobRoleItem {
   const JobRoleItem({
     required this.id,
     required this.name,
+    this.professionalAreaId,
   });
 
   final String id;
   final String name;
+  final String? professionalAreaId;
 
   factory JobRoleItem.fromJson(Map<String, dynamic> json) {
     return JobRoleItem(
       id: json['id'] as String,
       name: json['name'] as String,
+      professionalAreaId: json['professional_area_id'] as String?,
     );
   }
 }
@@ -105,11 +121,13 @@ class EditableUserCompetency {
     required this.competencyId,
     required this.name,
     required this.level,
+    this.requiresLevel = true,
   });
 
   final String competencyId;
   final String name;
   String level; // Básico | Intermedio | Avanzado
+  bool requiresLevel;
 }
 
 class EditableUserLanguage {
