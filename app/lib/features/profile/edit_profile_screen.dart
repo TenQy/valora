@@ -506,7 +506,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           ),
 
                           const SizedBox(height: AppSpacing.space32),
-                          SectionLabel('Competencias'),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              SectionLabel('Competencias'),
+                              if (_selectedCompetencies.isNotEmpty)
+                                TextButton(
+                                  onPressed: () => setState(() => _selectedCompetencies.clear()),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: AppColors.colorError,
+                                    padding: EdgeInsets.zero,
+                                    minimumSize: const Size(0, 0),
+                                  ),
+                                  child: const Text('Borrar todas', style: TextStyle(fontSize: 13)),
+                                ),
+                            ],
+                          ),
                           const SizedBox(height: AppSpacing.space12),
 
                           if (_selectedCompetencies.isEmpty)
@@ -547,7 +562,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           ),
 
                           const SizedBox(height: AppSpacing.space32),
-                          SectionLabel('Idiomas'),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              SectionLabel('Idiomas'),
+                              if (_selectedLanguages.isNotEmpty)
+                                TextButton(
+                                  onPressed: () => setState(() => _selectedLanguages.clear()),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: AppColors.colorError,
+                                    padding: EdgeInsets.zero,
+                                    minimumSize: const Size(0, 0),
+                                  ),
+                                  child: const Text('Borrar todos', style: TextStyle(fontSize: 13)),
+                                ),
+                            ],
+                          ),
                           const SizedBox(height: AppSpacing.space12),
 
                           if (_selectedLanguages.isEmpty)
@@ -586,7 +616,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           ),
 
                           const SizedBox(height: AppSpacing.space32),
-                          SectionLabel('Certificaciones'),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              SectionLabel('Certificaciones'),
+                              if (_selectedCertifications.isNotEmpty)
+                                TextButton(
+                                  onPressed: () => setState(() => _selectedCertifications.clear()),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: AppColors.colorError,
+                                    padding: EdgeInsets.zero,
+                                    minimumSize: const Size(0, 0),
+                                  ),
+                                  child: const Text('Borrar todas', style: TextStyle(fontSize: 13)),
+                                ),
+                            ],
+                          ),
                           const SizedBox(height: AppSpacing.space12),
 
                           if (_selectedCertifications.isEmpty)

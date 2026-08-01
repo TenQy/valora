@@ -159,7 +159,25 @@ Deno.serve(async (req: Request) => {
     let baseMax = 20000;
     let maxLevelCap = 25000; // Tope máximo realista para este nivel
 
-    switch (level) {
+    // Mapear los niveles dinámicos a los brackets base de salario
+    let mappedLevel = "Junior"; // default fallback
+    const lvlLower = level.toLowerCase();
+    
+    if (["estudiante", "becario", "interno", "dibujante", "pasante"].some(k => lvlLower.includes(k))) {
+      mappedLevel = "Estudiante";
+    } else if (["practicante", "auxiliar"].some(k => lvlLower.includes(k))) {
+      mappedLevel = "Practicante";
+    } else if (["junior", "médico general", "abogado junior"].some(k => lvlLower.includes(k))) {
+      mappedLevel = "Junior";
+    } else if (["semi senior", "analista", "titular", "residente", "proyectista", "proyecto", "asociado"].some(k => lvlLower.includes(k)) && !lvlLower.includes("senior")) {
+      mappedLevel = "Semi Senior";
+    } else if (["senior", "coordinador"].some(k => lvlLower.includes(k))) {
+      mappedLevel = "Senior";
+    } else if (["especialista", "gerente", "director", "lead", "staff", "socio", "adscrito", "investigador"].some(k => lvlLower.includes(k))) {
+      mappedLevel = "Especialista";
+    }
+
+    switch (mappedLevel) {
       case "Estudiante":
         baseMin = 6000;
         baseMax = 9000;
