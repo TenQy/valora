@@ -13,7 +13,7 @@ Este documento detalla las tareas a realizar antes de generar el APK final y des
 - [x] Exigir un llenado mínimo de datos (Área, un par de competencias) antes de habilitar el botón de "Calcular Valor".
 
 ### 3. Mejora de UX en Selección de Áreas y Competencias 
-- [ ] Ajustar la UX para que al seleccionar un Área Laboral (ej. Medicina), los selectores de competencias y herramientas se filtren o prioricen automáticamente.
+- [x] Ajustar la UX para que al seleccionar un Área Laboral (ej. Medicina), los selectores de competencias y herramientas se filtren o prioricen automáticamente.
 
 ### 4. Overhaul Visual y Diseño Premium 
 - [ ] Mejorar la calidad visual general del diseño (`core/theme/` y `shared/widgets/`).
@@ -27,7 +27,7 @@ Este documento detalla las tareas a realizar antes de generar el APK final y des
 ### 6. Poblado Total de la Base de Datos 
 - [x] Generar scripts SQL para las áreas laborales restantes.
 - [x] Generar las competencias asociadas a cada área.
-- [ ] Insertar en Supabase.
+- [x] Insertar en Supabase.
 
 ### 7. QA y Pruebas Generales
 - [ ] Recorrido completo de la aplicación evaluando cada función.

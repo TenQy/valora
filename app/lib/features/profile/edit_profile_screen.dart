@@ -15,6 +15,7 @@ import 'widgets/add_competency_dialog.dart';
 import 'widgets/add_language_dialog.dart';
 import 'models/catalog_models.dart';
 import 'services/profile_repository.dart';
+import 'utils/level_utils.dart';
 import '../dashboard/dashboard_screen.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -56,30 +57,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   List<EditableUserLanguage> _selectedLanguages = [];
   List<EditableUserCertification> _selectedCertifications = [];
 
-  static const _levelOptions = [
-    'Estudiante',
-    'Practicante',
-    'Junior',
-    'Semi Senior',
-    'Senior',
-    'Especialista',
-  ];
-
-  int _getMaxYearsForLevel(String level) {
-    switch (level) {
-      case 'Estudiante':
-        return 2;
-      case 'Practicante':
-        return 3;
-      case 'Junior':
-        return 5;
-      case 'Semi Senior':
-        return 10;
-      case 'Senior':
-      case 'Especialista':
-      default:
-        return 70;
-    }
+  List<String> get _currentLevelOptions {
+    final areaName = _selectedAreaId != null
+        ? _areas.cast<ProfessionalAreaItem?>().firstWhere(
+              (a) => a?.id == _selectedAreaId,
+              orElse: () => null,
+            )?.name
+        : null;
+    return LevelUtils.getLevelsForArea(areaName);
   }
 
   @override
@@ -165,7 +150,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           );
 
           final level = rawProfile['professional_level'] as String?;
-          if (level != null && _levelOptions.contains(level)) {
+          if (level != null && _currentLevelOptions.contains(level)) {
             _selectedProfessionalLevel = level;
           }
 
@@ -223,7 +208,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _selectedAreaId = guestAreaId;
         }
         if (guestLevel != null && _selectedProfessionalLevel == 'Estudiante') {
-          if (_levelOptions.contains(guestLevel)) {
+          if (_currentLevelOptions.contains(guestLevel)) {
             _selectedProfessionalLevel = guestLevel;
           }
         }
@@ -256,7 +241,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (yrsText.isNotEmpty) {
         final yrs = int.tryParse(yrsText);
         if (yrs != null) {
-          final maxYears = _getMaxYearsForLevel(_selectedProfessionalLevel);
+          final maxYears = LevelUtils.getMaxYearsForLevel(_selectedProfessionalLevel);
           if (yrs > maxYears) {
             _yearsExperienceFocusNode.requestFocus();
           }
@@ -476,10 +461,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           ValoraSearchableDropdown<String>(
                             label: 'Nivel Profesional',
                             value: _selectedProfessionalLevel,
-                            items: _levelOptions,
+                            items: _currentLevelOptions,
                             itemLabel: (lvl) => lvl,
-                                onChanged: (lvl) =>
-                                  setState(() => _selectedProfessionalLevel = lvl ?? 'Estudiante'),
+                            onChanged: (lvl) =>
+                                setState(() => _selectedProfessionalLevel = lvl ?? 'Estudiante'),
                           ),
                           const SizedBox(height: AppSpacing.space16),
 
@@ -495,7 +480,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               if (val != null && val.isNotEmpty) {
                                 final number = int.tryParse(val);
                                 if (number != null) {
-                                  final maxYears = _getMaxYearsForLevel(_selectedProfessionalLevel);
+                                  final maxYears = LevelUtils.getMaxYearsForLevel(_selectedProfessionalLevel);
                                   if (number > maxYears) {
                                     if (maxYears == 70) return 'Máximo 70 años';
                                     return 'Como $_selectedProfessionalLevel máximo $maxYears años';

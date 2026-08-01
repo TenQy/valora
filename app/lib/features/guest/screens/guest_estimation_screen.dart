@@ -11,6 +11,7 @@ import '../../../shared/widgets/valora_app_bar.dart';
 import '../../../shared/widgets/valora_searchable_dropdown.dart';
 import '../../profile/models/catalog_models.dart';
 import '../../profile/services/profile_repository.dart';
+import '../../profile/utils/level_utils.dart';
 import '../../profile/widgets/add_competency_dialog.dart';
 import 'guest_result_screen.dart';
 
@@ -36,14 +37,15 @@ class _GuestEstimationScreenState extends State<GuestEstimationScreen> {
   List<CompetencyItem> _competenciesCatalog = [];
   List<EditableUserCompetency> _selectedCompetencies = [];
 
-  static const _levelOptions = [
-    'Estudiante',
-    'Practicante',
-    'Junior',
-    'Semi Senior',
-    'Senior',
-    'Especialista',
-  ];
+  List<String> get _currentLevelOptions {
+    final areaName = _selectedAreaId != null
+        ? _areas.cast<ProfessionalAreaItem?>().firstWhere(
+              (a) => a?.id == _selectedAreaId,
+              orElse: () => null,
+            )?.name
+        : null;
+    return LevelUtils.getLevelsForArea(areaName);
+  }
 
   @override
   void initState() {
@@ -239,9 +241,10 @@ class _GuestEstimationScreenState extends State<GuestEstimationScreen> {
                             ValoraSearchableDropdown<String>(
                               label: 'Nivel Profesional',
                               value: _selectedProfessionalLevel,
-                              items: _levelOptions,
+                              items: _currentLevelOptions,
                               itemLabel: (lvl) => lvl,
-                              onChanged: (lvl) => setState(() => _selectedProfessionalLevel = lvl ?? 'Junior'),
+                              onChanged: (lvl) =>
+                                  setState(() => _selectedProfessionalLevel = lvl ?? 'Estudiante'),
                             ),
                             
                             const SizedBox(height: AppSpacing.space32),
