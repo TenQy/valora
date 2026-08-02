@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -10,8 +11,8 @@ import 'services/results_service.dart';
 import 'widgets/disclaimer_card.dart';
 import 'widgets/factor_breakdown_section.dart';
 import 'widgets/salary_card.dart';
-import 'widgets/score_grid.dart';
 import 'widgets/top_highlights_section.dart';
+import 'job_match_screen.dart';
 
 enum _LoadState { loading, success, error }
 
@@ -29,6 +30,23 @@ class _SalaryEstimationScreenState extends State<SalaryEstimationScreen> {
   _LoadState _state = _LoadState.loading;
   SalaryEstimation? _result;
   final ResultsService _resultsService = ResultsService();
+
+  SalaryEstimation get _dummyEstimation => const SalaryEstimation(
+        estimatedMinSalary: 30000,
+        estimatedMaxSalary: 50000,
+        currency: 'MXN',
+        professionalLevel: 'Analizando Nivel',
+        summary: 'Calculando el valor exacto de tu perfil basándonos en tus conocimientos técnicos y la demanda actual del mercado...',
+        influentialFactors: [],
+        topHighlights: [
+          HighlightItem(label: 'Habilidad Destacada', boost: 'Alto Impacto'),
+          HighlightItem(label: 'Idioma', boost: 'Bono'),
+        ],
+        factorBreakdown: [
+          BreakdownItem(category: 'Conocimientos', percentage: 70),
+          BreakdownItem(category: 'Experiencia', percentage: 30),
+        ],
+      );
 
   @override
   void initState() {
@@ -69,40 +87,24 @@ class _SalaryEstimationScreenState extends State<SalaryEstimationScreen> {
   }
 
   Widget _buildBody() {
-    switch (_state) {
-      case _LoadState.loading:
-        return const _LoadingView();
-      case _LoadState.error:
-        return _ErrorView(onRetry: _fetchEstimation);
-      case _LoadState.success:
-        return _ResultView(result: _result!);
+    if (_state == _LoadState.error) {
+      return _ErrorView(onRetry: _fetchEstimation);
     }
-  }
-}
-
-class _LoadingView extends StatelessWidget {
-  const _LoadingView();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CircularProgressIndicator(
-            strokeWidth: 2,
-            color: AppColors.silverMuted,
-          ),
-          SizedBox(height: AppSpacing.space20),
-          Text(
-            'Calculando tu estimación salarial...',
-            style: TextStyle(color: AppColors.textMuted, fontSize: 13),
-          ),
-        ],
+    
+    final isLoading = _state == _LoadState.loading;
+    final result = isLoading ? _dummyEstimation : _result!;
+    
+    return Skeletonizer(
+      enabled: isLoading,
+      effect: ShimmerEffect(
+        baseColor: AppColors.bgSurface,
+        highlightColor: AppColors.silver.withValues(alpha: 0.1),
       ),
+      child: _ResultView(result: result),
     );
   }
 }
+
 
 class _ErrorView extends StatelessWidget {
   const _ErrorView({required this.onRetry});
@@ -152,8 +154,22 @@ class _ResultView extends StatelessWidget {
 
         const SizedBox(height: AppSpacing.space24),
 
-        // 2. Grid 2x2 de métricas
-        ScoreGrid(result: result),
+        // 2. Resumen (Reemplazo de ScoreGrid)
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.space20),
+          decoration: BoxDecoration(
+            color: AppColors.silver.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Text(
+            result.summary,
+            style: const TextStyle(
+              color: AppColors.silver,
+              fontSize: 15,
+              height: 1.5,
+            ),
+          ),
+        ),
 
         const SizedBox(height: AppSpacing.space32),
 
@@ -175,6 +191,25 @@ class _ResultView extends StatelessWidget {
 
         // 5. Nota orientativa
         const DisclaimerCard(),
+
+        const SizedBox(height: AppSpacing.space24),
+        
+        // 6. Botón de Match Laboral
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => const JobMatchScreen()),
+              );
+            },
+            icon: const Icon(Icons.work_outline),
+            label: const Text('Descubrir Match Laboral', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+          ),
+        ),
 
         const SizedBox(height: AppSpacing.space24),
       ],

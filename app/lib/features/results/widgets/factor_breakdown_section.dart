@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -13,6 +14,8 @@ class FactorBreakdownSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isSkeleton = Skeletonizer.of(context).enabled;
+
     return Container(
       padding: const EdgeInsets.all(AppSpacing.space20),
       decoration: BoxDecoration(
@@ -61,19 +64,24 @@ class FactorBreakdownSection extends StatelessWidget {
                     widthFactor: (item.percentage / 100).clamp(0.0, 1.0),
                     child: Container(
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [
-                            AppColors.greenDim,
-                            AppColors.green,
-                          ],
-                        ),
+                        gradient: isSkeleton
+                            ? null
+                            : const LinearGradient(
+                                colors: [
+                                  AppColors.greenDim,
+                                  AppColors.green,
+                                ],
+                              ),
+                        color: isSkeleton ? AppColors.borderDefault : null,
                         borderRadius: BorderRadius.circular(3),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x334ADE80),
-                            blurRadius: 6,
-                          ),
-                        ],
+                        boxShadow: isSkeleton
+                            ? null
+                            : const [
+                                BoxShadow(
+                                  color: Color(0x334ADE80),
+                                  blurRadius: 6,
+                                ),
+                              ],
                       ),
                     ),
                   ),

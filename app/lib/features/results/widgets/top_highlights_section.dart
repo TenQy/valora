@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -13,6 +14,8 @@ class TopHighlightsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isSkeleton = Skeletonizer.of(context).enabled;
+
     return Column(
       children: [
         for (final item in highlights) ...[
@@ -50,9 +53,9 @@ class TopHighlightsSection extends StatelessWidget {
                     vertical: AppSpacing.space4,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.greenDim,
+                    color: isSkeleton ? AppColors.borderDefault : AppColors.greenDim,
                     borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: AppColors.greenBorder),
+                    border: Border.all(color: isSkeleton ? AppColors.borderDefault : AppColors.greenBorder),
                   ),
                   child: Text(
                     item.boost,
