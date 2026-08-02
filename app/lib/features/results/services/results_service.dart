@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/database/local_db_helper.dart';
 import '../models/job_match_model.dart';
 import '../models/salary_estimation.dart';
+import '../models/growth_path_model.dart';
 
 class ResultsService {
   final _client = Supabase.instance.client;
@@ -78,5 +79,43 @@ class ResultsService {
     await LocalDbHelper.instance.saveJobMatches(effectiveProfileId, jsonEncode(data));
 
     return results;
+  }
+
+  /// Llama a la Edge Function `growth-path` en Supabase (con soporte offline SQLite).
+  Future<GrowthPathModel> fetchGrowthPath({String? profileId, bool forceRefresh = false}) async {
+    final effectiveProfileId = profileId ?? _client.auth.currentUser?.id ?? 'guest';
+
+    // 1. Intentar cargar desde la base de datos local
+    if (!forceRefresh) {
+      final cachedData = await LocalDbHelper.instance.getGrowthPath(effectiveProfileId);
+      if (cachedData != null) {
+        try {
+          return GrowthPathModel.fromJson(jsonDecode(cachedData));
+        } catch (_) {
+          // Si el JSON falla, seguimos a la red
+        }
+      }
+    }
+
+    // 2. Si no hay datos locales, ir a la red
+    final res = await _client.functions.invoke(
+      'growth-path',
+      body: profileId != null ? {'profile_id': profileId} : {},
+    );
+
+    if (res.status != 200 || res.data == null) {
+      final errorMsg = (res.data is Map && res.data['error'] != null)
+          ? res.data['error']
+          : 'No pudimos generar tu ruta de crecimiento. Asegúrate de tener perfil.';
+      throw Exception(errorMsg);
+    }
+
+    final data = Map<String, dynamic>.from(res.data as Map);
+    final result = GrowthPathModel.fromJson(data);
+
+    // 3. Guardar el nuevo resultado en caché local SQLite
+    await LocalDbHelper.instance.saveGrowthPath(effectiveProfileId, jsonEncode(data));
+
+    return result;
   }
 }

@@ -168,6 +168,7 @@ class ProfileRepository {
       'professional_level': professionalLevel,
       'years_experience': yearsExperience,
       'bio': bio.trim(),
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
     }, onConflict: 'user_id').select('id').single();
 
     final profileId = profileRow['id'] as String;

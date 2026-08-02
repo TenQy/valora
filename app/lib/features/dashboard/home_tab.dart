@@ -12,6 +12,8 @@ import '../results/job_match_screen.dart';
 import '../../shared/widgets/match_badge.dart';
 import '../../shared/widgets/expandable_text.dart';
 import 'services/dashboard_service.dart';
+import '../results/services/results_service.dart';
+import '../results/models/growth_path_model.dart';
 
 class HomeTab extends StatefulWidget {
   const HomeTab({
@@ -30,6 +32,15 @@ class HomeTab extends StatefulWidget {
 class _HomeTabState extends State<HomeTab> {
   final _service = DashboardService();
   late Future<DashboardData> _future;
+  bool _isGeneratingPath = false;
+  final ScrollController _scrollController = ScrollController();
+  final GlobalKey _growthPathKey = GlobalKey();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   DashboardData get _dummyData => DashboardData(
         userName: 'Usuario',
@@ -67,10 +78,11 @@ class _HomeTabState extends State<HomeTab> {
     _loadData();
   }
 
-  void _loadData() {
+  Future<void> _loadData() async {
     setState(() {
       _future = _service.fetchDashboardData();
     });
+    await _future;
   }
 
   @override
@@ -98,6 +110,7 @@ class _HomeTabState extends State<HomeTab> {
               highlightColor: AppColors.silver.withValues(alpha: 0.1),
             ),
             child: ListView(
+              controller: _scrollController,
               padding: const EdgeInsets.all(AppSpacing.space24),
               children: [
                 _buildHeader(data!),
@@ -123,6 +136,74 @@ class _HomeTabState extends State<HomeTab> {
       ),
     );
   }
+
+  Future<void> _generateGrowthPath({bool forceRefresh = false}) async {
+    setState(() => _isGeneratingPath = true);
+    try {
+      final resultsService = ResultsService();
+      await resultsService.fetchGrowthPath(forceRefresh: forceRefresh);
+      await _loadData();
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_growthPathKey.currentContext != null) {
+          Scrollable.ensureVisible(
+            _growthPathKey.currentContext!,
+            duration: const Duration(milliseconds: 600),
+            curve: Curves.easeOut,
+            alignment: 0.1,
+          );
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')),
+          backgroundColor: AppColors.colorError,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isGeneratingPath = false);
+    }
+  }
+
+  void _confirmRefreshPath(bool isProfileUpdatedRecently) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.bgElevated,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          isProfileUpdatedRecently ? '¿Generar Nueva Ruta?' : '¿Actualizar Ruta?', 
+          style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)
+        ),
+        content: Text(
+          isProfileUpdatedRecently
+            ? 'Hemos detectado que actualizaste tu perfil recientemente.\n\nAl continuar, Valora analizará tus nuevos datos para trazar una ruta de aprendizaje más precisa y actualizada a tu nivel actual.\n\n¿Deseas generarla ahora?'
+            : 'Tu ruta está guardada localmente.\n\nTen en cuenta que si no has modificado tu perfil (agregando habilidades, idiomas o certificaciones), pedir una nueva ruta generará resultados muy similares o idénticos a los que ya tienes.\n\n¿Estás seguro de que quieres generar una nueva?',
+          style: const TextStyle(color: AppColors.silverMuted, fontSize: 14, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancelar', style: TextStyle(color: AppColors.silverMuted)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _generateGrowthPath(forceRefresh: true);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.textPrimary,
+              foregroundColor: AppColors.bgBase,
+            ),
+            child: Text(isProfileUpdatedRecently ? 'Sí, generar' : 'Sí, actualizar', style: const TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   Widget _buildError(String error) {
     return Center(
@@ -362,71 +443,218 @@ class _HomeTabState extends State<HomeTab> {
   }
 
   Widget _buildImprovementGuide(DashboardData data) {
-    final List<String> tips = [];
-
-    // Tip 1: Completitud
-    if (data.profileCompleteness < 100) {
-      tips.add('Tienes un ${data.profileCompleteness}% de tu perfil completo. Llenar los datos faltantes aumentará la precisión de tu valor.');
-    } else {
-      tips.add('Tu perfil base está impecable. El siguiente paso es diversificar tus conocimientos fuera de tu zona de confort.');
-    }
-
-    // Tip 2: Basado en el último match
-    if (data.latestMatches.isNotEmpty) {
-      final topMatch = data.latestMatches.first;
-      if (topMatch.missingCompetencies.isNotEmpty) {
-        final missing = topMatch.missingCompetencies.take(2).join(', ');
-        tips.add('Para asegurar tu puesto ideal como ${topMatch.jobRoleName}, el mercado exige que domines: $missing. ¡Añádelo a tu plan de estudio!');
-      } else {
-        tips.add('Tienes cobertura total para ${topMatch.jobRoleName}. Te sugerimos actualizar tus expectativas salariales o apuntar a roles de liderazgo.');
-      }
-    } else {
-      tips.add('Genera tu primera Compatibilidad Laboral para recibir recomendaciones precisas sobre qué tecnología aprender a continuación.');
-    }
-
-    // Tip 3: General de nivel
-    if (data.professionalLevel == 'Junior' || data.professionalLevel == 'Estudiante') {
-      tips.add('Las certificaciones oficiales son el atajo más rápido para saltar a un nivel Mid/Senior y destacar entre los candidatos.');
-    } else if (data.professionalLevel == 'Semi Senior' || data.professionalLevel == 'Mid Level') {
-      tips.add('En tu nivel, las habilidades de arquitectura y metodologías ágiles comienzan a tener más peso que el código puro.');
-    } else if (data.professionalLevel == 'Senior' || data.professionalLevel == 'Especialista') {
-      tips.add('Como talento Senior, dominar idiomas adicionales multiplicará tus oportunidades de acceder a salarios internacionales de primer nivel.');
+    if (data.latestGrowthPath != null) {
+      final result = data.latestGrowthPath!;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            key: _growthPathKey,
+            children: const [
+              Icon(Icons.rocket_launch_outlined, color: AppColors.silver, size: 20),
+              SizedBox(width: 8),
+              Text('Tu Ruta de Crecimiento', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 16)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            result.summary,
+            style: const TextStyle(color: AppColors.silverMuted, fontSize: 14, height: 1.5),
+          ),
+          const SizedBox(height: 24),
+          _buildTimeline(result),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _isGeneratingPath ? null : () => _confirmRefreshPath(data.isProfileUpdatedRecently),
+              icon: _isGeneratingPath 
+                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.silver))
+                : const Icon(Icons.refresh, size: 18),
+              label: Text(_isGeneratingPath ? 'Actualizando...' : 'Actualizar Ruta'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.silver,
+                side: const BorderSide(color: AppColors.borderDefault),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+          if (data.isProfileUpdatedRecently) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.colorInfo.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.colorInfo.withValues(alpha: 0.3)),
+              ),
+              child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.info_outline, color: AppColors.colorInfo, size: 16),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Has actualizado tu perfil recientemente. ¡Te sugerimos generar una nueva ruta!',
+                      style: TextStyle(color: AppColors.colorInfo, fontSize: 13, height: 1.4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      );
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
-          children: [
+        Row(
+          key: _growthPathKey,
+          children: const [
             Icon(Icons.rocket_launch_outlined, color: AppColors.silver, size: 20),
             SizedBox(width: 8),
             Text('Tu Ruta de Crecimiento', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 16)),
           ],
         ),
         const SizedBox(height: 16),
-        ...tips.map((t) => _buildGuideItem(t)),
+        const Text(
+          'Genera un plan de acción paso a paso impulsado por IA para alcanzar tu siguiente nivel profesional.',
+          style: TextStyle(color: AppColors.silverMuted, fontSize: 14, height: 1.5),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: _isGeneratingPath ? null : _generateGrowthPath,
+            icon: _isGeneratingPath 
+              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.bgPage))
+              : const Icon(Icons.trending_up, size: 18),
+            label: Text(_isGeneratingPath ? 'Generando...' : 'Generar mi Ruta'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildGuideItem(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            margin: const EdgeInsets.only(top: 2, right: 12),
-            padding: const EdgeInsets.all(2),
-            decoration: BoxDecoration(
-              color: AppColors.silver.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.arrow_forward_ios, size: 10, color: AppColors.silver),
+  Widget _buildTimeline(GrowthPathModel result) {
+    Color getIconColor(String type) {
+      switch (type) {
+        case 'skill': return Colors.blueAccent;
+        case 'certification': return Colors.orangeAccent;
+        case 'experience': return Colors.green;
+        case 'language': return Colors.purpleAccent;
+        case 'soft_skill': return Colors.tealAccent;
+        default: return AppColors.silver;
+      }
+    }
+
+    IconData getIcon(String type) {
+      switch (type) {
+        case 'skill': return Icons.code;
+        case 'certification': return Icons.verified_user_outlined;
+        case 'experience': return Icons.work_history_outlined;
+        case 'language': return Icons.language;
+        case 'soft_skill': return Icons.psychology_outlined;
+        default: return Icons.star_border;
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(AppSpacing.space20),
+          decoration: BoxDecoration(
+            color: AppColors.bgSurface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.borderDefault),
           ),
-          Expanded(child: Text(text, style: const TextStyle(color: AppColors.silverMuted, fontSize: 13, height: 1.5))),
-        ],
-      ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('NIVEL ACTUAL', style: TextStyle(color: AppColors.silverMuted, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                  const SizedBox(height: 4),
+                  Text(result.currentLevel, style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  const Text('SIGUIENTE NIVEL', style: TextStyle(color: AppColors.silverMuted, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                  const SizedBox(height: 4),
+                  Text(result.nextLevel, style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.space16),
+              const Divider(color: AppColors.borderDefault),
+              const SizedBox(height: AppSpacing.space16),
+              Row(
+                children: [
+                  const Icon(Icons.timer_outlined, color: AppColors.silverMuted, size: 16),
+                  const SizedBox(width: 8),
+                  Text('Tiempo estimado: ${result.estimatedTime}', style: const TextStyle(color: AppColors.silverMuted, fontSize: 13)),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.space24),
+        ...result.milestones.asMap().entries.map((entry) {
+          final int index = entry.key;
+          final milestone = entry.value;
+          final isLast = index == result.milestones.length - 1;
+
+          return IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Column(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: getIconColor(milestone.type).withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: getIconColor(milestone.type).withValues(alpha: 0.3)),
+                      ),
+                      child: Icon(getIcon(milestone.type), size: 16, color: getIconColor(milestone.type)),
+                    ),
+                    if (!isLast)
+                      Expanded(
+                        child: Container(
+                          width: 2,
+                          color: AppColors.borderDefault,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.space24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(milestone.title, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 16)),
+                        const SizedBox(height: 4),
+                        Text(milestone.description, style: const TextStyle(color: AppColors.silverMuted, fontSize: 14, height: 1.4)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
     );
   }
 

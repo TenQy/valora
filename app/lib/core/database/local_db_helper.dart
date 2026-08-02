@@ -19,7 +19,7 @@ class LocalDbHelper {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -31,6 +31,15 @@ class LocalDbHelper {
         CREATE TABLE local_job_matches (
           profile_id TEXT PRIMARY KEY,
           matches_json TEXT NOT NULL,
+          created_at TEXT NOT NULL
+        )
+      ''');
+    }
+    if (oldVersion < 3) {
+      await db.execute('''
+        CREATE TABLE local_growth_paths (
+          profile_id TEXT PRIMARY KEY,
+          path_json TEXT NOT NULL,
           created_at TEXT NOT NULL
         )
       ''');
@@ -52,6 +61,15 @@ class LocalDbHelper {
       CREATE TABLE local_job_matches (
         profile_id TEXT PRIMARY KEY,
         matches_json TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      )
+    ''');
+
+    // Tabla para guardar rutas de crecimiento generadas por IA
+    await db.execute('''
+      CREATE TABLE local_growth_paths (
+        profile_id TEXT PRIMARY KEY,
+        path_json TEXT NOT NULL,
         created_at TEXT NOT NULL
       )
     ''');
@@ -173,5 +191,59 @@ class LocalDbHelper {
       return maps.first['local_photo_path'] as String?;
     }
     return null;
+  }
+
+  // --- GROWTH PATH ---
+
+  Future<void> saveGrowthPath(String profileId, String pathJson) async {
+    final db = await instance.database;
+    await db.insert(
+      'local_growth_paths',
+      {
+        'profile_id': profileId,
+        'path_json': pathJson,
+        'created_at': DateTime.now().toIso8601String(),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<String?> getGrowthPath(String profileId) async {
+    final db = await instance.database;
+    final maps = await db.query(
+      'local_growth_paths',
+      columns: ['path_json'],
+      where: 'profile_id = ?',
+      whereArgs: [profileId],
+    );
+
+    if (maps.isNotEmpty) {
+      return maps.first['path_json'] as String;
+    }
+    return null;
+  }
+
+  Future<DateTime?> getGrowthPathCreatedAt(String profileId) async {
+    final db = await instance.database;
+    final maps = await db.query(
+      'local_growth_paths',
+      columns: ['created_at'],
+      where: 'profile_id = ?',
+      whereArgs: [profileId],
+    );
+
+    if (maps.isNotEmpty) {
+      return DateTime.tryParse(maps.first['created_at'] as String);
+    }
+    return null;
+  }
+
+  Future<void> clearGrowthPath(String profileId) async {
+    final db = await instance.database;
+    await db.delete(
+      'local_growth_paths',
+      where: 'profile_id = ?',
+      whereArgs: [profileId],
+    );
   }
 }
