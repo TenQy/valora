@@ -7,6 +7,7 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/widgets/valora_app_bar.dart';
 import '../../../shared/widgets/match_badge.dart';
+import '../../../shared/widgets/expandable_text.dart';
 import 'models/job_match_model.dart';
 import 'services/results_service.dart';
 
@@ -193,9 +194,10 @@ class JobMatchCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.space16),
-          Text(
-            match.summary,
-            style: const TextStyle(color: AppColors.textMuted, fontSize: 14, height: 1.4),
+          ExpandableText(
+            text: match.summary,
+            maxLines: 3,
+            style: const TextStyle(color: AppColors.silver, fontSize: 14, height: 1.5),
           ),
           const SizedBox(height: AppSpacing.space16),
           if (match.matchedCompetencies.isNotEmpty) ...[

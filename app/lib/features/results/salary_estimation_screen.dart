@@ -4,6 +4,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/animated_app_background.dart';
+import '../../../shared/widgets/expandable_text.dart';
 import '../../../shared/widgets/section_label.dart';
 import '../../../shared/widgets/valora_app_bar.dart';
 import 'models/salary_estimation.dart';
@@ -154,15 +155,16 @@ class _ResultView extends StatelessWidget {
 
         const SizedBox(height: AppSpacing.space24),
 
-        // 2. Resumen (Reemplazo de ScoreGrid)
+        // 2. Resumen (Expandible)
         Container(
           padding: const EdgeInsets.all(AppSpacing.space20),
           decoration: BoxDecoration(
             color: AppColors.silver.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(16),
           ),
-          child: Text(
-            result.summary,
+          child: ExpandableText(
+            text: result.summary,
+            maxLines: 4,
             style: const TextStyle(
               color: AppColors.silver,
               fontSize: 15,

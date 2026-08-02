@@ -10,6 +10,7 @@ import '../results/models/salary_estimation.dart';
 import '../results/history_screen.dart';
 import '../results/job_match_screen.dart';
 import '../../shared/widgets/match_badge.dart';
+import '../../shared/widgets/expandable_text.dart';
 import 'services/dashboard_service.dart';
 
 class HomeTab extends StatefulWidget {
@@ -297,7 +298,11 @@ class _HomeTabState extends State<HomeTab> {
             style: const TextStyle(color: AppColors.silver, fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.5),
           ),
           const SizedBox(height: 8),
-          Text(est.summary, style: const TextStyle(color: AppColors.silverMuted, fontSize: 14, height: 1.4)),
+          ExpandableText(
+            text: est.summary,
+            maxLines: 2,
+            style: const TextStyle(color: AppColors.silverMuted, fontSize: 14, height: 1.4),
+          ),
         ],
       ),
     );
@@ -448,7 +453,11 @@ class _HomeTabState extends State<HomeTab> {
               style: const TextStyle(color: AppColors.colorSuccess, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            Text(match.summary, style: const TextStyle(color: AppColors.silverMuted, fontSize: 14, height: 1.4)),
+            ExpandableText(
+              text: match.summary,
+              maxLines: 2,
+              style: const TextStyle(color: AppColors.silverMuted, fontSize: 14, height: 1.4),
+            ),
             const SizedBox(height: 24),
             if (match.matchedCompetencies.isNotEmpty) ...[
               const Text('Habilidades fuertes:', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
