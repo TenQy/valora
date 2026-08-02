@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.39.7";
-
+import { GoogleGenerativeAI } from "npm:@google/generative-ai";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -244,21 +244,35 @@ Deno.serve(async (req: Request) => {
     }
     compBonus = Math.min(compBonus, 0.12);
 
-    // 4. Idiomas (Inglés B2 +10%, C1/C2 +18%)
+    // 4. Idiomas
     let langBonus = 0;
+    let nativosContados = 0;
     for (const lang of userLangs) {
       const langObj = lang.languages as Record<string, unknown> | null;
       const levelObj = lang.language_levels as Record<string, unknown> | null;
       const langName = (langObj?.name as string) ?? "";
       const lvlName = (levelObj?.name as string) ?? "";
 
-      if (langName.toLowerCase().includes("ingl") || langName.toLowerCase().includes("engl")) {
-        const bonus = ["C1", "C2", "Nativo"].includes(lvlName) ? 0.18 : ["B2"].includes(lvlName) ? 0.10 : 0.04;
-        langBonus += bonus;
-        const label = `Inglés ${lvlName}`;
-        influentialFactors.push(label);
-        highlightCandidates.push({ label, rawBonus: bonus });
+      if (lvlName === "Nativo") {
+        nativosContados++;
+        if (nativosContados === 1) {
+          continue; // Ignorar el primer idioma nativo
+        }
       }
+
+      const isEnglish = langName.toLowerCase().includes("ingl") || langName.toLowerCase().includes("engl");
+      let bonus = 0;
+
+      if (isEnglish) {
+        bonus = ["C1", "C2", "Nativo"].includes(lvlName) ? 0.18 : ["B2"].includes(lvlName) ? 0.10 : 0.04;
+      } else {
+        bonus = ["C1", "C2", "Nativo"].includes(lvlName) ? 0.10 : ["B2"].includes(lvlName) ? 0.05 : 0.02;
+      }
+
+      langBonus += bonus;
+      const label = `${langName} ${lvlName}`;
+      influentialFactors.push(label);
+      highlightCandidates.push({ label, rawBonus: bonus });
     }
 
     // 5. Certificaciones (+3% cada una, tope +8%)
@@ -339,6 +353,87 @@ Deno.serve(async (req: Request) => {
       summary = `Basado en tu ${expText}${compText}, tienes un perfil con potencial de nivel ${level} en el área de ${areaName}. Este rango refleja el valor actual que las empresas están dispuestas a pagar por tu perfil en el mercado.`;
     }
 
+    // =========================================================================
+    // REFINAMIENTO CON IA (GEMINI)
+    // =========================================================================
+    let finalMin = estimatedMinSalary;
+    let finalMax = estimatedMaxSalary;
+    let finalSummary = summary;
+
+    try {
+      const apiKey = Deno.env.get("GEMINI_API_KEY");
+      if (apiKey) {
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const modelsToTry = [
+          "gemini-3.5-flash-lite",
+          "gemini-3.1-flash",
+          "gemini-3.1-flash-lite",
+          "gemini-2.5-flash",
+          "gemini-2.5-flash-lite",
+        ];
+
+        const profileJson = JSON.stringify({
+          level, yearsExp, areaName, userComps, userLangs, certs
+        }, null, 2);
+
+        const prompt = `
+Eres un experto reclutador y analista de salarios en el sector profesional.
+Tu objetivo es analizar un perfil profesional y refinar su rango salarial matemáticamente calculado para hacerlo más preciso, detectando posibles anomalías de coherencia.
+
+Perfil del Usuario:
+${profileJson}
+
+Rango Salarial Base Calculado Matemáticamente:
+Mínimo: $${estimatedMinSalary} MXN
+Máximo: $${estimatedMaxSalary} MXN
+
+Instrucciones:
+1. Analiza el perfil buscando anomalías (por ejemplo, un Junior con 15 años de experiencia, o un "Desarrollador de Software" con la competencia "Cirugía Médica").
+2. Si detectas anomalías de coherencia, penaliza ligeramente el rango salarial (reduciendo un poco el máximo) porque indica que el perfil no está enfocado o los datos son inconsistentes. Si el perfil es altamente coherente y especializado, puedes acotar (volver más preciso) el rango salarial (ej. subir un poco el mínimo y bajar un poco el máximo para dar un rango de mayor confianza).
+3. NUNCA inventes rangos muy por fuera del rango base calculado. Usa el rango base como tu ancla estricta, solo refínalo (acótalo) para mayor precisión.
+4. Genera un 'summary' (resumen) redactado directamente para el usuario de unas 2 a 3 oraciones (en segunda persona). Explícale de forma profesional por qué tiene ese valor salarial, mencionando sus habilidades clave o años de experiencia. Si detectaste anomalías, menciónalas de forma constructiva (ej. "Notamos habilidades fuera de tu área que no añaden valor directo a tu rol principal..."). NUNCA uses markdown en el summary.
+5. Retorna ÚNICAMENTE un JSON válido con este formato exacto:
+{
+  "estimated_min_salary": 26000,
+  "estimated_max_salary": 32000,
+  "summary": "Texto del resumen personalizado..."
+}
+`;
+        let responseText = "";
+        for (const modelName of modelsToTry) {
+          try {
+            const model = genAI.getGenerativeModel({ model: modelName });
+            const result = await model.generateContent({
+              contents: [{ role: "user", parts: [{ text: prompt }] }],
+              generationConfig: { temperature: 0.2 }
+            });
+            responseText = result.response.text();
+            break;
+          } catch (e) {
+            console.warn(`Gemini model ${modelName} failed:`, e);
+          }
+        }
+
+        if (responseText) {
+          let cleanedJson = responseText.trim();
+          if (cleanedJson.startsWith("```json")) {
+            cleanedJson = cleanedJson.replace(/^```json/, "").replace(/```$/, "").trim();
+          } else if (cleanedJson.startsWith("```")) {
+            cleanedJson = cleanedJson.replace(/^```/, "").replace(/```$/, "").trim();
+          }
+          const parsed = JSON.parse(cleanedJson);
+          if (parsed.estimated_min_salary && parsed.estimated_max_salary && parsed.summary) {
+            finalMin = parsed.estimated_min_salary;
+            finalMax = parsed.estimated_max_salary;
+            finalSummary = parsed.summary;
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Gemini Salary Refinement Error:", e);
+      // Fallback silencioso a los valores matemáticos
+    }
+
     if (profileId && profileAreaId) {
       // Evitar guardar historial si el valor es exactamente el mismo que el anterior
       const { data: lastEst } = await supabase
@@ -350,30 +445,30 @@ Deno.serve(async (req: Request) => {
         .maybeSingle();
 
       const isDuplicate = lastEst &&
-        lastEst.estimated_min_salary === estimatedMinSalary &&
-        lastEst.estimated_max_salary === estimatedMaxSalary &&
-        lastEst.summary === summary;
+        lastEst.estimated_min_salary === finalMin &&
+        lastEst.estimated_max_salary === finalMax &&
+        lastEst.summary === finalSummary;
 
       if (!isDuplicate) {
         await supabase.from("salary_estimations").insert({
           profile_id: profileId,
           professional_area_id: profileAreaId,
-          estimated_min_salary: estimatedMinSalary,
-          estimated_max_salary: estimatedMaxSalary,
+          estimated_min_salary: finalMin,
+          estimated_max_salary: finalMax,
           currency: "MXN",
           professional_level: level,
-          summary: summary,
+          summary: finalSummary,
         });
       }
     }
 
     return new Response(
       JSON.stringify({
-        estimated_min_salary: estimatedMinSalary,
-        estimated_max_salary: estimatedMaxSalary,
+        estimated_min_salary: finalMin,
+        estimated_max_salary: finalMax,
         currency: "MXN",
         professional_level: level,
-        summary: summary,
+        summary: finalSummary,
         influential_factors: influentialFactors,
         top_highlights: topHighlights,
         factor_breakdown: factorBreakdown,

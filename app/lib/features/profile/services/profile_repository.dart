@@ -1,5 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-
+import '../../../core/database/local_db_helper.dart';
 import '../models/catalog_models.dart';
 import '../models/profile_models.dart';
 import 'language_flags.dart';
@@ -208,6 +208,11 @@ class ProfileRepository {
         }).toList(),
       );
     }
+
+    // 5. Limpiar estimación en SQLite para forzar recalculación con IA
+    await LocalDbHelper.instance.clearSalaryEstimation(profileId);
+    await LocalDbHelper.instance.clearSalaryEstimation(user.id);
+    await LocalDbHelper.instance.clearSalaryEstimation('guest');
 
     return profileId;
   }
