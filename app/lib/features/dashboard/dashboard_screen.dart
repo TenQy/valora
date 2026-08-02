@@ -18,6 +18,7 @@ import '../results/job_match_screen.dart';
 import '../results/salary_estimation_screen.dart';
 import '../profile/edit_profile_screen.dart';
 import '../profile/services/profile_repository.dart';
+import '../../core/services/notification_service.dart';
 import 'home_tab.dart';
 
 /// Dashboard con navegación inferior (ver ROADMAP.md Fase 7).
@@ -34,8 +35,9 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingObserver {
   final _authService = AuthService(Supabase.instance.client);
+  final _notificationService = NotificationService();
 
   int _currentIndex = 0;
   bool _isSigningOut = false;
@@ -49,17 +51,54 @@ class _DashboardScreenState extends State<DashboardScreen> {
   ];
 
   bool _checkingProfile = true;
+  bool _isProfileIncomplete = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _initNotifications();
     _checkProfileCompletion();
+  }
+
+  Future<void> _initNotifications() async {
+    await _notificationService.initialize();
+    await _notificationService.requestPermissions();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
+      if (_isProfileIncomplete) {
+        // Programa la notificación para 3 segundos en el futuro (incluso si se mata la app)
+        _notificationService.scheduleProfileReminderNotification(
+          delay: const Duration(seconds: 3),
+        );
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      // Si el usuario vuelve a entrar antes de que suene o ya sonó, cancelamos pendientes
+      _notificationService.cancelAllNotifications();
+    }
   }
 
   Future<void> _checkProfileCompletion() async {
     try {
       final repo = ProfileRepository(Supabase.instance.client);
       final profile = await repo.fetchCurrentProfile();
+      
+      if (profile != null) {
+        // Calculamos empíricamente si está debajo del 70%
+        _isProfileIncomplete = profile.competencies.isEmpty || 
+                              profile.languages.isEmpty || 
+                              profile.professionalArea == 'Sin área';
+      }
+
       if (profile == null || profile.professionalArea == 'Sin área') {
         final prefs = await SharedPreferences.getInstance();
         final hasSeenTutorial = prefs.getBool('has_seen_tutorial') ?? false;
