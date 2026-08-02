@@ -104,10 +104,10 @@ Deno.serve(async (req: Request) => {
       ? `$${lastEstimation.estimated_min_salary} - $${lastEstimation.estimated_max_salary} MXN`
       : 'Desconocido';
 
-    // 2. Fetch Job Roles for the area
+    // 2. Fetch Job Roles for the area (Optimizado sin description para ahorrar tokens)
     const { data: jobRoles, error: rolesError } = await supabase
       .from("job_roles")
-      .select("id, name, description, min_salary, max_salary")
+      .select("id, name, min_salary, max_salary")
       .eq("professional_area_id", profileRow.professional_area_id)
       .eq("is_active", true);
 
@@ -151,19 +151,15 @@ ${currentValuationText}
 
 Instrucciones:
 1. Analiza el nivel, carrera, años de experiencia, lenguajes, certificaciones y competencias del usuario.
-2. Compara esto con la descripción de cada rol en el catálogo.
+   - REGLA CRÍTICA: Si el usuario NO tiene competencias ni bio, NO inventes habilidades. Devuelve un arreglo vacío [] en "matched_competencies". Todas las habilidades requeridas por el rol deben ir en "missing_competencies".
+2. Compara esto con el nombre de cada rol en el catálogo y utiliza tu conocimiento experto para inferir qué exige cada rol.
 3. Selecciona los 3 roles con mayor compatibilidad.
 4. Ajusta el salario estimado (min/max) dentro del rango del rol, pero ANCLADO estrechamente al mercado real en México y a su "Valoración Monetaria Actual". 
-   - REGLA ESTRICTA: Un "Practicante", "Estudiante" o "Junior" rara vez supera los 15,000 a 25,000 MXN en México, sin importar cuán alto sea el rango del catálogo. ¡NUNCA inventes salarios de 45k-70k para roles iniciales! Sé realista y conservador.
-5. Genera una cadena de búsqueda (search_query) altamente optimizada para Google Jobs, siguiendo estas reglas estrictas:
-   - NO incluyas palabras como "trabajo de" o "empleo de", busca el rol directo.
-   - NO incluyas habilidades técnicas en la cadena.
-   - Si el nivel es "Estudiante", omite el nivel (ej. "Desarrollador Frontend").
-   - Si el nivel es "Practicante", ponlo antes (ej. "practicante de Desarrollador Frontend").
-   - Si el nivel es "Junior", ponlo después (ej. "Desarrollador Frontend junior").
-   - Si el nivel es "Semi Senior", usa el término "mid level" al final (ej. "Desarrollador Frontend mid level").
-   - Si el nivel es "Senior", ponlo después (ej. "Desarrollador Frontend senior").
-   - Si el nivel es "Especialista", ponlo después (ej. "Desarrollador Frontend especialista").
+   - REGLA ESTRICTA: Un "Practicante", "Estudiante" o "Junior" rara vez supera los 15,000 a 25,000 MXN en México. Sé realista.
+5. Genera una cadena de búsqueda (search_query) altamente optimizada para Google Jobs:
+   - Usa el nombre puro del rol (ej. "Desarrollador Frontend") sin añadir niveles confusos (ni "mid level", ni "especialista", etc).
+   - EXCEPCIÓN 1: Si el nivel es "Practicante" o "Pasante", busca "Practicante de [Rol]".
+   - EXCEPCIÓN 2: Si el nivel es "Junior", busca "[Rol] junior".
 6. Retorna ÚNICAMENTE un arreglo JSON con el siguiente formato exacto y sin markdown extra:
 [
   {
