@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -29,6 +30,36 @@ class _HomeTabState extends State<HomeTab> {
   final _service = DashboardService();
   late Future<DashboardData> _future;
 
+  DashboardData get _dummyData => DashboardData(
+        userName: 'Usuario',
+        professionalLevel: 'Senior',
+        profileCompleteness: 85,
+        latestEstimation: const SalaryEstimation(
+          estimatedMinSalary: 35000,
+          estimatedMaxSalary: 45000,
+          currency: 'MXN',
+          professionalLevel: 'Senior',
+          summary: 'Basado en tus habilidades técnicas de alto nivel, esto es lo que ofrece el mercado.',
+          influentialFactors: [],
+          topHighlights: [],
+          factorBreakdown: [],
+        ),
+        latestMatches: [
+          JobMatchResult(
+            jobRoleId: 'dummy',
+            jobRoleName: 'Desarrollador Flutter Senior',
+            matchPercentage: 90,
+            estimatedMinSalary: 0,
+            estimatedMaxSalary: 0,
+            currency: 'MXN',
+            searchQuery: 'Flutter',
+            matchedCompetencies: [],
+            missingCompetencies: [],
+            summary: 'Cumples con la gran mayoría de los requisitos.',
+          ),
+        ],
+      );
+
   @override
   void initState() {
     super.initState();
@@ -48,41 +79,44 @@ class _HomeTabState extends State<HomeTab> {
       child: FutureBuilder<DashboardData>(
         future: _future,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.silver),
-            );
-          }
-
           if (snapshot.hasError) {
             return _buildError(snapshot.error.toString());
           }
 
-          final data = snapshot.data;
-          if (data == null) {
+          final isLoading = snapshot.connectionState == ConnectionState.waiting;
+          final data = isLoading ? _dummyData : snapshot.data;
+
+          if (!isLoading && data == null) {
             return _buildError('No se encontraron datos.');
           }
 
-          return ListView(
-            padding: const EdgeInsets.all(AppSpacing.space24),
-            children: [
-              _buildHeader(data),
-              const SizedBox(height: AppSpacing.space24),
-              _buildCompleteness(data),
-              const SizedBox(height: AppSpacing.space32),
-              _buildActions(),
-              const SizedBox(height: AppSpacing.space32),
-              if (data.latestEstimation != null) ...[
-                _buildLatestEstimation(data.latestEstimation!),
-                const SizedBox(height: AppSpacing.space32),
+          return Skeletonizer(
+            enabled: isLoading,
+            effect: ShimmerEffect(
+              baseColor: AppColors.bgSurface,
+              highlightColor: AppColors.silver.withValues(alpha: 0.1),
+            ),
+            child: ListView(
+              padding: const EdgeInsets.all(AppSpacing.space24),
+              children: [
+                _buildHeader(data!),
+                const SizedBox(height: 24),
+                _buildCompleteness(data),
+                const SizedBox(height: 32),
+                _buildActions(),
+                const SizedBox(height: 32),
+                if (data.latestEstimation != null) ...[
+                  _buildLatestEstimation(data.latestEstimation!),
+                  const SizedBox(height: 32),
+                ],
+                if (data.latestMatches.isNotEmpty) ...[
+                  _buildLatestMatches(data.latestMatches),
+                  const SizedBox(height: 32),
+                ],
+                _buildImprovementGuide(data),
+                const SizedBox(height: 64),
               ],
-              if (data.latestMatches.isNotEmpty) ...[
-                _buildLatestMatches(data.latestMatches),
-                const SizedBox(height: AppSpacing.space32),
-              ],
-              _buildImprovementGuide(data),
-              const SizedBox(height: 64),
-            ],
+            ),
           );
         },
       ),
@@ -109,23 +143,24 @@ class _HomeTabState extends State<HomeTab> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Hola, ${data.userName}', style: AppTextStyles.h1),
-        const SizedBox(height: 4),
-        Text(
-          data.professionalLevel != '—' ? 'Nivel: ${data.professionalLevel}' : 'Completa tu perfil para empezar',
-          style: const TextStyle(color: AppColors.silverMuted, fontSize: 16),
-        ),
       ],
     );
   }
 
   Widget _buildCompleteness(DashboardData data) {
-    final color = data.profileCompleteness == 100 ? AppColors.colorSuccess : AppColors.colorWarning;
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.space16),
+      padding: const EdgeInsets.all(AppSpacing.space20),
       decoration: BoxDecoration(
         color: AppColors.bgSurface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.borderDefault),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,16 +169,34 @@ class _HomeTabState extends State<HomeTab> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('Perfil completado', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
-              Text('${data.profileCompleteness}%', style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+              Text('${data.profileCompleteness}%', style: const TextStyle(color: AppColors.silver, fontWeight: FontWeight.bold)),
             ],
           ),
-          const SizedBox(height: 12),
-          LinearProgressIndicator(
-            value: data.profileCompleteness / 100,
-            backgroundColor: AppColors.bgInput,
-            color: color,
-            minHeight: 8,
-            borderRadius: BorderRadius.circular(4),
+          const SizedBox(height: 16),
+          Container(
+            height: 8,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: AppColors.bgInput,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            alignment: Alignment.centerLeft,
+            child: FractionallySizedBox(
+              widthFactor: data.profileCompleteness / 100,
+              child: Skeleton.leaf(
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(4),
+                    gradient: const LinearGradient(
+                      colors: [
+                        Color(0xFF2E7D32),
+                        AppColors.colorSuccess,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -192,11 +245,25 @@ class _HomeTabState extends State<HomeTab> {
 
   Widget _buildLatestEstimation(SalaryEstimation est) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.space20),
+      padding: const EdgeInsets.all(AppSpacing.space24),
       decoration: BoxDecoration(
-        color: AppColors.silver.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.silver.withValues(alpha: 0.3)),
+        gradient: LinearGradient(
+          colors: [
+            AppColors.bgSurface,
+            AppColors.bgSurface.withValues(alpha: 0.6),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.silver.withValues(alpha: 0.15)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,22 +271,33 @@ class _HomeTabState extends State<HomeTab> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Última estimación', style: TextStyle(color: AppColors.silver, fontSize: 14)),
+              const Row(
+                children: [
+                  Icon(Icons.monetization_on, color: AppColors.silver, size: 20),
+                  SizedBox(width: 8),
+                  Text('Última estimación', style: TextStyle(color: AppColors.silver, fontSize: 14, fontWeight: FontWeight.bold)),
+                ],
+              ),
               TextButton(
                 onPressed: () {
                   Navigator.of(context).push(MaterialPageRoute(builder: (_) => const HistoryScreen()));
                 },
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
                 child: const Text('Historial', style: TextStyle(fontSize: 13, color: AppColors.silver)),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           Text(
             '\$${Formatters.formatThousands(est.estimatedMinSalary)} - \$${Formatters.formatThousands(est.estimatedMaxSalary)} ${est.currency}',
-            style: const TextStyle(color: AppColors.silver, fontSize: 24, fontWeight: FontWeight.bold),
+            style: const TextStyle(color: AppColors.silver, fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.5),
           ),
-          const SizedBox(height: 4),
-          Text(est.summary, style: const TextStyle(color: AppColors.silverMuted, fontSize: 13, height: 1.3)),
+          const SizedBox(height: 8),
+          Text(est.summary, style: const TextStyle(color: AppColors.silverMuted, fontSize: 14, height: 1.4)),
         ],
       ),
     );
