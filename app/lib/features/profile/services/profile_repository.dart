@@ -209,10 +209,14 @@ class ProfileRepository {
       );
     }
 
-    // 5. Limpiar estimación en SQLite para forzar recalculación con IA
+    // 5. Limpiar caché en SQLite para forzar recalculación con IA
     await LocalDbHelper.instance.clearSalaryEstimation(profileId);
     await LocalDbHelper.instance.clearSalaryEstimation(user.id);
     await LocalDbHelper.instance.clearSalaryEstimation('guest');
+
+    await LocalDbHelper.instance.clearJobMatches(profileId);
+    await LocalDbHelper.instance.clearJobMatches(user.id);
+    await LocalDbHelper.instance.clearJobMatches('guest');
 
     return profileId;
   }

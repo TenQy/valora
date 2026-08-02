@@ -19,9 +19,22 @@ class LocalDbHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _createDB,
+      onUpgrade: _upgradeDB,
     );
+  }
+
+  Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('''
+        CREATE TABLE local_job_matches (
+          profile_id TEXT PRIMARY KEY,
+          matches_json TEXT NOT NULL,
+          created_at TEXT NOT NULL
+        )
+      ''');
+    }
   }
 
   Future<void> _createDB(Database db, int version) async {
@@ -30,6 +43,15 @@ class LocalDbHelper {
       CREATE TABLE local_estimations (
         profile_id TEXT PRIMARY KEY,
         estimation_json TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      )
+    ''');
+
+    // Tabla para guardar job matches
+    await db.execute('''
+      CREATE TABLE local_job_matches (
+        profile_id TEXT PRIMARY KEY,
+        matches_json TEXT NOT NULL,
         created_at TEXT NOT NULL
       )
     ''');
@@ -79,6 +101,46 @@ class LocalDbHelper {
     final db = await instance.database;
     await db.delete(
       'local_estimations',
+      where: 'profile_id = ?',
+      whereArgs: [profileId],
+    );
+  }
+
+  /// Guarda los resultados de compatibilidad laboral en la base de datos local
+  Future<void> saveJobMatches(String profileId, String jsonStr) async {
+    final db = await instance.database;
+    await db.insert(
+      'local_job_matches',
+      {
+        'profile_id': profileId,
+        'matches_json': jsonStr,
+        'created_at': DateTime.now().toIso8601String(),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  /// Recupera los resultados de compatibilidad laboral guardados
+  Future<String?> getJobMatches(String profileId) async {
+    final db = await instance.database;
+    final maps = await db.query(
+      'local_job_matches',
+      columns: ['matches_json'],
+      where: 'profile_id = ?',
+      whereArgs: [profileId],
+    );
+
+    if (maps.isNotEmpty) {
+      return maps.first['matches_json'] as String;
+    }
+    return null;
+  }
+
+  /// Limpia el caché de compatibilidad laboral cuando se actualiza el perfil
+  Future<void> clearJobMatches(String profileId) async {
+    final db = await instance.database;
+    await db.delete(
+      'local_job_matches',
       where: 'profile_id = ?',
       whereArgs: [profileId],
     );

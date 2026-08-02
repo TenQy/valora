@@ -12,10 +12,10 @@ class MatchBadge extends StatelessWidget {
       constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width - 64),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: hasIt ? AppColors.colorSuccess.withValues(alpha: 0.1) : AppColors.colorWarning.withValues(alpha: 0.1),
+        color: hasIt ? AppColors.colorSuccess.withValues(alpha: 0.1) : AppColors.silver.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: hasIt ? AppColors.colorSuccess.withValues(alpha: 0.2) : AppColors.colorWarning.withValues(alpha: 0.2),
+          color: hasIt ? AppColors.colorSuccess.withValues(alpha: 0.2) : AppColors.silver.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -24,7 +24,7 @@ class MatchBadge extends StatelessWidget {
           Icon(
             hasIt ? Icons.check_circle : Icons.arrow_upward,
             size: 14,
-            color: hasIt ? AppColors.colorSuccess : AppColors.colorWarning,
+            color: hasIt ? AppColors.colorSuccess : AppColors.silver,
           ),
           const SizedBox(width: 4),
           Flexible(
@@ -32,7 +32,7 @@ class MatchBadge extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: 12,
-                color: hasIt ? AppColors.colorSuccess : AppColors.colorWarning,
+                color: hasIt ? AppColors.colorSuccess : AppColors.silver,
               ),
               softWrap: true,
               overflow: TextOverflow.visible,

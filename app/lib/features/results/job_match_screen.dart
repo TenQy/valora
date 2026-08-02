@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -20,22 +21,50 @@ class JobMatchScreen extends StatefulWidget {
   State<JobMatchScreen> createState() => _JobMatchScreenState();
 }
 
+enum _LoadState { loading, success, error }
+
 class _JobMatchScreenState extends State<JobMatchScreen> {
   final _service = ResultsService();
-  late Future<List<JobMatchResult>> _future;
+  
+  _LoadState _state = _LoadState.loading;
+  String _errorMsg = '';
+  List<JobMatchResult> _matches = [];
+
+  // Datos dummy para el skeleton
+  final _dummyMatches = List.generate(3, (index) => JobMatchResult(
+    jobRoleId: 'dummy',
+    jobRoleName: 'Cargando posición...',
+    matchPercentage: 100,
+    matchedCompetencies: ['Habilidad 1', 'Habilidad 2', 'Habilidad 3'],
+    missingCompetencies: ['Habilidad 4', 'Habilidad 5'],
+    estimatedMinSalary: 5000,
+    estimatedMaxSalary: 8000,
+    currency: 'USD',
+    summary: 'Calculando compatibilidad de tu perfil con esta posición de acuerdo a los requerimientos del mercado actual...',
+    searchQuery: 'Cargando',
+  ));
 
   @override
   void initState() {
     super.initState();
-    if (widget.savedMatches != null) {
-      _future = Future.value(widget.savedMatches!);
-    } else {
-      _future = _service.fetchJobMatches();
-    }
+    _loadData();
   }
 
-  void _retry() {
-    setState(() => _future = _service.fetchJobMatches());
+  Future<void> _loadData() async {
+    setState(() => _state = _LoadState.loading);
+    try {
+      if (widget.savedMatches != null) {
+        _matches = widget.savedMatches!;
+      } else {
+        _matches = await _service.fetchJobMatches();
+      }
+      setState(() => _state = _LoadState.success);
+    } catch (e) {
+      setState(() {
+        _errorMsg = e.toString().replaceAll('Exception: ', '');
+        _state = _LoadState.error;
+      });
+    }
   }
 
   @override
@@ -43,67 +72,66 @@ class _JobMatchScreenState extends State<JobMatchScreen> {
     return Scaffold(
       backgroundColor: AppColors.bgPage,
       appBar: const ValoraAppBar(title: 'Compatibilidad Laboral'),
-      body: FutureBuilder<List<JobMatchResult>>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(strokeWidth: 2, color: AppColors.silver),
-                  SizedBox(height: AppSpacing.space16),
-                  Text('Analizando tu perfil con IA...', style: TextStyle(color: AppColors.textMuted)),
-                ],
-              ),
-            );
-          }
+      body: _buildBody(),
+    );
+  }
 
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.space24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.error_outline, size: 48, color: AppColors.colorError),
-                    const SizedBox(height: AppSpacing.space16),
-                    Text(
-                      '${snapshot.error}'.replaceAll('Exception: ', ''),
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: AppColors.textPrimary),
-                    ),
-                    const SizedBox(height: AppSpacing.space24),
-                    ElevatedButton(
-                      onPressed: _retry,
-                      child: const Text('Reintentar'),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-
-          final matches = snapshot.data ?? [];
-
-          if (matches.isEmpty) {
-            return const Center(
-              child: Text(
-                'No encontramos posiciones compatibles.\nIntenta agregar más habilidades a tu perfil.',
+  Widget _buildBody() {
+    if (_state == _LoadState.error) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.space24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: AppColors.colorError),
+              const SizedBox(height: AppSpacing.space16),
+              Text(
+                _errorMsg,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.textMuted),
+                style: const TextStyle(color: AppColors.textPrimary),
               ),
-            );
-          }
+              const SizedBox(height: AppSpacing.space24),
+              ElevatedButton(
+                onPressed: _loadData,
+                child: const Text('Reintentar'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
-          return ListView.separated(
-            padding: const EdgeInsets.all(AppSpacing.space24),
-            itemCount: matches.length,
-            separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.space24),
-            itemBuilder: (context, index) {
-              return JobMatchCard(match: matches[index], rank: index + 1);
-            },
-          );
+    if (_state == _LoadState.success && _matches.isEmpty) {
+      return const Center(
+        child: Text(
+          'No encontramos posiciones compatibles.\nIntenta agregar más habilidades a tu perfil.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: AppColors.textMuted),
+        ),
+      );
+    }
+
+    final isLoading = _state == _LoadState.loading;
+    final displayMatches = isLoading ? _dummyMatches : _matches;
+
+    return Skeletonizer(
+      enabled: isLoading,
+      effect: const ShimmerEffect(
+        baseColor: AppColors.bgSurface,
+        highlightColor: AppColors.borderDefault,
+        duration: Duration(seconds: 2),
+      ),
+      child: ListView.separated(
+        padding: const EdgeInsets.all(AppSpacing.space24),
+        itemCount: displayMatches.length,
+        separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.space24),
+        itemBuilder: (context, index) {
+          // Si estamos cargando, usamos un widget estático para el Skeleton para evitar errores en animaciones
+          if (isLoading) {
+            return _JobMatchCardSkeleton(match: displayMatches[index], rank: index + 1);
+          }
+          return JobMatchCard(match: displayMatches[index], rank: index + 1);
         },
       ),
     );
@@ -243,5 +271,108 @@ class JobMatchCard extends StatelessWidget {
     if (percentage >= 80) return AppColors.colorSuccess;
     if (percentage >= 60) return AppColors.colorWarning;
     return AppColors.colorError;
+  }
+}
+
+class _JobMatchCardSkeleton extends StatelessWidget {
+  const _JobMatchCardSkeleton({required this.match, required this.rank});
+
+  final JobMatchResult match;
+  final int rank;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.bgSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderDefault),
+      ),
+      padding: const EdgeInsets.all(AppSpacing.space20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: AppColors.silver.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Text('#$rank'),
+              ),
+              const SizedBox(width: AppSpacing.space12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(match.jobRoleName, style: AppTextStyles.subtitle),
+                    const SizedBox(height: 4),
+                    const Text('\$5,000 - \$8,000 USD / mes'),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.silver.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text('100%'),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.space16),
+          Text(match.summary, maxLines: 3),
+          const SizedBox(height: AppSpacing.space16),
+          const Text('Habilidades que tienes:'),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: match.matchedCompetencies.map((c) => _SkeletonBadge(label: c)).toList(),
+          ),
+          const SizedBox(height: AppSpacing.space16),
+          const Text('Áreas de oportunidad:'),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: match.missingCompetencies.map((c) => _SkeletonBadge(label: c)).toList(),
+          ),
+          const SizedBox(height: AppSpacing.space24),
+          const SizedBox(
+            width: double.infinity,
+            height: 48,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SkeletonBadge extends StatelessWidget {
+  final String label;
+
+  const _SkeletonBadge({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.silver.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.silver.withValues(alpha: 0.2)),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(fontSize: 12, color: AppColors.silver),
+      ),
+    );
   }
 }

@@ -43,8 +43,22 @@ class ResultsService {
     return result;
   }
 
-  /// Llama a la Edge Function `job-match` en Supabase.
+  /// Llama a la Edge Function `job-match` en Supabase (con soporte offline SQLite).
   Future<List<JobMatchResult>> fetchJobMatches({String? profileId}) async {
+    final effectiveProfileId = profileId ?? _client.auth.currentUser?.id ?? 'guest';
+
+    // 1. Intentar cargar desde la base de datos local
+    final cachedData = await LocalDbHelper.instance.getJobMatches(effectiveProfileId);
+    if (cachedData != null) {
+      try {
+        final decodedList = jsonDecode(cachedData) as List;
+        return decodedList.map((json) => JobMatchResult.fromJson(json as Map<String, dynamic>)).toList();
+      } catch (_) {
+        // Si el JSON falla, seguimos a la red
+      }
+    }
+
+    // 2. Si no hay datos locales, ir a la red
     final res = await _client.functions.invoke(
       'job-match',
       body: profileId != null ? {'profile_id': profileId} : {},
@@ -58,6 +72,11 @@ class ResultsService {
     }
 
     final data = List<dynamic>.from(res.data as List);
-    return data.map((json) => JobMatchResult.fromJson(json as Map<String, dynamic>)).toList();
+    final results = data.map((json) => JobMatchResult.fromJson(json as Map<String, dynamic>)).toList();
+
+    // 3. Guardar el nuevo resultado en caché local SQLite
+    await LocalDbHelper.instance.saveJobMatches(effectiveProfileId, jsonEncode(data));
+
+    return results;
   }
 }
