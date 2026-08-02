@@ -162,13 +162,22 @@ class _SplashScreenState extends State<SplashScreen>
                 opacity: _loaderOpacity.value,
                 child: child,
               ),
-              child: const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(
-                  color: AppColors.silverMuted,
-                  strokeWidth: 1,
-                ),
+              child: Column(
+                children: [
+                  const Text('INICIANDO', style: TextStyle(color: AppColors.silverMuted, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 4)),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: 140,
+                    height: 2,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(1),
+                      child: const LinearProgressIndicator(
+                        backgroundColor: AppColors.bgSurface,
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.silver),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
