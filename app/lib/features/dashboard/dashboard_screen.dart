@@ -179,15 +179,6 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
 
   @override
   Widget build(BuildContext context) {
-    if (_checkingProfile) {
-      return const Scaffold(
-        backgroundColor: AppColors.bgPage,
-        body: Center(
-          child: CircularProgressIndicator(color: AppColors.silver, strokeWidth: 2),
-        ),
-      );
-    }
-
     return Scaffold(
       backgroundColor: AppColors.bgPage,
       extendBodyBehindAppBar: true,
