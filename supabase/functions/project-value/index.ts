@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.44.2";
+import { createClient } from "npm:@supabase/supabase-js@2.39.7";
+import { GEMINI_MODELS_FALLBACK } from "../_shared/ai_config.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -86,7 +87,7 @@ Nivel del desarrollador: ${profileData.professional_level} con ${profileData.yea
     const apiKey = Deno.env.get("GEMINI_API_KEY");
     if (!apiKey) throw new Error("API Key de Gemini no configurada");
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODELS_FALLBACK[0]}:generateContent?key=${apiKey}`;
 
     const response = await fetch(geminiUrl, {
       method: "POST",

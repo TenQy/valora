@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.39.7";
 import { GoogleGenerativeAI } from "npm:@google/generative-ai";
+import { GEMINI_MODELS_FALLBACK } from "../_shared/ai_config.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -364,13 +365,7 @@ Deno.serve(async (req: Request) => {
       const apiKey = Deno.env.get("GEMINI_API_KEY");
       if (apiKey) {
         const genAI = new GoogleGenerativeAI(apiKey);
-        const modelsToTry = [
-          "gemini-3.5-flash-lite",
-          "gemini-3.1-flash",
-          "gemini-3.1-flash-lite",
-          "gemini-2.5-flash",
-          "gemini-2.5-flash-lite",
-        ];
+        const modelsToTry = GEMINI_MODELS_FALLBACK;
 
         const profileJson = JSON.stringify({
           level, yearsExp, areaName, userComps, userLangs, certs
