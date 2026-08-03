@@ -11,6 +11,11 @@ const Map<String, String> _flagsByLanguage = {
   'Japonés': '🇯🇵',
   'Coreano': '🇰🇷',
   'Chino mandarín': '🇨🇳',
+  'Chino': '🇨🇳',
+  'Ruso': '🇷🇺',
+  'Ruso (Rusia)': '🇷🇺',
+  'Hindi': '🇮🇳',
+  'Árabe': '🇸🇦',
 };
 
 String flagForLanguage(String languageName) =>

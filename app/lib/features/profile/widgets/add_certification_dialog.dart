@@ -10,10 +10,12 @@ class AddCertificationDialog extends StatefulWidget {
     super.key,
     required this.issuersCatalog,
     required this.repository,
+    this.initialData,
   });
 
   final List<CertificationIssuerItem> issuersCatalog;
   final ProfileRepository repository;
+  final EditableUserCertification? initialData;
 
   @override
   State<AddCertificationDialog> createState() => _AddCertificationDialogState();
@@ -26,6 +28,19 @@ class _AddCertificationDialogState extends State<AddCertificationDialog> {
   bool _isValidating = false;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.initialData != null) {
+      _nameCtrl.text = widget.initialData!.name;
+      _dateCtrl.text = widget.initialData!.issueDate;
+      _selectedIssuer = widget.issuersCatalog.cast<CertificationIssuerItem?>().firstWhere(
+            (issuer) => issuer?.name == widget.initialData!.issuer,
+            orElse: () => null,
+          );
+    }
+  }
+
+  @override
   void dispose() {
     _nameCtrl.dispose();
     _dateCtrl.dispose();
@@ -36,7 +51,7 @@ class _AddCertificationDialogState extends State<AddCertificationDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: AppColors.bgSurface,
-      title: const Text('Agregar Certificación', style: TextStyle(color: Colors.white)),
+      title: Text(widget.initialData == null ? 'Agregar Certificación' : 'Editar Certificación', style: const TextStyle(color: Colors.white)),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -142,7 +157,7 @@ class _AddCertificationDialogState extends State<AddCertificationDialog> {
                 },
           child: _isValidating 
               ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-              : const Text('Agregar'),
+              : Text(widget.initialData == null ? 'Agregar' : 'Guardar'),
         ),
       ],
     );

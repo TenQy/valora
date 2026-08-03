@@ -10,6 +10,8 @@ class ProfessionalAreaItem {
       name: json['name'] as String,
     );
   }
+  
+  Map<String, dynamic> toJson() => {'id': id, 'name': name};
 }
 
 class CompetencyItem {
@@ -43,6 +45,14 @@ class CompetencyItem {
       requiresLevel: json['requires_level'] as bool? ?? true,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'category': category,
+    'requires_level': requiresLevel,
+    'competency_areas': relatedAreaIds.map((id) => {'professional_area_id': id}).toList(),
+  };
 }
 
 class LanguageItem {
@@ -57,6 +67,8 @@ class LanguageItem {
       name: json['name'] as String,
     );
   }
+
+  Map<String, dynamic> toJson() => {'id': id, 'name': name};
 }
 
 class LanguageLevelItem {
@@ -77,6 +89,8 @@ class LanguageLevelItem {
       description: json['description'] as String?,
     );
   }
+
+  Map<String, dynamic> toJson() => {'id': id, 'name': name, 'description': description};
 }
 
 class JobRoleItem {
@@ -97,6 +111,8 @@ class JobRoleItem {
       professionalAreaId: json['professional_area_id'] as String?,
     );
   }
+
+  Map<String, dynamic> toJson() => {'id': id, 'name': name, 'professional_area_id': professionalAreaId};
 }
 
 class CertificationIssuerItem {
@@ -114,6 +130,8 @@ class CertificationIssuerItem {
       name: json['name'] as String,
     );
   }
+
+  Map<String, dynamic> toJson() => {'id': id, 'name': name};
 }
 
 class EditableUserCompetency {
