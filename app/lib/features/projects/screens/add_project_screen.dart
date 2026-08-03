@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/valora_app_bar.dart';
@@ -106,6 +107,9 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
       context: context,
       backgroundColor: AppColors.bgSurface,
       isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+      ),
       builder: (context) {
         return _CompetenciesPickerModal(
           available: _availableCompetencies,
@@ -133,6 +137,9 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
       context: context,
       backgroundColor: AppColors.bgSurface,
       isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+      ),
       builder: (context) {
         return _PlatformsPickerModal(
           available: _availablePlatforms,
@@ -158,6 +165,9 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.bgSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+      ),
       builder: (context) {
         return _SingleSelectModal(
           title: 'Seleccionar Tipo',
@@ -177,6 +187,9 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.bgSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+      ),
       builder: (context) {
         return _SingleSelectModal(
           title: 'Nivel de Complejidad',
@@ -188,6 +201,112 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
           },
         );
       },
+    );
+  }
+
+  Future<void> _confirmDelete(String title, String message, VoidCallback onConfirm) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.bgSurface,
+        title: Text(title, style: const TextStyle(color: Colors.white)),
+        content: Text(message, style: const TextStyle(color: AppColors.textSecondary)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true), 
+            style: TextButton.styleFrom(foregroundColor: AppColors.colorError),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      onConfirm();
+    }
+  }
+
+  void _showAllItemsModal<T>({
+    required String title,
+    required List<T> items,
+    required Widget Function(T item, StateSetter setModalState) builder,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.bgSurface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+      ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          minChildSize: 0.5,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) {
+            return StatefulBuilder(
+              builder: (context, setModalState) {
+                return SafeArea(
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(AppSpacing.space16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
+                            IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                          ],
+                        ),
+                      ),
+                      const Divider(height: 1, color: AppColors.borderSubtle),
+                      Expanded(
+                        child: ListView.builder(
+                          controller: scrollController,
+                          padding: const EdgeInsets.all(AppSpacing.space16),
+                          itemCount: items.length,
+                          itemBuilder: (context, index) => builder(items[index], setModalState),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildEditableList<T>({
+    required List<T> items,
+    required String emptyMessage,
+    required String modalTitle,
+    required Widget Function(T item, StateSetter? setModalState) builder,
+  }) {
+    if (items.isEmpty) {
+      return Text(emptyMessage, style: const TextStyle(color: AppColors.textMuted, fontSize: 13));
+    }
+    const limit = 5;
+    final visibleItems = items.take(limit).toList();
+    return Column(
+      children: [
+        ...visibleItems.map((i) => builder(i, null)),
+        if (items.length > limit)
+          TextButton(
+            onPressed: () => _showAllItemsModal(
+              title: modalTitle,
+              items: items,
+              builder: (item, setModalState) => Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.space8),
+                child: builder(item, setModalState),
+              ),
+            ),
+            child: Text('Ver todas (${items.length})'),
+          ),
+      ],
     );
   }
 
@@ -204,10 +323,14 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
       ),
       body: AnimatedAppBackground(
         child: SafeArea(
-          child: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : Form(
-                  key: _formKey,
+          child: Skeletonizer(
+            enabled: _isLoading,
+            effect: ShimmerEffect(
+              baseColor: AppColors.bgSurface.withValues(alpha: 0.5),
+              highlightColor: AppColors.silverSubtle,
+            ),
+            child: Form(
+              key: _formKey,
                   child: ListView(
                     padding: const EdgeInsets.all(AppSpacing.space24),
                     children: [
@@ -251,20 +374,50 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
                         decoration: const InputDecoration(labelText: 'Tiempo Estimado (ej. 3 meses)'),
                       ),
                       const SizedBox(height: 32),
-                      SectionLabel('Entregables o Plataformas'),
+                      SectionLabel(
+                        'Entregables o Plataformas',
+                        trailing: _selectedPlatforms.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.delete_sweep, color: AppColors.colorError, size: 20),
+                                onPressed: () => _confirmDelete(
+                                  'Borrar todas',
+                                  '¿Estás seguro de que quieres borrar todas las plataformas/entregables?',
+                                  () => setState(() => _selectedPlatforms.clear()),
+                                ),
+                                tooltip: 'Borrar todas',
+                              )
+                            : null,
+                      ),
                       const SizedBox(height: 16),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          for (final plat in _selectedPlatforms)
-                            Chip(
-                              backgroundColor: AppColors.bgSurface,
-                              label: Text(plat, style: const TextStyle(color: Colors.white, fontSize: 13)),
-                              deleteIconColor: AppColors.textMuted,
-                              onDeleted: () => setState(() => _selectedPlatforms.remove(plat)),
+                      _buildEditableList<String>(
+                        items: _selectedPlatforms,
+                        emptyMessage: 'No has agregado plataformas aún.',
+                        modalTitle: 'Todas las Plataformas',
+                        builder: (plat, setModalState) {
+                          return Card(
+                            color: AppColors.bgSurface,
+                            margin: const EdgeInsets.only(bottom: AppSpacing.space8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.sm),
+                              side: const BorderSide(color: AppColors.borderSubtle),
                             ),
-                        ],
+                            child: ListTile(
+                              dense: true,
+                              title: Text(plat, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.colorError),
+                                onPressed: () => _confirmDelete(
+                                  'Borrar entregable',
+                                  '¿Deseas eliminar $plat?',
+                                  () {
+                                    setState(() => _selectedPlatforms.remove(plat));
+                                    if (setModalState != null) setModalState(() {});
+                                  }
+                                ),
+                              ),
+                            ),
+                          );
+                        },
                       ),
                       const SizedBox(height: 12),
                       OutlinedButton.icon(
@@ -273,20 +426,50 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
                         label: const Text('Agregar Entregable / Plataforma'),
                       ),
                       const SizedBox(height: 32),
-                      SectionLabel('Competencias / Herramientas Aplicadas'),
+                      SectionLabel(
+                        'Competencias / Herramientas Aplicadas',
+                        trailing: _selectedCompetencies.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.delete_sweep, color: AppColors.colorError, size: 20),
+                                onPressed: () => _confirmDelete(
+                                  'Borrar todas',
+                                  '¿Estás seguro de que quieres borrar todas las competencias?',
+                                  () => setState(() => _selectedCompetencies.clear()),
+                                ),
+                                tooltip: 'Borrar todas',
+                              )
+                            : null,
+                      ),
                       const SizedBox(height: 16),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          for (final comp in _selectedCompetencies)
-                            Chip(
-                              backgroundColor: AppColors.bgSurface,
-                              label: Text(comp.name, style: const TextStyle(color: Colors.white, fontSize: 13)),
-                              deleteIconColor: AppColors.textMuted,
-                              onDeleted: () => setState(() => _selectedCompetencies.remove(comp)),
+                      _buildEditableList<CompetencyItem>(
+                        items: _selectedCompetencies,
+                        emptyMessage: 'No has agregado competencias aún.',
+                        modalTitle: 'Todas tus Competencias',
+                        builder: (comp, setModalState) {
+                          return Card(
+                            color: AppColors.bgSurface,
+                            margin: const EdgeInsets.only(bottom: AppSpacing.space8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.sm),
+                              side: const BorderSide(color: AppColors.borderSubtle),
                             ),
-                        ],
+                            child: ListTile(
+                              dense: true,
+                              title: Text(comp.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.colorError),
+                                onPressed: () => _confirmDelete(
+                                  'Borrar competencia',
+                                  '¿Deseas eliminar ${comp.name}?',
+                                  () {
+                                    setState(() => _selectedCompetencies.remove(comp));
+                                    if (setModalState != null) setModalState(() {});
+                                  }
+                                ),
+                              ),
+                            ),
+                          );
+                        },
                       ),
                       const SizedBox(height: 12),
                       OutlinedButton.icon(
@@ -304,6 +487,7 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
                     ],
                   ),
                 ),
+              ),
         ),
       ),
     ),
@@ -415,7 +599,7 @@ class _CompetenciesPickerModalState extends State<_CompetenciesPickerModal> {
                     contentPadding: EdgeInsets.zero,
                     title: Text(comp.name, style: const TextStyle(color: Colors.white)),
                     value: isSelected,
-                    activeColor: AppColors.silver,
+                    activeColor: AppColors.green,
                     checkColor: AppColors.bgSurface,
                     side: const BorderSide(color: AppColors.textMuted),
                     onChanged: (bool? checked) {
@@ -485,7 +669,7 @@ class _PlatformsPickerModalState extends State<_PlatformsPickerModal> {
                     contentPadding: EdgeInsets.zero,
                     title: Text(plat, style: const TextStyle(color: Colors.white)),
                     value: isSelected,
-                    activeColor: AppColors.silver,
+                    activeColor: AppColors.green,
                     checkColor: AppColors.bgSurface,
                     side: const BorderSide(color: AppColors.textMuted),
                     onChanged: (bool? checked) {
@@ -521,30 +705,27 @@ class _SingleSelectModal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
+    return SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.space16),
+            child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
+          ),
           Flexible(
-            child: ListView.builder(
+            child: ListView(
               shrinkWrap: true,
-              itemCount: options.length,
-              itemBuilder: (context, index) {
-                final opt = options[index];
+              children: options.map((opt) {
                 final isSelected = opt == selectedValue;
                 return ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(opt, style: const TextStyle(color: Colors.white)),
-                  trailing: isSelected ? const Icon(Icons.check, color: AppColors.silver) : null,
+                  title: Text(opt, style: TextStyle(color: isSelected ? AppColors.green : Colors.white)),
+                  trailing: isSelected ? const Icon(Icons.check, color: AppColors.green) : null,
                   onTap: () => onSelected(opt),
                 );
-              },
+              }).toList(),
             ),
           ),
-          const SizedBox(height: 24),
         ],
       ),
     );
