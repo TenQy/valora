@@ -79,7 +79,7 @@ class ProjectsRepository {
     required String name,
     required String description,
     required String projectType,
-    required String complexity,
+    String complexity = '',
     required String estimatedTime,
     required String platforms,
     required List<CompetencyItem> selectedCompetencies,

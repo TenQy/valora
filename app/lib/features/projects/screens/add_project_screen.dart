@@ -34,7 +34,6 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
   final _timeController = TextEditingController();
 
   String _projectType = 'Personal';
-  String _complexity = 'Media';
 
   final List<String> _availablePlatforms = [
     'App Móvil', 'Sitio Web', 'API / Backend', 'Dashboard',
@@ -79,7 +78,6 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
         name: _nameController.text.trim(),
         description: _descriptionController.text.trim(),
         projectType: _projectType,
-        complexity: _complexity,
         estimatedTime: _timeController.text.trim(),
         platforms: _selectedPlatforms.join(', '),
         selectedCompetencies: _selectedCompetencies,
@@ -182,27 +180,6 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
     );
   }
 
-  void _showComplexityPicker() {
-    final complexities = ['Baja', 'Media', 'Alta'];
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.bgSurface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
-      ),
-      builder: (context) {
-        return _SingleSelectModal(
-          title: 'Nivel de Complejidad',
-          options: complexities,
-          selectedValue: _complexity,
-          onSelected: (val) {
-            setState(() => _complexity = val);
-            Navigator.pop(context);
-          },
-        );
-      },
-    );
-  }
 
   Future<void> _confirmDelete(String title, String message, VoidCallback onConfirm) async {
     final confirmed = await showDialog<bool>(
@@ -338,14 +315,18 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _nameController,
-                        decoration: const InputDecoration(labelText: 'Nombre del Proyecto (ej. Valora App)'),
+                        decoration: const InputDecoration(
+                          labelText: 'Nombre / Título (ej. E-commerce App)',
+                        ),
                         validator: (v) => v!.isEmpty ? 'Requerido' : null,
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _descriptionController,
-                        maxLines: 3,
-                        decoration: const InputDecoration(labelText: 'Descripción corta'),
+                        maxLines: 4,
+                        decoration: const InputDecoration(
+                          labelText: 'Descripción (¿De qué trata y cuál fue tu rol?)',
+                        ),
                         validator: (v) => v!.isEmpty ? 'Requerido' : null,
                       ),
                       const SizedBox(height: 16),
@@ -358,16 +339,7 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
                         ),
                         onTap: _showProjectTypePicker,
                       ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        readOnly: true,
-                        controller: TextEditingController(text: _complexity),
-                        decoration: const InputDecoration(
-                          labelText: 'Nivel de Complejidad',
-                          suffixIcon: Icon(Icons.arrow_drop_down, color: AppColors.textMuted),
-                        ),
-                        onTap: _showComplexityPicker,
-                      ),
+
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _timeController,
