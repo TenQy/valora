@@ -777,21 +777,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           ),
 
                           const SizedBox(height: AppSpacing.space32),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              SectionLabel('Competencias'),
-                              if (_selectedCompetencies.isNotEmpty)
-                                IconButton(
-                                  icon: const Icon(Icons.delete_sweep, color: AppColors.colorError, size: 20),
-                                  onPressed: () => _confirmDelete(
-                                    'Borrar todas',
-                                    '¿Estás seguro de que quieres borrar todas tus competencias?',
-                                    () => setState(() => _selectedCompetencies.clear()),
-                                  ),
-                                  tooltip: 'Borrar todas',
-                                ),
-                            ],
+                          SectionLabel(
+                            'Competencias',
+                            trailing: _selectedCompetencies.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.delete_sweep, color: AppColors.colorError, size: 20),
+                                    onPressed: () => _confirmDelete(
+                                      'Borrar todas',
+                                      '¿Estás seguro de que quieres borrar todas tus competencias?',
+                                      () => setState(() => _selectedCompetencies.clear()),
+                                    ),
+                                    tooltip: 'Borrar todas',
+                                  )
+                                : null,
                           ),
                           const SizedBox(height: AppSpacing.space12),
 
@@ -846,21 +844,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           ),
 
                           const SizedBox(height: AppSpacing.space32),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              SectionLabel('Idiomas'),
-                              if (_selectedLanguages.isNotEmpty)
-                                IconButton(
-                                  icon: const Icon(Icons.delete_sweep, color: AppColors.colorError, size: 20),
-                                  onPressed: () => _confirmDelete(
-                                    'Borrar todos',
-                                    '¿Estás seguro de que quieres borrar todos tus idiomas?',
-                                    () => setState(() => _selectedLanguages.clear()),
-                                  ),
-                                  tooltip: 'Borrar todos',
-                                ),
-                            ],
+                          SectionLabel(
+                            'Idiomas',
+                            trailing: _selectedLanguages.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.delete_sweep, color: AppColors.colorError, size: 20),
+                                    onPressed: () => _confirmDelete(
+                                      'Borrar todos',
+                                      '¿Estás seguro de que quieres borrar todos tus idiomas?',
+                                      () => setState(() => _selectedLanguages.clear()),
+                                    ),
+                                    tooltip: 'Borrar todos',
+                                  )
+                                : null,
                           ),
                           const SizedBox(height: AppSpacing.space12),
 
@@ -914,21 +910,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           ),
 
                           const SizedBox(height: AppSpacing.space32),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              SectionLabel('Certificaciones'),
-                              if (_selectedCertifications.isNotEmpty)
-                                IconButton(
-                                  icon: const Icon(Icons.delete_sweep, color: AppColors.colorError, size: 20),
-                                  onPressed: () => _confirmDelete(
-                                    'Borrar todas',
-                                    '¿Estás seguro de que quieres borrar todas tus certificaciones?',
-                                    () => setState(() => _selectedCertifications.clear()),
-                                  ),
-                                  tooltip: 'Borrar todas',
-                                ),
-                            ],
+                          SectionLabel(
+                            'Certificaciones',
+                            trailing: _selectedCertifications.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.delete_sweep, color: AppColors.colorError, size: 20),
+                                    onPressed: () => _confirmDelete(
+                                      'Borrar todas',
+                                      '¿Estás seguro de que quieres borrar todas tus certificaciones?',
+                                      () => setState(() => _selectedCertifications.clear()),
+                                    ),
+                                    tooltip: 'Borrar todas',
+                                  )
+                                : null,
                           ),
                           const SizedBox(height: AppSpacing.space12),
 

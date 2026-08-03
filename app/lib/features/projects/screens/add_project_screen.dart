@@ -8,16 +8,19 @@ import '../../../shared/widgets/animated_app_background.dart';
 import '../../../shared/widgets/section_label.dart';
 import '../../profile/models/catalog_models.dart';
 import '../../profile/services/profile_repository.dart';
+import '../models/project_model.dart';
 import '../services/projects_repository.dart';
 
 class AddProjectScreen extends StatefulWidget {
   final String profileId;
   final String professionalAreaId;
+  final ProjectModel? projectToEdit;
 
   const AddProjectScreen({
     super.key,
     required this.profileId,
     required this.professionalAreaId,
+    this.projectToEdit,
   });
 
   @override
@@ -50,6 +53,16 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.projectToEdit != null) {
+      final p = widget.projectToEdit!;
+      _nameController.text = p.name;
+      _descriptionController.text = p.description;
+      _projectType = p.projectType.isNotEmpty ? p.projectType : 'Personal';
+      _timeController.text = p.estimatedTime;
+      if (p.platforms.isNotEmpty) {
+        _selectedPlatforms.addAll(p.platforms.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty));
+      }
+    }
     _loadCompetencies();
   }
 
@@ -59,6 +72,11 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
       if (mounted) {
         setState(() {
           _availableCompetencies = comps;
+          if (widget.projectToEdit != null) {
+            _selectedCompetencies.addAll(
+              comps.where((c) => widget.projectToEdit!.competencies.contains(c.name))
+            );
+          }
           _isLoading = false;
         });
       }
@@ -72,16 +90,28 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
     setState(() => _isSaving = true);
 
     try {
-      final projectId = await _repository.addProject(
-        profileId: widget.profileId,
-        professionalAreaId: widget.professionalAreaId,
-        name: _nameController.text.trim(),
-        description: _descriptionController.text.trim(),
-        projectType: _projectType,
-        estimatedTime: _timeController.text.trim(),
-        platforms: _selectedPlatforms.join(', '),
-        selectedCompetencies: _selectedCompetencies,
-      );
+      if (widget.projectToEdit == null) {
+        await _repository.addProject(
+          profileId: widget.profileId,
+          professionalAreaId: widget.professionalAreaId,
+          name: _nameController.text.trim(),
+          description: _descriptionController.text.trim(),
+          projectType: _projectType,
+          estimatedTime: _timeController.text.trim(),
+          platforms: _selectedPlatforms.join(', '),
+          selectedCompetencies: _selectedCompetencies,
+        );
+      } else {
+        await _repository.updateProject(
+          projectId: widget.projectToEdit!.id,
+          name: _nameController.text.trim(),
+          description: _descriptionController.text.trim(),
+          projectType: _projectType,
+          estimatedTime: _timeController.text.trim(),
+          platforms: _selectedPlatforms.join(', '),
+          selectedCompetencies: _selectedCompetencies,
+        );
+      }
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -294,8 +324,8 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
       child: Scaffold(
         backgroundColor: AppColors.bgPage,
       extendBodyBehindAppBar: true,
-      appBar: const ValoraAppBar(
-        title: 'Agregar Proyecto',
+      appBar: ValoraAppBar(
+        title: widget.projectToEdit == null ? 'Agregar Proyecto' : 'Editar Proyecto',
         showBackButton: true,
       ),
       body: AnimatedAppBackground(
@@ -454,7 +484,7 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
                         onPressed: _isSaving ? null : _saveProject,
                         child: _isSaving
                             ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                            : const Text('Guardar Proyecto'),
+                            : Text(widget.projectToEdit == null ? 'Guardar Proyecto' : 'Actualizar Proyecto'),
                       ),
                     ],
                   ),

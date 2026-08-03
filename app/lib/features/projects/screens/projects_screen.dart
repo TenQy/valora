@@ -117,6 +117,23 @@ class _ProjectsTabState extends State<ProjectsTab> {
     ).then((_) => _loadProjects()); // Recargar proyectos al volver
   }
 
+  Future<void> _navigateToAddProject({ProjectModel? projectToEdit}) async {
+    if (_profileId == null) return;
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddProjectScreen(
+          profileId: _profileId!,
+          professionalAreaId: _professionalAreaId ?? '',
+          projectToEdit: projectToEdit,
+        ),
+      ),
+    );
+    if (result == true) {
+      _loadProjects();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -125,6 +142,38 @@ class _ProjectsTabState extends State<ProjectsTab> {
 
     return Column(
       children: [
+        if (_profileId != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(AppSpacing.space24, AppSpacing.space24, AppSpacing.space24, AppSpacing.space8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Agrega, estima y valora tu trabajo',
+                        style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: -0.3),
+                      ),
+                    ],
+                  ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => _navigateToAddProject(),
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text('Agregar'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.silver,
+                    side: const BorderSide(color: AppColors.borderDefault),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+          ),
         Expanded(
           child: _projects == null || _projects!.isEmpty
               ? const Center(
@@ -223,10 +272,19 @@ class _ProjectsTabState extends State<ProjectsTab> {
                               color: AppColors.bgPage,
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: IconButton(
-                              icon: const Icon(Icons.delete_outline, color: AppColors.colorError, size: 20),
-                              onPressed: () => _deleteProject(project.id),
-                              tooltip: 'Eliminar',
+                            child: Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit_outlined, color: AppColors.silver, size: 20),
+                                  onPressed: () => _navigateToAddProject(projectToEdit: project),
+                                  tooltip: 'Editar',
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline, color: AppColors.colorError, size: 20),
+                                  onPressed: () => _deleteProject(project.id),
+                                  tooltip: 'Eliminar',
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -316,35 +374,6 @@ class _ProjectsTabState extends State<ProjectsTab> {
             },
           ),
         ),
-        if (_profileId != null)
-          Padding(
-            padding: const EdgeInsets.only(
-              left: AppSpacing.space24,
-              right: AppSpacing.space24,
-              bottom: AppSpacing.space24,
-            ),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => AddProjectScreen(
-                        profileId: _profileId!,
-                        professionalAreaId: _professionalAreaId ?? '',
-                      ),
-                    ),
-                  );
-                  if (result == true) {
-                    _loadProjects();
-                  }
-                },
-                icon: const Icon(Icons.add, size: 20),
-                label: const Text('Agregar Proyecto'),
-              ),
-            ),
-          ),
       ],
     );
   }

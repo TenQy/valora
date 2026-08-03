@@ -111,6 +111,39 @@ class ProjectsRepository {
     return projectId;
   }
 
+  Future<void> updateProject({
+    required String projectId,
+    required String name,
+    required String description,
+    required String projectType,
+    String complexity = '',
+    required String estimatedTime,
+    required String platforms,
+    required List<CompetencyItem> selectedCompetencies,
+  }) async {
+    // Update project
+    await _client.from('projects').update({
+      'name': name,
+      'description': description,
+      'project_type': projectType,
+      'estimated_time': estimatedTime,
+      'platforms': platforms.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
+    }).eq('id', projectId);
+
+    // Delete existing competencies
+    await _client.from('project_competencies').delete().eq('project_id', projectId);
+
+    // Insert new competencies
+    if (selectedCompetencies.isNotEmpty) {
+      final compData = selectedCompetencies.map((c) => {
+        'project_id': projectId,
+        'competency_id': c.id,
+      }).toList();
+      
+      await _client.from('project_competencies').insert(compData);
+    }
+  }
+
   Future<void> deleteProject(String projectId) async {
     await _client.from('projects').delete().eq('id', projectId);
   }

@@ -38,6 +38,7 @@ serve(async (req) => {
           id,
           professional_level,
           years_experience,
+          bio,
           professional_areas ( name )
         )
       `)
@@ -58,19 +59,28 @@ serve(async (req) => {
 
     const profileData = projectData.profiles;
     const areaName = profileData.professional_areas?.name || "Tecnología";
+    
+    const bioRaw = profileData.bio || "";
+    const bio = bioRaw.length > 800 ? bioRaw.substring(0, 800) + "..." : bioRaw;
 
     // 2. Prompt para Gemini
     const systemPrompt = `
 Eres un experto estimador de proyectos freelance y corporativos en el área de ${areaName}.
-Analiza el siguiente proyecto y estima su valor económico aproximado estrictamente en Pesos Mexicanos (MXN), basándote en la complejidad técnica, tiempo de desarrollo y tecnologías.
-Debes ser extremadamente preciso. El rango entre el valor mínimo y máximo NO debe superar el 20% de diferencia para dar una cifra más certera.
+Analiza detalladamente el siguiente proyecto y estima su valor económico aproximado estrictamente en Pesos Mexicanos (MXN).
+
+REGLAS CRÍTICAS DE EVALUACIÓN:
+1. COHERENCIA: Analiza la relación entre el Nombre/Título, la Descripción y las Tecnologías/Competencias.
+2. PENALIZACIÓN: Si las tecnologías o competencias parecen agregadas al azar y no concuerdan con la descripción, o si la descripción es demasiado vaga (ej. "hice una app"), debes disminuir drásticamente la complejidad y el valor estimado. El valor real depende de cómo se justifica el trabajo en la descripción.
+3. CONTEXTO DEL AUTOR: Ajusta el valor y las expectativas basándote en el nivel profesional y los años de experiencia de la persona.
+4. PRECISIÓN: El rango entre el valor mínimo y máximo NO debe superar el 20% de diferencia.
+
 Regresa la respuesta ÚNICAMENTE en JSON válido con el siguiente formato:
 {
   "estimated_min_value": 15000,
-  "estimated_max_value": 30000,
+  "estimated_max_value": 18000,
   "currency": "MXN",
-  "complexity_result": "Nivel alto",
-  "summary": "Breve explicación de por qué vale esto..."
+  "complexity_result": "Baja/Media/Alta (Calculada por ti basándote en la coherencia)",
+  "summary": "Breve explicación detallando la coherencia encontrada, la complejidad real asignada y por qué vale esto..."
 }`;
 
     const userPrompt = `
@@ -82,6 +92,7 @@ Tiempo Estimado: ${projectData.estimated_time}
 Plataformas: ${projectData.platforms}
 Tecnologías usadas: ${comps || "No especificadas"}
 Nivel del desarrollador: ${profileData.professional_level} con ${profileData.years_experience} años de exp.
+Bio del desarrollador: ${bio || "No proporcionada"}
 `;
 
     const apiKey = Deno.env.get("GEMINI_API_KEY");
@@ -114,6 +125,9 @@ Nivel del desarrollador: ${profileData.professional_level} con ${profileData.yea
     const parsedResult = JSON.parse(responseText);
 
     // 3. Guardar en Base de Datos
+    // Eliminar estimaciones previas si existen (para soportar recálculo limpio)
+    await supabase.from("project_estimations").delete().eq("project_id", project_id);
+
     const estimationRecord = {
       project_id: project_id,
       profile_id: profileData.id,
