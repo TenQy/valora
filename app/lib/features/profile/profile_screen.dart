@@ -55,13 +55,11 @@ class ProfileContent extends StatelessWidget {
 
         SectionLabel('Competencias'),
         const SizedBox(height: AppSpacing.space16),
-        Wrap(
-          spacing: AppSpacing.space8,
-          runSpacing: AppSpacing.space8,
-          children: [
-            for (final competency in profile.competencies)
-              SkillChip(competency.name),
-          ],
+        _buildLimitedWrap(
+          context: context,
+          items: profile.competencies,
+          title: 'competencias',
+          builder: (c) => SkillChip(c.name),
         ),
         const SizedBox(height: AppSpacing.space32),
         _Divider(),
@@ -69,17 +67,15 @@ class ProfileContent extends StatelessWidget {
 
         SectionLabel('Idiomas'),
         const SizedBox(height: AppSpacing.space16),
-        Wrap(
-          spacing: AppSpacing.space8,
-          runSpacing: AppSpacing.space8,
-          children: [
-            for (final language in profile.languages)
-              LanguageChip(
-                flagEmoji: language.flagEmoji,
-                language: language.language,
-                level: language.level,
-              ),
-          ],
+        _buildLimitedWrap(
+          context: context,
+          items: profile.languages,
+          title: 'idiomas',
+          builder: (l) => LanguageChip(
+            flagEmoji: l.flagEmoji,
+            language: l.language,
+            level: l.level,
+          ),
         ),
         const SizedBox(height: AppSpacing.space32),
         _Divider(),
@@ -87,23 +83,21 @@ class ProfileContent extends StatelessWidget {
 
         SectionLabel('Certificaciones'),
         const SizedBox(height: AppSpacing.space16),
-        if (profile.certifications.isEmpty)
-          _EmptyState(text: 'Aún no has agregado certificaciones.')
-        else
-          Column(
-            children: [
-              for (final certification in profile.certifications) ...[
-                CertificationTile(certification: certification),
-                const SizedBox(height: AppSpacing.space12),
-              ],
-            ],
+        _buildLimitedColumn(
+          context: context,
+          items: profile.certifications,
+          title: 'certificaciones',
+          builder: (c) => Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.space12),
+            child: CertificationTile(certification: c),
           ),
+        ),
         const SizedBox(height: AppSpacing.space20),
         _Divider(),
         const SizedBox(height: AppSpacing.space32),
 
         Center(
-          child: OutlinedButton.icon(
+          child: TextButton.icon(
             onPressed: () {
               Navigator.push(
                 context,
@@ -112,31 +106,167 @@ class ProfileContent extends StatelessWidget {
             },
             icon: const Icon(Icons.security, size: 18),
             label: const Text('Seguridad y Privacidad'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.white,
-              side: const BorderSide(color: Colors.white),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.silverMuted,
             ),
           ),
         ),
-        const SizedBox(height: AppSpacing.space24),
+        const SizedBox(height: AppSpacing.space16),
 
         Center(
-          child: TextButton(
+          child: TextButton.icon(
             onPressed: isSigningOut ? null : onSignOut,
-            child: isSigningOut
+            icon: isSigningOut
                 ? const SizedBox(
                     height: 16,
                     width: 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: AppColors.textMuted,
+                      color: AppColors.silverMuted,
                     ),
                   )
-                : const Text('Cerrar sesión'),
+                : const Icon(Icons.logout, size: 18),
+            label: Text(
+              isSigningOut ? 'Cerrando sesión...' : 'Cerrar sesión',
+            ),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.colorError.withValues(alpha: 0.8),
+            ),
           ),
         ),
         const SizedBox(height: AppSpacing.space24),
       ],
+    );
+  }
+
+  Widget _buildLimitedWrap<T>({
+    required BuildContext context,
+    required List<T> items,
+    required String title,
+    required Widget Function(T) builder,
+    int limit = 10,
+  }) {
+    if (items.isEmpty) return _EmptyState(text: 'Aún no has agregado $title.');
+    final displayedItems = items.take(limit).toList();
+    final hasMore = items.length > limit;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: AppSpacing.space8,
+          runSpacing: AppSpacing.space8,
+          children: displayedItems.map(builder).toList(),
+        ),
+        if (hasMore)
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.space12),
+            child: TextButton(
+              onPressed: () => _showFullListModal(
+                context: context,
+                title: 'Todas las $title',
+                child: Wrap(
+                  spacing: AppSpacing.space8,
+                  runSpacing: AppSpacing.space8,
+                  children: items.map(builder).toList(),
+                ),
+              ),
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text('Ver todas (${items.length})', style: const TextStyle(fontSize: 13)),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildLimitedColumn<T>({
+    required BuildContext context,
+    required List<T> items,
+    required String title,
+    required Widget Function(T) builder,
+    int limit = 10,
+  }) {
+    if (items.isEmpty) return _EmptyState(text: 'Aún no has agregado $title.');
+    final displayedItems = items.take(limit).toList();
+    final hasMore = items.length > limit;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
+          children: displayedItems.map(builder).toList(),
+        ),
+        if (hasMore)
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.space8),
+            child: TextButton(
+              onPressed: () => _showFullListModal(
+                context: context,
+                title: 'Todas las $title',
+                child: Column(
+                  children: items.map(builder).toList(),
+                ),
+              ),
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text('Ver todas (${items.length})', style: const TextStyle(fontSize: 13)),
+            ),
+          ),
+      ],
+    );
+  }
+
+  void _showFullListModal({
+    required BuildContext context,
+    required String title,
+    required Widget child,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.bgSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.space24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(title, style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: AppColors.textMuted),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.space16),
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: child,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

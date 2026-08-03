@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../shared/widgets/expandable_text.dart';
 import '../models/profile_models.dart';
 
 /// Header de la pantalla de Perfil: nombre, área profesional, badges de
@@ -23,8 +24,6 @@ class ProfileHeader extends StatefulWidget {
 }
 
 class _ProfileHeaderState extends State<ProfileHeader> {
-  bool _bioExpanded = false;
-
   @override
   Widget build(BuildContext context) {
     final profile = widget.profile;
@@ -54,9 +53,16 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                 ],
               ),
             ),
-            OutlinedButton(
+            OutlinedButton.icon(
               onPressed: widget.onEditPressed,
-              child: const Text('Editar perfil'),
+              icon: const Icon(Icons.edit_outlined, size: 16),
+              label: const Text('Editar'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.silver,
+                side: const BorderSide(color: AppColors.borderDefault),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),
@@ -75,28 +81,10 @@ class _ProfileHeaderState extends State<ProfileHeader> {
           ],
         ),
         const SizedBox(height: AppSpacing.space16),
-        AnimatedSize(
-          duration: const Duration(milliseconds: 180),
-          alignment: Alignment.topLeft,
-          child: Text(
-            profile.bio,
-            style: AppTextStyles.body.copyWith(fontSize: 13),
-            maxLines: _bioExpanded ? null : 3,
-            overflow: _bioExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
-          ),
-        ),
-        GestureDetector(
-          onTap: () => setState(() => _bioExpanded = !_bioExpanded),
-          child: Padding(
-            padding: const EdgeInsets.only(top: AppSpacing.space4),
-            child: Text(
-              _bioExpanded ? 'ver menos' : 'ver más',
-              style: AppTextStyles.hint.copyWith(
-                color: AppColors.textMuted,
-                decoration: TextDecoration.underline,
-              ),
-            ),
-          ),
+        ExpandableText(
+          text: profile.bio,
+          maxLines: 3,
+          style: AppTextStyles.body.copyWith(fontSize: 13),
         ),
       ],
     );

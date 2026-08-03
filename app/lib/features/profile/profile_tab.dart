@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -46,7 +47,17 @@ class _ProfileTabState extends State<ProfileTab> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+          return Skeletonizer(
+            enabled: true,
+            effect: ShimmerEffect(
+              baseColor: AppColors.bgSurface,
+              highlightColor: AppColors.silver.withValues(alpha: 0.1),
+            ),
+            child: ProfileContent(
+              onEditPressed: () {},
+              onSignOut: () {},
+            ),
+          );
         }
 
         if (snapshot.hasError) {
