@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../shared/widgets/animated_app_background.dart';
+import '../../../shared/widgets/expandable_text.dart';
 import '../../../shared/widgets/section_label.dart';
 import '../../../shared/widgets/valora_app_bar.dart';
 import '../models/project_model.dart';
@@ -26,6 +30,24 @@ class _ProjectEstimationScreenState extends State<ProjectEstimationScreen> {
   final ProjectsRepository _repository = ProjectsRepository(Supabase.instance.client);
   String _errorMessage = '';
 
+  ProjectModel get _dummyProject => ProjectModel(
+    id: 'dummy',
+    profileId: '',
+    professionalAreaId: '',
+    name: 'Nombre del Proyecto',
+    description: 'Descripción de prueba para skeletonizer.',
+    projectType: 'Tipo',
+    complexity: 'Media',
+    estimatedTime: '2 Semanas',
+    platforms: 'Web',
+    competencies: ['Dart', 'Flutter'],
+    estimatedValueMin: 12000,
+    estimatedValueMax: 18000,
+    currency: 'MXN',
+    complexityResult: 'La complejidad técnica de las herramientas usadas indica que...',
+    summary: 'La Inteligencia Artificial ha evaluado que este proyecto...',
+  );
+
   @override
   void initState() {
     super.initState();
@@ -35,17 +57,14 @@ class _ProjectEstimationScreenState extends State<ProjectEstimationScreen> {
   Future<void> _loadOrCalculate({bool force = false}) async {
     setState(() => _state = _LoadState.loading);
     try {
-      // 1. Fetch project from DB
       ProjectModel proj = await _repository.fetchProject(widget.projectId);
       
-      // 2. If not calculated or forced, invoke edge function
       if (proj.estimatedValueMin == null || force) {
         setState(() => _state = _LoadState.calculating);
         await Supabase.instance.client.functions.invoke(
           'project-value',
           body: {'project_id': widget.projectId},
         );
-        // Fetch again with the new estimation
         proj = await _repository.fetchProject(widget.projectId);
       }
 
@@ -73,14 +92,7 @@ class _ProjectEstimationScreenState extends State<ProjectEstimationScreen> {
       appBar: ValoraAppBar(
         showBackButton: true,
         title: _project?.name ?? 'Valor del Proyecto',
-        actions: [
-          if (_state == _LoadState.success)
-            IconButton(
-              icon: const Icon(Icons.refresh, color: AppColors.silver),
-              tooltip: 'Recalcular valor',
-              onPressed: () => _loadOrCalculate(force: true),
-            ),
-        ],
+        actions: const [], 
       ),
       body: AnimatedAppBackground(
         child: SafeArea(
@@ -91,40 +103,23 @@ class _ProjectEstimationScreenState extends State<ProjectEstimationScreen> {
   }
 
   Widget _buildBody() {
-    switch (_state) {
-      case _LoadState.loading:
-        return const _LoadingView(message: 'Cargando detalles del proyecto...');
-      case _LoadState.calculating:
-        return const _LoadingView(message: 'La IA está calculando el valor económico basado en la complejidad y herramientas...');
-      case _LoadState.error:
-        return _ErrorView(error: _errorMessage, onRetry: _loadOrCalculate);
-      case _LoadState.success:
-        return _ResultView(project: _project!);
+    if (_state == _LoadState.error) {
+      return _ErrorView(error: _errorMessage, onRetry: _loadOrCalculate);
     }
-  }
-}
+    
+    final isLoading = _state == _LoadState.loading || _state == _LoadState.calculating;
+    final displayProject = _project ?? _dummyProject;
 
-class _LoadingView extends StatelessWidget {
-  final String message;
-  const _LoadingView({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircularProgressIndicator(strokeWidth: 2, color: AppColors.silverMuted),
-            const SizedBox(height: AppSpacing.space20),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 13, height: 1.5),
-            ),
-          ],
-        ),
+    return Skeletonizer(
+      enabled: isLoading,
+      effect: ShimmerEffect(
+        baseColor: AppColors.bgSurface.withValues(alpha: 0.5),
+        highlightColor: AppColors.silverSubtle,
+      ),
+      child: _ResultView(
+        project: displayProject, 
+        isCalculating: _state == _LoadState.calculating,
+        onRecalculate: () => _loadOrCalculate(force: true),
       ),
     );
   }
@@ -162,139 +157,218 @@ class _ErrorView extends StatelessWidget {
 
 class _ResultView extends StatelessWidget {
   final ProjectModel project;
+  final bool isCalculating;
+  final VoidCallback onRecalculate;
 
-  const _ResultView({required this.project});
+  const _ResultView({
+    required this.project, 
+    required this.isCalculating,
+    required this.onRecalculate,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final isSkeleton = Skeletonizer.of(context).enabled;
+    
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.space24),
       children: [
+        if (isCalculating)
+          Container(
+            margin: const EdgeInsets.only(bottom: AppSpacing.space20),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.silver.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 16, height: 16, 
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.silver)
+                ),
+                SizedBox(width: 12),
+                Text('La IA está calculando la estimación...', style: TextStyle(color: AppColors.silver, fontSize: 13)),
+              ],
+            ),
+          ),
+          
         // 1. Tarjeta de Valor Principal
         Container(
-          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: AppColors.bgSurface,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.green.withValues(alpha: 0.3)),
-            boxShadow: [
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.borderDefault),
+            boxShadow: const [
               BoxShadow(
-                color: AppColors.green.withValues(alpha: 0.05),
-                blurRadius: 20,
-                spreadRadius: 5,
+                color: Color(0x80000000),
+                blurRadius: 60,
+                offset: Offset(0, 20),
               ),
             ],
           ),
-          child: Column(
-            children: [
-              const Text(
-                'VALOR ESTIMADO',
-                style: TextStyle(color: AppColors.green, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  const Text('\$', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                  Text(
-                    '${project.estimatedValueMin} - ${project.estimatedValueMax}',
-                    style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold, height: 1),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.bgPage,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  project.currency ?? 'MXN',
-                  style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
-        ),
-        
-        const SizedBox(height: 32),
-
-        // 2. Complejidad
-        if (project.complexityResult != null && project.complexityResult!.isNotEmpty) ...[
-          const SectionLabel('ANÁLISIS DE COMPLEJIDAD'),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppColors.bgSurface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.silver.withValues(alpha: 0.1)),
-            ),
-            child: Row(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Stack(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.silver.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
+                if (!isSkeleton)
+                  Positioned(
+                    top: -40,
+                    right: -40,
+                    child: Container(
+                      width: 160,
+                      height: 160,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            Color(0x1F4ADE80), // greenDim
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                  child: const Icon(Icons.analytics_outlined, color: AppColors.silver),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    project.complexityResult!,
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, height: 1.4),
+                Padding(
+                  padding: const EdgeInsets.all(AppSpacing.space28),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'VALOR ESTIMADO DEL PROYECTO',
+                        style: AppTextStyles.sectionLabel,
+                      ),
+                      const SizedBox(height: AppSpacing.space12),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text('\$', style: AppTextStyles.currencySymbol),
+                          const SizedBox(width: AppSpacing.space4),
+                          Flexible(
+                            child: Text(
+                              '${Formatters.formatThousands(project.estimatedValueMin ?? 0)} – ${Formatters.formatThousands(project.estimatedValueMax ?? 0)}',
+                              style: AppTextStyles.salary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.space8),
+                      Text(
+                        'Divisa de referencia: ${project.currency ?? 'MXN'}',
+                        style: AppTextStyles.subtitle,
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 32),
-        ],
+        ),
+        
+        const SizedBox(height: AppSpacing.space24),
 
-        // 3. Resumen y Desglose
+        // 2. Resumen (Expandible)
         if (project.summary != null && project.summary!.isNotEmpty) ...[
-          const SectionLabel('DESGLOSE DE LA IA'),
-          const SizedBox(height: 16),
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(AppSpacing.space20),
             decoration: BoxDecoration(
-              color: AppColors.bgSurface,
+              color: AppColors.silver.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.silver.withValues(alpha: 0.1)),
             ),
-            child: Text(
-              project.summary!,
-              style: const TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.6),
+            child: ExpandableText(
+              text: project.summary!,
+              maxLines: 4,
+              style: const TextStyle(
+                color: AppColors.silver,
+                fontSize: 15,
+                height: 1.5,
+              ),
             ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: AppSpacing.space32),
+        ],
+
+        // 3. Complejidad
+        if (project.complexityResult != null && project.complexityResult!.isNotEmpty) ...[
+          const SectionLabel('ANÁLISIS DE COMPLEJIDAD'),
+          const SizedBox(height: AppSpacing.space16),
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.space20),
+            decoration: BoxDecoration(
+              color: AppColors.bgSurface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.borderDefault),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.silver.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.analytics_outlined, color: AppColors.silver, size: 20),
+                ),
+                const SizedBox(width: AppSpacing.space16),
+                Expanded(
+                  child: Text(
+                    project.complexityResult!,
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, height: 1.5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.space32),
         ],
 
         // 4. Disclaimer
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.space16),
           decoration: BoxDecoration(
-            color: AppColors.colorError.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
+            color: AppColors.bgElevated,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: AppColors.borderDefault),
           ),
-          child: const Row(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.info_outline, color: AppColors.colorError, size: 20),
-              SizedBox(width: 12),
+              const Icon(
+                Icons.info_outline,
+                size: 16,
+                color: AppColors.silverMuted,
+              ),
+              const SizedBox(width: AppSpacing.space12),
               Expanded(
                 child: Text(
-                  'Esta estimación es generada por Inteligencia Artificial tomando en cuenta el mercado actual, la complejidad de tus herramientas y tiempo estimado. Utilízala como referencia, el valor final de tu trabajo siempre dependerá del contexto del cliente.',
-                  style: TextStyle(color: AppColors.colorError, fontSize: 12, height: 1.5),
+                  'Esta estimación es generada por Inteligencia Artificial tomando en cuenta el mercado actual, las tecnologías y el tiempo estimado. Utilízala solo como referencia orientativa.',
+                  style: AppTextStyles.hint,
                 ),
               ),
             ],
           ),
         ),
+
+        const SizedBox(height: AppSpacing.space32),
+
+        // 5. Botón Recalcular
+        if (!isSkeleton)
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: onRecalculate,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Recalcular Estimación', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+          ),
+          
+        const SizedBox(height: AppSpacing.space24),
       ],
     );
   }
