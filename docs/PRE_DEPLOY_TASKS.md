@@ -16,13 +16,13 @@ Este documento detalla las tareas a realizar antes de generar el APK final y des
 - [x] Ajustar la UX para que al seleccionar un Área Laboral (ej. Medicina), los selectores de competencias y herramientas se filtren o prioricen automáticamente.
 
 ### 4. Overhaul Visual y Diseño Premium 
-- [ ] Mejorar la calidad visual general del diseño (`core/theme/` y `shared/widgets/`).
+- [x] Mejorar la calidad visual general del diseño (`core/theme/` y `shared/widgets/`).
 - [ ] Implementar micro-animaciones, mejores sombras, degradados sutiles y consistencia absoluta.
 
 ### 5. Robustez de API y Manejo de Errores 
 - [ ] Implementar timeouts en llamadas a Supabase Edge Functions.
-- [ ] Agregar fallbacks y un manejo de errores robusto y amigable para el usuario.
-- [ ] Añadir feedback visual claro (loaders consistentes).
+- [x] Agregar fallbacks y un manejo de errores robusto y amigable para el usuario.
+- [x] Añadir feedback visual claro (loaders consistentes).
 
 ### 6. Poblado Total de la Base de Datos 
 - [x] Generar scripts SQL para las áreas laborales restantes.

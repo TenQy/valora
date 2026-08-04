@@ -6,6 +6,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/animated_app_background.dart';
 import '../../../shared/widgets/expandable_text.dart';
 import '../../../shared/widgets/section_label.dart';
+import '../../shared/widgets/dynamic_loading_message.dart';
 import '../../../shared/widgets/valora_app_bar.dart';
 import 'models/salary_estimation.dart';
 import 'services/results_service.dart';
@@ -95,13 +96,31 @@ class _SalaryEstimationScreenState extends State<SalaryEstimationScreen> {
     final isLoading = _state == _LoadState.loading;
     final result = isLoading ? _dummyEstimation : _result!;
     
-    return Skeletonizer(
-      enabled: isLoading,
-      effect: ShimmerEffect(
-        baseColor: AppColors.bgSurface,
-        highlightColor: AppColors.silver.withValues(alpha: 0.1),
-      ),
-      child: _ResultView(result: result),
+    return Column(
+      children: [
+        if (isLoading)
+          const Padding(
+            padding: EdgeInsets.fromLTRB(AppSpacing.space24, AppSpacing.space24, AppSpacing.space24, 0),
+            child: DynamicLoadingMessage(
+              messages: [
+                'Analizando tu perfil...',
+                'Consultando el mercado laboral actual...',
+                'Calculando estimaciones...',
+                'Generando reporte final...',
+              ],
+            ),
+          ),
+        Expanded(
+          child: Skeletonizer(
+            enabled: isLoading,
+            effect: ShimmerEffect(
+              baseColor: AppColors.bgSurface,
+              highlightColor: AppColors.silver.withValues(alpha: 0.1),
+            ),
+            child: _ResultView(result: result),
+          ),
+        ),
+      ],
     );
   }
 }

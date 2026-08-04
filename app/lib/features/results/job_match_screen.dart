@@ -6,6 +6,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/formatters.dart';
+import '../../shared/widgets/animated_app_background.dart';
+import '../../shared/widgets/dynamic_loading_message.dart';
 import '../../../shared/widgets/valora_app_bar.dart';
 import '../../../shared/widgets/match_badge.dart';
 import '../../../shared/widgets/expandable_text.dart';
@@ -115,25 +117,42 @@ class _JobMatchScreenState extends State<JobMatchScreen> {
     final isLoading = _state == _LoadState.loading;
     final displayMatches = isLoading ? _dummyMatches : _matches;
 
-    return Skeletonizer(
-      enabled: isLoading,
-      effect: const ShimmerEffect(
-        baseColor: AppColors.bgSurface,
-        highlightColor: AppColors.borderDefault,
-        duration: Duration(seconds: 2),
-      ),
-      child: ListView.separated(
-        padding: const EdgeInsets.all(AppSpacing.space24),
-        itemCount: displayMatches.length,
-        separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.space24),
-        itemBuilder: (context, index) {
-          // Si estamos cargando, usamos un widget estático para el Skeleton para evitar errores en animaciones
-          if (isLoading) {
-            return _JobMatchCardSkeleton(match: displayMatches[index], rank: index + 1);
-          }
-          return JobMatchCard(match: displayMatches[index], rank: index + 1);
-        },
-      ),
+    return Column(
+      children: [
+        if (isLoading)
+          const Padding(
+            padding: EdgeInsets.fromLTRB(AppSpacing.space24, AppSpacing.space24, AppSpacing.space24, 0),
+            child: DynamicLoadingMessage(
+              messages: [
+                'Buscando posiciones compatibles...',
+                'Evaluando tus competencias...',
+                'Calculando porcentaje de match...',
+                'Ordenando mejores opciones...',
+              ],
+            ),
+          ),
+        Expanded(
+          child: Skeletonizer(
+            enabled: isLoading,
+            effect: const ShimmerEffect(
+              baseColor: AppColors.bgSurface,
+              highlightColor: AppColors.borderDefault,
+              duration: Duration(seconds: 2),
+            ),
+            child: ListView.separated(
+              padding: const EdgeInsets.all(AppSpacing.space24),
+              itemCount: displayMatches.length,
+              separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.space24),
+              itemBuilder: (context, index) {
+                if (isLoading) {
+                  return _JobMatchCardSkeleton(match: displayMatches[index], rank: index + 1);
+                }
+                return JobMatchCard(match: displayMatches[index], rank: index + 1);
+              },
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

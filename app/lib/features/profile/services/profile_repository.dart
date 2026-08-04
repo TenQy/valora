@@ -130,7 +130,9 @@ class ProfileRepository {
     final res = await _client.functions.invoke(
       'validate-text',
       body: {'text': text, 'type': type},
-    );
+    ).timeout(const Duration(seconds: 10), onTimeout: () {
+      throw Exception('Fallo de conexión al validar el texto.');
+    });
     
     if (res.status != 200 || res.data == null) {
       throw Exception('Fallo en el servicio de validación');

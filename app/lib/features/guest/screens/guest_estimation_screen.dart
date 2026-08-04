@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/animated_app_background.dart';
+import '../../../shared/widgets/dynamic_loading_message.dart';
 import '../../../shared/widgets/section_label.dart';
 import '../../../shared/widgets/valora_app_bar.dart';
 import '../../../shared/widgets/valora_searchable_dropdown.dart';
@@ -133,7 +134,9 @@ class _GuestEstimationScreenState extends State<GuestEstimationScreen> {
       final response = await Supabase.instance.client.functions.invoke(
         'estimate-salary',
         body: {'guest_profile': guestProfile},
-      );
+      ).timeout(const Duration(seconds: 15), onTimeout: () {
+        throw Exception('Tiempo de espera agotado. El servidor tardó demasiado.');
+      });
 
       if (response.status != 200 || response.data == null) {
         throw Exception('Error en el cálculo. Intenta de nuevo.');
@@ -290,14 +293,22 @@ class _GuestEstimationScreenState extends State<GuestEstimationScreen> {
 
                             const SizedBox(height: AppSpacing.space48),
 
+                            if (_isEstimating)
+                              const Padding(
+                                padding: EdgeInsets.only(bottom: AppSpacing.space16),
+                                child: DynamicLoadingMessage(
+                                  messages: [
+                                    'Procesando perfil invitado...',
+                                    'Consultando datos del mercado...',
+                                    'Calculando estimación...',
+                                  ],
+                                ),
+                              ),
+
                             ElevatedButton(
                               onPressed: _isEstimating ? null : _submitEstimation,
                               child: _isEstimating
-                                  ? const SizedBox(
-                                      height: 20,
-                                      width: 20,
-                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                    )
+                                  ? const Text('Calculando...')
                                   : const Text('Calcular mi valor real'),
                             ),
                           ],

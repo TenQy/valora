@@ -7,6 +7,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../shared/widgets/animated_app_background.dart';
+import '../../../shared/widgets/dynamic_loading_message.dart';
 import '../../../shared/widgets/expandable_text.dart';
 import '../../../shared/widgets/section_label.dart';
 import '../../../shared/widgets/valora_app_bar.dart';
@@ -64,7 +65,9 @@ class _ProjectEstimationScreenState extends State<ProjectEstimationScreen> {
         await Supabase.instance.client.functions.invoke(
           'project-value',
           body: {'project_id': widget.projectId},
-        );
+        ).timeout(const Duration(seconds: 15), onTimeout: () {
+          throw Exception('Tiempo de espera agotado. El servidor tardó demasiado.');
+        });
         proj = await _repository.fetchProject(widget.projectId);
       }
 
@@ -174,22 +177,14 @@ class _ResultView extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.space24),
       children: [
         if (isCalculating)
-          Container(
-            margin: const EdgeInsets.only(bottom: AppSpacing.space20),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.silver.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: 16, height: 16, 
-                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.silver)
-                ),
-                SizedBox(width: 12),
-                Text('La IA está calculando la estimación...', style: TextStyle(color: AppColors.silver, fontSize: 13)),
+          const Padding(
+            padding: EdgeInsets.only(bottom: AppSpacing.space20),
+            child: DynamicLoadingMessage(
+              messages: [
+                'Analizando parámetros del proyecto...',
+                'Evaluando complejidad de herramientas...',
+                'Consultando mercado de referencia...',
+                'Calculando valor final...'
               ],
             ),
           ),

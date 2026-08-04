@@ -26,7 +26,9 @@ class ResultsService {
     final res = await _client.functions.invoke(
       'estimate-salary',
       body: profileId != null ? {'profile_id': profileId} : {},
-    );
+    ).timeout(const Duration(seconds: 15), onTimeout: () {
+      throw Exception('Tiempo de espera agotado. El servidor tardó demasiado.');
+    });
 
     if (res.status != 200 || res.data == null) {
       final errorMsg = (res.data is Map && res.data['error'] != null)
@@ -63,7 +65,9 @@ class ResultsService {
     final res = await _client.functions.invoke(
       'job-match',
       body: profileId != null ? {'profile_id': profileId} : {},
-    );
+    ).timeout(const Duration(seconds: 15), onTimeout: () {
+      throw Exception('Tiempo de espera agotado. El servidor tardó demasiado.');
+    });
 
     if (res.status != 200 || res.data == null) {
       final errorMsg = (res.data is Map && res.data['error'] != null)
@@ -101,7 +105,9 @@ class ResultsService {
     final res = await _client.functions.invoke(
       'growth-path',
       body: profileId != null ? {'profile_id': profileId} : {},
-    );
+    ).timeout(const Duration(seconds: 15), onTimeout: () {
+      throw Exception('Tiempo de espera agotado. El servidor tardó demasiado.');
+    });
 
     if (res.status != 200 || res.data == null) {
       final errorMsg = (res.data is Map && res.data['error'] != null)
