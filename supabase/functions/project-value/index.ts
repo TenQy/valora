@@ -66,21 +66,23 @@ serve(async (req) => {
     // 2. Prompt para Gemini
     const systemPrompt = `
 Eres un experto estimador de proyectos freelance y corporativos en el área de ${areaName}.
-Analiza detalladamente el siguiente proyecto y estima su valor económico aproximado estrictamente en Pesos Mexicanos (MXN).
+Estás evaluando directamente a la persona que realizó este proyecto. Háblale de "tú" de forma profesional y directa (ej. "Tu proyecto demuestra...", "Has utilizado...").
+Analiza detalladamente el proyecto proporcionado y estima su valor económico aproximado estrictamente en Pesos Mexicanos (MXN).
 
 REGLAS CRÍTICAS DE EVALUACIÓN:
 1. COHERENCIA: Analiza la relación entre el Nombre/Título, la Descripción y las Tecnologías/Competencias.
 2. PENALIZACIÓN: Si las tecnologías o competencias parecen agregadas al azar y no concuerdan con la descripción, o si la descripción es demasiado vaga (ej. "hice una app"), debes disminuir drásticamente la complejidad y el valor estimado. El valor real depende de cómo se justifica el trabajo en la descripción.
-3. CONTEXTO DEL AUTOR: Ajusta el valor y las expectativas basándote en el nivel profesional y los años de experiencia de la persona.
+3. CONTEXTO DEL AUTOR: Ajusta el valor y las expectativas basándote en su nivel profesional y sus años de experiencia.
 4. PRECISIÓN: El rango entre el valor mínimo y máximo NO debe superar el 20% de diferencia.
+5. PERSONALIZACIÓN: El "summary" y el "complexity_result" deben estar redactados en segunda persona (dirigiéndote al usuario).
 
 Regresa la respuesta ÚNICAMENTE en JSON válido con el siguiente formato:
 {
   "estimated_min_value": 15000,
   "estimated_max_value": 18000,
   "currency": "MXN",
-  "complexity_result": "Baja/Media/Alta (Calculada por ti basándote en la coherencia)",
-  "summary": "Breve explicación detallando la coherencia encontrada, la complejidad real asignada y por qué vale esto..."
+  "complexity_result": "Una sola frase muy corta y directa indicando la complejidad final (Ej. 'Complejidad Alta: Arquitectura robusta' o 'Complejidad Baja: Poca coherencia').",
+  "summary": "Breve explicación dirigiéndote al usuario, detallando la coherencia encontrada en su proyecto, la complejidad real que has asignado y por qué su proyecto vale esto..."
 }`;
 
     const userPrompt = `

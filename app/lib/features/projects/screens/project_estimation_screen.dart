@@ -271,6 +271,8 @@ class _ResultView extends StatelessWidget {
 
         // 2. Resumen (Expandible)
         if (project.summary != null && project.summary!.isNotEmpty) ...[
+          const SectionLabel('ANÁLISIS DE LA IA'),
+          const SizedBox(height: AppSpacing.space16),
           Container(
             padding: const EdgeInsets.all(AppSpacing.space20),
             decoration: BoxDecoration(
