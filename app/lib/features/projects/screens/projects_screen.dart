@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/expandable_text.dart';
 import '../models/project_model.dart';
 import '../services/projects_repository.dart';
 import 'add_project_screen.dart';
@@ -20,6 +22,22 @@ class _ProjectsTabState extends State<ProjectsTab> {
   bool _isLoading = true;
   String? _profileId;
   String? _professionalAreaId;
+
+  List<ProjectModel> get _fakeProjects => List.generate(
+    3,
+    (index) => ProjectModel(
+      id: 'fake_$index',
+      profileId: '',
+      professionalAreaId: '',
+      name: 'Cargando Proyecto...',
+      description: 'Esta es una descripción de prueba muy larga que se usa para mostrar el skeleton loader mientras el proyecto carga los datos reales desde la base de datos.',
+      projectType: 'Desarrollo Web',
+      complexity: '',
+      estimatedTime: '1 mes',
+      platforms: 'Web, Móvil',
+      competencies: ['Flutter', 'Dart', 'Supabase'],
+    ),
+  );
 
   @override
   void initState() {
@@ -55,7 +73,16 @@ class _ProjectsTabState extends State<ProjectsTab> {
   Future<void> _loadProjects() async {
     if (_profileId == null) return;
     setState(() => _isLoading = true);
+    
     try {
+      final cached = await _repository.getCachedProjects(_profileId!);
+      if (cached != null && mounted) {
+        setState(() {
+          _projects = cached;
+          _isLoading = false;
+        });
+      }
+      
       final projects = await _repository.fetchProjects(_profileId!);
       if (mounted) {
         setState(() {
@@ -136,31 +163,24 @@ class _ProjectsTabState extends State<ProjectsTab> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    final displayProjects = (_isLoading && (_projects == null || _projects!.isEmpty))
+        ? _fakeProjects
+        : _projects;
 
-    return Column(
-      children: [
-        if (_profileId != null)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.space24, AppSpacing.space24, AppSpacing.space24, AppSpacing.space8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Agrega, estima y valora tu trabajo',
-                        style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: -0.3),
-                      ),
-                    ],
-                  ),
-                ),
-                OutlinedButton.icon(
+    return Skeletonizer(
+      enabled: _isLoading,
+      effect: ShimmerEffect(
+        baseColor: AppColors.bgSurface.withValues(alpha: 0.5),
+        highlightColor: AppColors.silverSubtle,
+      ),
+      child: Column(
+        children: [
+          if (_profileId != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(AppSpacing.space24, AppSpacing.space24, AppSpacing.space24, AppSpacing.space8),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: OutlinedButton.icon(
                   onPressed: () => _navigateToAddProject(),
                   icon: const Icon(Icons.add, size: 16),
                   label: const Text('Agregar'),
@@ -171,11 +191,10 @@ class _ProjectsTabState extends State<ProjectsTab> {
                     textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                   ),
                 ),
-              ],
-            ),
+              ),
           ),
         Expanded(
-          child: _projects == null || _projects!.isEmpty
+          child: (!_isLoading && (displayProjects == null || displayProjects.isEmpty))
               ? const Center(
                   child: Text(
                     'No has agregado proyectos aún.',
@@ -184,9 +203,9 @@ class _ProjectsTabState extends State<ProjectsTab> {
                 )
               : ListView.builder(
                   padding: const EdgeInsets.all(AppSpacing.space24),
-            itemCount: _projects!.length,
+            itemCount: displayProjects?.length ?? 0,
             itemBuilder: (context, index) {
-              final project = _projects![index];
+              final project = displayProjects![index];
               return Card(
                 color: AppColors.bgSurface,
                 shape: RoundedRectangleBorder(
@@ -223,45 +242,38 @@ class _ProjectsTabState extends State<ProjectsTab> {
                                   GestureDetector(
                                     onTap: () => _openEstimation(project.id),
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.green.withValues(alpha: 0.15),
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: AppColors.green.withValues(alpha: 0.3)),
-                                      ),
+                                      padding: const EdgeInsets.symmetric(vertical: 4),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          const Icon(Icons.attach_money, color: AppColors.green, size: 14),
+                                          const Icon(Icons.monetization_on_rounded, color: AppColors.green, size: 16),
+                                          const SizedBox(width: 4),
                                           Text(
                                             '${project.estimatedValueMin} - ${project.estimatedValueMax} ${project.currency}',
                                             style: const TextStyle(
                                               color: AppColors.green,
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w600,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w700,
+                                              letterSpacing: -0.3,
                                             ),
                                           ),
+                                          const SizedBox(width: 6),
+                                          Icon(Icons.info_outline, color: AppColors.green.withValues(alpha: 0.5), size: 14),
                                         ],
                                       ),
                                     ),
                                   )
                                 else
-                                  GestureDetector(
-                                    onTap: () => _openEstimation(project.id),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        gradient: const LinearGradient(colors: [AppColors.silver, AppColors.silverMuted]),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: const Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(Icons.auto_awesome, color: AppColors.bgBase, size: 14),
-                                          SizedBox(width: 4),
-                                          Text('Calcular Valor', style: TextStyle(color: AppColors.bgBase, fontSize: 12, fontWeight: FontWeight.bold)),
-                                        ],
-                                      ),
+                                  OutlinedButton.icon(
+                                    onPressed: () => _openEstimation(project.id),
+                                    icon: const Icon(Icons.auto_awesome, size: 14),
+                                    label: const Text('Calcular Valor'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: AppColors.silver,
+                                      side: const BorderSide(color: AppColors.borderSubtle),
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                                      minimumSize: const Size(0, 28),
+                                      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                                     ),
                                   ),
                               ],
@@ -290,9 +302,10 @@ class _ProjectsTabState extends State<ProjectsTab> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      Text(
-                        project.description,
+                      ExpandableText(
+                        text: project.description,
                         style: const TextStyle(color: AppColors.textPrimary, fontSize: 14, height: 1.5),
+                        maxLines: 3,
                       ),
                       const SizedBox(height: 20),
                       Wrap(
@@ -312,22 +325,6 @@ class _ProjectsTabState extends State<ProjectsTab> {
                                 const Icon(Icons.category_outlined, color: AppColors.silver, size: 12),
                                 const SizedBox(width: 4),
                                 Text(project.projectType, style: const TextStyle(color: AppColors.silver, fontSize: 12, fontWeight: FontWeight.w500)),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppColors.bgPage,
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: AppColors.silver.withValues(alpha: 0.1)),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.bar_chart, color: AppColors.textMuted, size: 12),
-                                const SizedBox(width: 4),
-                                Text(project.complexity, style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w500)),
                               ],
                             ),
                           ),
@@ -375,6 +372,7 @@ class _ProjectsTabState extends State<ProjectsTab> {
           ),
         ),
       ],
-    );
-  }
+    ),
+  );
+}
 }

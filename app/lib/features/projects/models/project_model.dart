@@ -44,7 +44,32 @@ class ProjectModel {
       complexity: json['complexity'] ?? '',
       estimatedTime: json['estimated_time'] ?? '',
       platforms: json['platforms'] is List ? (json['platforms'] as List).join(', ') : (json['platforms']?.toString() ?? ''),
-      competencies: <String>[],
+      competencies: (json['competencies'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? <String>[],
+      estimatedValueMin: json['estimated_min_value'] as int?,
+      estimatedValueMax: json['estimated_max_value'] as int?,
+      currency: json['currency'] as String?,
+      complexityResult: json['complexity_result'] as String?,
+      summary: json['summary'] as String?,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'profile_id': profileId,
+      'professional_area_id': professionalAreaId,
+      'name': name,
+      'description': description,
+      'project_type': projectType,
+      'complexity': complexity,
+      'estimated_time': estimatedTime,
+      'platforms': platforms,
+      'competencies': competencies,
+      'estimated_min_value': estimatedValueMin,
+      'estimated_max_value': estimatedValueMax,
+      'currency': currency,
+      'complexity_result': complexityResult,
+      'summary': summary,
+    };
   }
 }

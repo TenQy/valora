@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/project_model.dart';
 import '../../profile/models/catalog_models.dart';
@@ -7,14 +9,32 @@ class ProjectsRepository {
 
   ProjectsRepository(this._client);
 
+  Future<List<ProjectModel>?> getCachedProjects(String profileId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final cacheKey = 'projects_cache_$profileId';
+    final cachedStr = prefs.getString(cacheKey);
+    if (cachedStr != null) {
+      try {
+        final List<dynamic> cachedData = jsonDecode(cachedStr);
+        return cachedData.map((e) => ProjectModel.fromJson(e)).toList();
+      } catch (e) {
+        // Ignore cache error
+      }
+    }
+    return null;
+  }
+
   Future<List<ProjectModel>> fetchProjects(String profileId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final cacheKey = 'projects_cache_$profileId';
+
     final res = await _client
         .from('projects')
         .select('*, project_competencies(competencies(name)), project_estimations(estimated_min_value, estimated_max_value, currency, complexity_result, summary)')
         .eq('profile_id', profileId)
         .order('created_at', ascending: false);
     
-    return (res as List<dynamic>).map<ProjectModel>((p) {
+    final projects = (res as List<dynamic>).map<ProjectModel>((p) {
       final estimations = p['project_estimations'] as List?;
       final est = estimations != null && estimations.isNotEmpty ? estimations.first : null;
       
@@ -39,6 +59,11 @@ class ProjectsRepository {
         summary: est?['summary'],
       );
     }).toList();
+
+    // Guardar en caché
+    prefs.setString(cacheKey, jsonEncode(projects.map((p) => p.toJson()).toList()));
+
+    return projects;
   }
 
   Future<ProjectModel> fetchProject(String projectId) async {
