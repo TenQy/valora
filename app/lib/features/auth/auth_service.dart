@@ -67,7 +67,8 @@ class AuthService {
       // es usar el flujo OAuth con redirección.
       final success = await _client.auth.signInWithOAuth(
         OAuthProvider.google,
-        // Supabase interceptará el token al regresar y restaurará la sesión automáticamente.
+        // Usamos Uri.base.origin para que funcione tanto en localhost (desarrollo) como en Vercel (producción)
+        redirectTo: '${Uri.base.origin}/',
       );
       
       if (!success) {

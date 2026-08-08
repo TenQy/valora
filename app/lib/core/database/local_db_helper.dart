@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -8,6 +9,9 @@ class LocalDbHelper {
   LocalDbHelper._init();
 
   Future<Database> get database async {
+    if (kIsWeb) {
+      throw UnsupportedError('SQLite no está soportado nativamente en la web');
+    }
     if (_database != null) return _database!;
     _database = await _initDB('valora.db');
     return _database!;
@@ -47,7 +51,6 @@ class LocalDbHelper {
   }
 
   Future<void> _createDB(Database db, int version) async {
-    // Tabla para guardar estimaciones salariales
     await db.execute('''
       CREATE TABLE local_estimations (
         profile_id TEXT PRIMARY KEY,
@@ -56,7 +59,6 @@ class LocalDbHelper {
       )
     ''');
 
-    // Tabla para guardar job matches
     await db.execute('''
       CREATE TABLE local_job_matches (
         profile_id TEXT PRIMARY KEY,
@@ -65,7 +67,6 @@ class LocalDbHelper {
       )
     ''');
 
-    // Tabla para guardar rutas de crecimiento generadas por IA
     await db.execute('''
       CREATE TABLE local_growth_paths (
         profile_id TEXT PRIMARY KEY,
@@ -74,7 +75,6 @@ class LocalDbHelper {
       )
     ''');
 
-    // Tabla para perfiles (para guardar la ruta de la foto localmente, etc)
     await db.execute('''
       CREATE TABLE local_profiles (
         profile_id TEXT PRIMARY KEY,
@@ -84,8 +84,8 @@ class LocalDbHelper {
     ''');
   }
 
-  /// Guarda una estimación salarial en la base de datos local
   Future<void> saveSalaryEstimation(String profileId, String jsonStr) async {
+    if (kIsWeb) return;
     final db = await instance.database;
     await db.insert(
       'local_estimations',
@@ -98,8 +98,8 @@ class LocalDbHelper {
     );
   }
 
-  /// Recupera la última estimación salarial guardada
   Future<String?> getSalaryEstimation(String profileId) async {
+    if (kIsWeb) return null;
     final db = await instance.database;
     final maps = await db.query(
       'local_estimations',
@@ -108,24 +108,18 @@ class LocalDbHelper {
       whereArgs: [profileId],
     );
 
-    if (maps.isNotEmpty) {
-      return maps.first['estimation_json'] as String;
-    }
+    if (maps.isNotEmpty) return maps.first['estimation_json'] as String;
     return null;
   }
 
-  /// Limpia la estimación cuando se actualiza el perfil
   Future<void> clearSalaryEstimation(String profileId) async {
+    if (kIsWeb) return;
     final db = await instance.database;
-    await db.delete(
-      'local_estimations',
-      where: 'profile_id = ?',
-      whereArgs: [profileId],
-    );
+    await db.delete('local_estimations', where: 'profile_id = ?', whereArgs: [profileId]);
   }
 
-  /// Guarda los resultados de compatibilidad laboral en la base de datos local
   Future<void> saveJobMatches(String profileId, String jsonStr) async {
+    if (kIsWeb) return;
     final db = await instance.database;
     await db.insert(
       'local_job_matches',
@@ -138,8 +132,8 @@ class LocalDbHelper {
     );
   }
 
-  /// Recupera los resultados de compatibilidad laboral guardados
   Future<String?> getJobMatches(String profileId) async {
+    if (kIsWeb) return null;
     final db = await instance.database;
     final maps = await db.query(
       'local_job_matches',
@@ -148,24 +142,18 @@ class LocalDbHelper {
       whereArgs: [profileId],
     );
 
-    if (maps.isNotEmpty) {
-      return maps.first['matches_json'] as String;
-    }
+    if (maps.isNotEmpty) return maps.first['matches_json'] as String;
     return null;
   }
 
-  /// Limpia el caché de compatibilidad laboral cuando se actualiza el perfil
   Future<void> clearJobMatches(String profileId) async {
+    if (kIsWeb) return;
     final db = await instance.database;
-    await db.delete(
-      'local_job_matches',
-      where: 'profile_id = ?',
-      whereArgs: [profileId],
-    );
+    await db.delete('local_job_matches', where: 'profile_id = ?', whereArgs: [profileId]);
   }
 
-  /// Guarda la ruta de la foto de perfil localmente
   Future<void> saveLocalProfilePhoto(String profileId, String path) async {
+    if (kIsWeb) return;
     final db = await instance.database;
     await db.insert(
       'local_profiles',
@@ -179,6 +167,7 @@ class LocalDbHelper {
   }
 
   Future<String?> getLocalProfilePhoto(String profileId) async {
+    if (kIsWeb) return null;
     final db = await instance.database;
     final maps = await db.query(
       'local_profiles',
@@ -187,15 +176,12 @@ class LocalDbHelper {
       whereArgs: [profileId],
     );
 
-    if (maps.isNotEmpty) {
-      return maps.first['local_photo_path'] as String?;
-    }
+    if (maps.isNotEmpty) return maps.first['local_photo_path'] as String?;
     return null;
   }
 
-  // --- GROWTH PATH ---
-
   Future<void> saveGrowthPath(String profileId, String pathJson) async {
+    if (kIsWeb) return;
     final db = await instance.database;
     await db.insert(
       'local_growth_paths',
@@ -209,6 +195,7 @@ class LocalDbHelper {
   }
 
   Future<String?> getGrowthPath(String profileId) async {
+    if (kIsWeb) return null;
     final db = await instance.database;
     final maps = await db.query(
       'local_growth_paths',
@@ -217,13 +204,12 @@ class LocalDbHelper {
       whereArgs: [profileId],
     );
 
-    if (maps.isNotEmpty) {
-      return maps.first['path_json'] as String;
-    }
+    if (maps.isNotEmpty) return maps.first['path_json'] as String;
     return null;
   }
 
   Future<DateTime?> getGrowthPathCreatedAt(String profileId) async {
+    if (kIsWeb) return null;
     final db = await instance.database;
     final maps = await db.query(
       'local_growth_paths',
@@ -232,18 +218,13 @@ class LocalDbHelper {
       whereArgs: [profileId],
     );
 
-    if (maps.isNotEmpty) {
-      return DateTime.tryParse(maps.first['created_at'] as String);
-    }
+    if (maps.isNotEmpty) return DateTime.tryParse(maps.first['created_at'] as String);
     return null;
   }
 
   Future<void> clearGrowthPath(String profileId) async {
+    if (kIsWeb) return;
     final db = await instance.database;
-    await db.delete(
-      'local_growth_paths',
-      where: 'profile_id = ?',
-      whereArgs: [profileId],
-    );
+    await db.delete('local_growth_paths', where: 'profile_id = ?', whereArgs: [profileId]);
   }
 }
