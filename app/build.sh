@@ -5,7 +5,7 @@
 
 echo "Descargando Flutter SDK..."
 if [ ! -d "flutter" ]; then
-  git clone https://github.com/flutter/flutter.git -b stable
+  git clone --depth 1 https://github.com/flutter/flutter.git -b stable
 fi
 
 export PATH="$PATH:`pwd`/flutter/bin"
