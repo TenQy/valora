@@ -14,4 +14,9 @@ echo "Instalando dependencias y compilando..."
 flutter doctor
 flutter clean
 flutter pub get
+
+echo "Generando .env desde variables de entorno de Vercel..."
+echo "SUPABASE_URL=$SUPABASE_URL" > .env
+echo "SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY" >> .env
+
 flutter build web --release
