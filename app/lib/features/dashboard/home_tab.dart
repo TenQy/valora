@@ -14,6 +14,7 @@ import '../../shared/widgets/expandable_text.dart';
 import 'services/dashboard_service.dart';
 import '../results/services/results_service.dart';
 import '../results/models/growth_path_model.dart';
+import 'package:flutter_animate/flutter_animate.dart' hide ShimmerEffect;
 
 class HomeTab extends StatefulWidget {
   const HomeTab({
@@ -113,21 +114,21 @@ class _HomeTabState extends State<HomeTab> {
               controller: _scrollController,
               padding: const EdgeInsets.all(AppSpacing.space24),
               children: [
-                _buildHeader(data!),
+                _buildHeader(data!).animate().fade(duration: 400.ms).slideY(begin: 0.05, curve: Curves.easeOut),
                 const SizedBox(height: 24),
-                _buildCompleteness(data),
+                _buildCompleteness(data).animate().fade(duration: 400.ms).slideY(begin: 0.05, curve: Curves.easeOut),
                 const SizedBox(height: 32),
-                _buildActions(),
+                _buildActions().animate().fade(duration: 400.ms).slideY(begin: 0.05, curve: Curves.easeOut),
                 const SizedBox(height: 32),
                 if (data.latestEstimation != null) ...[
-                  _buildLatestEstimation(data.latestEstimation!),
+                  _buildLatestEstimation(data.latestEstimation!).animate().fade(duration: 400.ms).slideY(begin: 0.05, curve: Curves.easeOut),
                   const SizedBox(height: 32),
                 ],
                 if (data.latestMatches.isNotEmpty) ...[
-                  _buildLatestMatches(data.latestMatches),
+                  _buildLatestMatches(data.latestMatches).animate().fade(duration: 400.ms).slideY(begin: 0.05, curve: Curves.easeOut),
                   const SizedBox(height: 32),
                 ],
-                _buildImprovementGuide(data),
+                _buildImprovementGuide(data).animate().fade(duration: 400.ms).slideY(begin: 0.05, curve: Curves.easeOut),
                 const SizedBox(height: 64),
               ],
             ),
@@ -652,7 +653,7 @@ class _HomeTabState extends State<HomeTab> {
                 ),
               ],
             ),
-          );
+          ).animate(delay: (index * 100).ms).fade(duration: 400.ms).slideX(begin: 0.05, curve: Curves.easeOut);
         }),
       ],
     );

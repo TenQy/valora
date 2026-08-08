@@ -11,6 +11,7 @@ import '../../../shared/widgets/dynamic_loading_message.dart';
 import '../../../shared/widgets/expandable_text.dart';
 import '../../../shared/widgets/section_label.dart';
 import '../../../shared/widgets/valora_app_bar.dart';
+import 'package:flutter_animate/flutter_animate.dart' hide ShimmerEffect;
 import '../models/project_model.dart';
 import '../services/projects_repository.dart';
 
@@ -260,36 +261,33 @@ class _ResultView extends StatelessWidget {
               ],
             ),
           ),
-        ),
+        ).animate().fade(duration: 400.ms).slideY(begin: 0.05, curve: Curves.easeOut),
         
         const SizedBox(height: AppSpacing.space24),
 
         // 2. Resumen (Expandible)
-        if (project.summary != null && project.summary!.isNotEmpty) ...[
-          const SectionLabel('ANÁLISIS DE LA IA'),
-          const SizedBox(height: AppSpacing.space16),
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.space20),
-            decoration: BoxDecoration(
-              color: AppColors.silver.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: ExpandableText(
-              text: project.summary!,
-              maxLines: 4,
-              style: const TextStyle(
-                color: AppColors.silver,
-                fontSize: 15,
-                height: 1.5,
-              ),
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.space20),
+          decoration: BoxDecoration(
+            color: AppColors.silver.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: ExpandableText(
+            text: project.description,
+            maxLines: 4,
+            style: const TextStyle(
+              color: AppColors.silver,
+              fontSize: 15,
+              height: 1.5,
             ),
           ),
-          const SizedBox(height: AppSpacing.space32),
-        ],
+        ).animate().fade(duration: 400.ms).slideY(begin: 0.05, curve: Curves.easeOut),
 
-        // 3. Complejidad
+        const SizedBox(height: AppSpacing.space32),
+
+        // 3. Desglose de IA
         if (project.complexityResult != null && project.complexityResult!.isNotEmpty) ...[
-          const SectionLabel('ANÁLISIS DE COMPLEJIDAD'),
+          SectionLabel('EVALUACIÓN DE COMPLEJIDAD Y HERRAMIENTAS').animate().fade(duration: 400.ms).slideY(begin: 0.05, curve: Curves.easeOut),
           const SizedBox(height: AppSpacing.space16),
           Container(
             padding: const EdgeInsets.all(AppSpacing.space20),
@@ -318,7 +316,7 @@ class _ResultView extends StatelessWidget {
                 ),
               ],
             ),
-          ),
+          ).animate().fade(duration: 400.ms).slideY(begin: 0.05, curve: Curves.easeOut),
           const SizedBox(height: AppSpacing.space32),
         ],
 
@@ -347,7 +345,7 @@ class _ResultView extends StatelessWidget {
               ),
             ],
           ),
-        ),
+        ).animate().fade(duration: 400.ms).slideY(begin: 0.05, curve: Curves.easeOut),
 
         const SizedBox(height: AppSpacing.space32),
 
@@ -363,7 +361,7 @@ class _ResultView extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
             ),
-          ),
+          ).animate().fade(duration: 400.ms).slideY(begin: 0.05, curve: Curves.easeOut),
           
         const SizedBox(height: AppSpacing.space24),
       ],

@@ -8,6 +8,7 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/utils/formatters.dart';
 import '../../shared/widgets/animated_app_background.dart';
 import '../../shared/widgets/dynamic_loading_message.dart';
+import 'package:flutter_animate/flutter_animate.dart' hide ShimmerEffect;
 import '../../../shared/widgets/valora_app_bar.dart';
 import '../../../shared/widgets/match_badge.dart';
 import '../../../shared/widgets/expandable_text.dart';
@@ -147,7 +148,10 @@ class _JobMatchScreenState extends State<JobMatchScreen> {
                 if (isLoading) {
                   return _JobMatchCardSkeleton(match: displayMatches[index], rank: index + 1);
                 }
-                return JobMatchCard(match: displayMatches[index], rank: index + 1);
+                return JobMatchCard(match: displayMatches[index], rank: index + 1)
+                    .animate(delay: (index * 100).ms)
+                    .fade(duration: 400.ms)
+                    .slideY(begin: 0.05, curve: Curves.easeOut);
               },
             ),
           ),

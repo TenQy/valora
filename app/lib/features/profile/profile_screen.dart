@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'edit_profile_screen.dart';
 import 'profile_tab.dart';
@@ -135,7 +136,7 @@ class ProfileContent extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.space24),
-      ],
+      ].animate(interval: 50.ms).fade(duration: 400.ms).slideY(begin: 0.05, curve: Curves.easeOut),
     );
   }
 

@@ -7,6 +7,8 @@ import '../../../shared/widgets/animated_app_background.dart';
 import '../../../shared/widgets/expandable_text.dart';
 import '../../../shared/widgets/section_label.dart';
 import '../../shared/widgets/dynamic_loading_message.dart';
+import 'package:flutter_animate/flutter_animate.dart' hide ShimmerEffect;
+
 import '../../../shared/widgets/valora_app_bar.dart';
 import 'models/salary_estimation.dart';
 import 'services/results_service.dart';
@@ -170,7 +172,7 @@ class _ResultView extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.space24),
       children: [
         // 1. Card Principal Salarial
-        SalaryCard(result: result),
+        SalaryCard(result: result).animate().fade(duration: 400.ms).slideY(begin: 0.05, curve: Curves.easeOut),
 
         const SizedBox(height: AppSpacing.space24),
 
@@ -190,28 +192,28 @@ class _ResultView extends StatelessWidget {
               height: 1.5,
             ),
           ),
-        ),
+        ).animate().fade(duration: 400.ms).slideY(begin: 0.05, curve: Curves.easeOut),
 
         const SizedBox(height: AppSpacing.space32),
 
         // 3. Destacados
         if (result.topHighlights.isNotEmpty) ...[
-          SectionLabel('FACTORES QUE MÁS AÑADEN VALOR'),
+          SectionLabel('FACTORES QUE MÁS AÑADEN VALOR').animate().fade(duration: 400.ms).slideY(begin: 0.05, curve: Curves.easeOut),
           const SizedBox(height: AppSpacing.space16),
-          TopHighlightsSection(highlights: result.topHighlights),
+          TopHighlightsSection(highlights: result.topHighlights).animate().fade(duration: 400.ms).slideY(begin: 0.05, curve: Curves.easeOut),
           const SizedBox(height: AppSpacing.space32),
         ],
 
         // 4. Tabla de barras de impacto
         if (result.factorBreakdown.isNotEmpty) ...[
-          SectionLabel('DESGLOSE DE IMPACTO EN TU VALOR'),
+          SectionLabel('DESGLOSE DE IMPACTO EN TU VALOR').animate().fade(duration: 400.ms).slideY(begin: 0.05, curve: Curves.easeOut),
           const SizedBox(height: AppSpacing.space16),
-          FactorBreakdownSection(breakdown: result.factorBreakdown),
+          FactorBreakdownSection(breakdown: result.factorBreakdown).animate().fade(duration: 400.ms).slideY(begin: 0.05, curve: Curves.easeOut),
           const SizedBox(height: AppSpacing.space32),
         ],
 
         // 5. Nota orientativa
-        const DisclaimerCard(),
+        const DisclaimerCard().animate().fade(duration: 400.ms).slideY(begin: 0.05, curve: Curves.easeOut),
 
         const SizedBox(height: AppSpacing.space24),
         
@@ -230,7 +232,7 @@ class _ResultView extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
           ),
-        ),
+        ).animate().fade(duration: 400.ms).slideY(begin: 0.05, curve: Curves.easeOut),
 
         const SizedBox(height: AppSpacing.space24),
       ],

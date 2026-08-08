@@ -4,6 +4,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/formatters.dart';
 import '../../shared/widgets/valora_app_bar.dart';
+import 'package:flutter_animate/flutter_animate.dart' hide ShimmerEffect;
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -124,7 +125,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ),
                   ],
                 ),
-              );
+              ).animate(delay: (index * 50).ms).fade(duration: 400.ms).slideX(begin: 0.05, curve: Curves.easeOut);
             },
           );
         },
