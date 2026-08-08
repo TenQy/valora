@@ -63,7 +63,7 @@ class AuthService {
   Future<AuthResponse> signInWithGoogle() async {
     final googleSignIn = GoogleSignIn(
       clientId: kIsWeb ? _webClientId : null,
-      serverClientId: _webClientId,
+      serverClientId: kIsWeb ? null : _webClientId,
     );
 
     final googleUser = await googleSignIn.signIn();
