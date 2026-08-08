@@ -95,7 +95,8 @@ class _AuthScreenState extends State<AuthScreen> {
     } on AuthException catch (e) {
       setState(() => _errorMessage = e.message);
     } catch (e) {
-      setState(() => _errorMessage = genericErrorMessage);
+      print('Auth Error: $e');
+      setState(() => _errorMessage = '$genericErrorMessage\nDetalle: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

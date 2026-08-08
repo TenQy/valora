@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -60,7 +61,10 @@ class AuthService {
   /// app (sin abrir un navegador externo), obtiene el ID token y lo
   /// intercambia con Supabase para crear la sesión.
   Future<AuthResponse> signInWithGoogle() async {
-    final googleSignIn = GoogleSignIn(serverClientId: _webClientId);
+    final googleSignIn = GoogleSignIn(
+      clientId: kIsWeb ? _webClientId : null,
+      serverClientId: _webClientId,
+    );
 
     final googleUser = await googleSignIn.signIn();
     if (googleUser == null) {

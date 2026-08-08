@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/theme/app_theme.dart';
 import 'features/splash/splash_screen.dart';
+import 'shared/widgets/responsive_wrapper.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,6 +33,10 @@ class ValoraApp extends StatelessWidget {
       theme: AppTheme.dark,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.dark,
+      builder: (context, child) {
+        if (child == null) return const SizedBox.shrink();
+        return ResponsiveWrapper(child: child);
+      },
       home: const SplashScreen(),
       routes: {
         '/dashboard': (_) => const Scaffold(
