@@ -61,9 +61,28 @@ class AuthService {
   /// app (sin abrir un navegador externo), obtiene el ID token y lo
   /// intercambia con Supabase para crear la sesión.
   Future<AuthResponse> signInWithGoogle() async {
+    if (kIsWeb) {
+      // En Web, los navegadores modernos bloquean las cookies de terceros, lo que rompe el plugin
+      // nativo de google_sign_in. La forma oficial y robusta recomendada por Supabase para Web
+      // es usar el flujo OAuth con redirección.
+      final success = await _client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        // Supabase interceptará el token al regresar y restaurará la sesión automáticamente.
+      );
+      
+      if (!success) {
+        throw const AuthException('No se pudo iniciar sesión con Google en la Web.');
+      }
+      
+      // Como signInWithOAuth redirige la página completa, el código normalmente no llega aquí.
+      // Retornamos una respuesta vacía para cumplir con la firma de la función.
+      return AuthResponse(session: _client.auth.currentSession, user: _client.auth.currentUser);
+    }
+
+    // Flujo para Android/iOS (Mantiene la ventana nativa sin redirigir el navegador)
     final googleSignIn = GoogleSignIn(
-      clientId: kIsWeb ? _webClientId : null,
-      serverClientId: kIsWeb ? null : _webClientId,
+      clientId: null,
+      serverClientId: _webClientId,
     );
 
     final googleUser = await googleSignIn.signIn();
