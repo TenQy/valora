@@ -1,20 +1,27 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../results/models/job_match_model.dart';
 import '../../results/models/salary_estimation.dart';
+import '../../results/models/growth_path_model.dart';
+import '../../../core/database/local_db_helper.dart';
+import 'dart:convert';
 
 class DashboardData {
   final String userName;
   final String professionalLevel;
   final SalaryEstimation? latestEstimation;
   final List<JobMatchResult> latestMatches;
+  final GrowthPathModel? latestGrowthPath;
   final int profileCompleteness;
+  final bool isProfileUpdatedRecently;
 
   DashboardData({
     required this.userName,
     required this.professionalLevel,
     required this.latestEstimation,
     required this.latestMatches,
+    this.latestGrowthPath,
     required this.profileCompleteness,
+    this.isProfileUpdatedRecently = false,
   });
 }
 
@@ -28,7 +35,7 @@ class DashboardService {
     // 1. Fetch profile basics
     final profileRes = await _client
         .from('profiles')
-        .select('id, full_name, professional_level, years_experience, professional_area_id')
+        .select('id, full_name, professional_level, years_experience, professional_area_id, updated_at')
         .eq('user_id', userId)
         .maybeSingle();
 
@@ -38,7 +45,9 @@ class DashboardService {
         professionalLevel: '—',
         latestEstimation: null,
         latestMatches: [],
+        latestGrowthPath: null,
         profileCompleteness: 0,
+        isProfileUpdatedRecently: false,
       );
     }
 
@@ -80,9 +89,9 @@ class DashboardService {
         currency: salaryRes['currency'] ?? 'MXN',
         professionalLevel: salaryRes['professional_level'] ?? '',
         summary: salaryRes['summary'] ?? '',
-        influentialFactors: [], // No guardados en BD, solo en memoria
-        topHighlights: [],
-        factorBreakdown: [],
+        influentialFactors: <String>[], // No guardados en BD, solo en memoria
+        topHighlights: <HighlightItem>[],
+        factorBreakdown: <BreakdownItem>[],
       );
     }
 
@@ -98,7 +107,7 @@ class DashboardService {
     for (final matchRow in matchesRes) {
       // En job_matches no guardamos el nombre directo, pero sí el id
       // Supabase join con job_roles(name)
-      final roleName = matchRow['job_roles'] != null ? matchRow['job_roles']['name'] : 'Rol';
+      final String roleName = matchRow['job_role_title'] ?? (matchRow['job_roles'] != null ? matchRow['job_roles']['name'] : 'Rol Profesional');
       matches.add(JobMatchResult.fromJson({
         ...matchRow,
         'job_role_name': roleName,
@@ -106,12 +115,34 @@ class DashboardService {
       }));
     }
 
+    // 4. Fetch latest growth path from local db
+    GrowthPathModel? growthPath;
+    bool isUpdated = false;
+    
+    final cachedPath = await LocalDbHelper.instance.getGrowthPath(userId);
+    if (cachedPath != null) {
+      try {
+        growthPath = GrowthPathModel.fromJson(jsonDecode(cachedPath));
+        
+        // Comparar fechas para ver si se actualizó el perfil después de generar la ruta
+        final pathCreatedAt = await LocalDbHelper.instance.getGrowthPathCreatedAt(userId);
+        if (pathCreatedAt != null && profileRes['updated_at'] != null) {
+          final profileUpdatedAt = DateTime.tryParse(profileRes['updated_at'].toString());
+          if (profileUpdatedAt != null && profileUpdatedAt.isAfter(pathCreatedAt)) {
+            isUpdated = true;
+          }
+        }
+      } catch (_) {}
+    }
+
     return DashboardData(
       userName: profileRes['full_name'] ?? 'Usuario',
       professionalLevel: profileRes['professional_level'] ?? '—',
       latestEstimation: estimation,
       latestMatches: matches,
+      latestGrowthPath: growthPath,
       profileCompleteness: completeness,
+      isProfileUpdatedRecently: isUpdated,
     );
   }
 }

@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.39.7";
-
+import { GoogleGenerativeAI } from "npm:@google/generative-ai";
+import { GEMINI_MODELS_FALLBACK } from "../_shared/ai_config.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -18,6 +19,20 @@ interface HighlightItem {
 interface BreakdownItem {
   category: string;
   percentage: number;
+}
+
+interface GuestProfile {
+  level: string;
+  years_experience: number;
+  area_name: string;
+  competencies: Array<{ name: string; level: string }>;
+  languages: Array<{ name: string; level: string }>;
+  certifications: Array<{ name: string }>;
+}
+
+interface EstimateSalaryRequest {
+  profile_id?: string;
+  guest_profile?: GuestProfile;
 }
 
 Deno.serve(async (req: Request) => {
@@ -41,18 +56,6 @@ Deno.serve(async (req: Request) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized user session" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     let requestBody: EstimateSalaryRequest = {};
     try {
       requestBody = await req.json();
@@ -60,53 +63,122 @@ Deno.serve(async (req: Request) => {
       // Body can be empty
     }
 
-    let query = supabase
-      .from("profiles")
-      .select(`
-        id,
-        user_id,
-        full_name,
-        career,
-        professional_level,
-        years_experience,
-        bio,
-        professional_area_id,
-        professional_areas ( name ),
-        user_competencies ( level, competencies ( name, category ) ),
-        user_languages ( languages ( name ), language_levels ( name ) ),
-        certifications ( name, issuer )
-      `);
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-    if (requestBody.profile_id) {
-      query = query.eq("id", requestBody.profile_id);
-    } else {
-      query = query.eq("user_id", user.id);
+    // Si no hay usuario y no hay guest_profile, denegar
+    if ((userError || !user) && !requestBody.guest_profile) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized user session" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    const { data: profileRow, error: profileError } = await query.single();
+    let level = "Junior";
+    let yearsExp = 0;
+    let areaName = "Tecnología";
+    let userComps: Array<any> = [];
+    let userLangs: Array<any> = [];
+    let certs: Array<any> = [];
+    let profileId: string | null = null;
+    let profileAreaId: string | null = null;
 
-    if (profileError || !profileRow) {
-      return new Response(
-        JSON.stringify({
-          error: "No se encontró un perfil profesional para calcular el salario.",
-        }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (requestBody.guest_profile) {
+      // Usar datos del invitado
+      const guest = requestBody.guest_profile;
+      level = guest.level || "Junior";
+      yearsExp = guest.years_experience || 0;
+      areaName = guest.area_name || "Tecnología";
+
+      userComps = (guest.competencies || []).map(c => ({
+        level: c.level,
+        competencies: { name: c.name }
+      }));
+
+      userLangs = (guest.languages || []).map(l => ({
+        language_levels: { name: l.level },
+        languages: { name: l.name }
+      }));
+
+      certs = (guest.certifications || []).map(c => ({
+        name: c.name
+      }));
+    } else if (user) {
+      // Usar base de datos
+      let query = supabase
+        .from("profiles")
+        .select(`
+          id,
+          user_id,
+          full_name,
+          career,
+          professional_level,
+          years_experience,
+          bio,
+          professional_area_id,
+          professional_areas ( name ),
+          user_competencies ( level, competencies ( name, category ) ),
+          user_languages ( languages ( name ), language_levels ( name ) ),
+          certifications ( name, issuer )
+        `);
+
+      if (requestBody.profile_id) {
+        query = query.eq("id", requestBody.profile_id);
+      } else {
+        query = query.eq("user_id", user.id);
+      }
+
+      const { data: profileRow, error: profileError } = await query.single();
+
+      if (profileError || !profileRow) {
+        return new Response(
+          JSON.stringify({
+            error: "No se encontró un perfil profesional para calcular el salario.",
+          }),
+          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      level = profileRow.professional_level ?? "Junior";
+      yearsExp = profileRow.years_experience ?? 0;
+      areaName = (profileRow.professional_areas as Record<string, unknown> | null)?.name as string ?? "Tecnología";
+      userComps = (profileRow.user_competencies as Array<Record<string, unknown>>) || [];
+      userLangs = (profileRow.user_languages as Array<Record<string, unknown>>) || [];
+      certs = (profileRow.certifications as Array<Record<string, unknown>>) || [];
+      profileId = profileRow.id;
+      profileAreaId = profileRow.professional_area_id;
     }
 
     // =========================================================================
     // RANGOS SALARIALES CALIBRADOS AL MERCADO NACIONAL MEXICANO (MXN / mes)
     // =========================================================================
-    const level = profileRow.professional_level ?? "Junior";
-    const yearsExp = profileRow.years_experience ?? 0;
-    const areaName = (profileRow.professional_areas as Record<string, unknown> | null)?.name as string ?? "Tecnología";
 
     // 1. Rangos base realistas por nivel
     let baseMin = 13000;
     let baseMax = 20000;
     let maxLevelCap = 25000; // Tope máximo realista para este nivel
 
-    switch (level) {
+    // Mapear los niveles dinámicos a los brackets base de salario
+    let mappedLevel = "Junior"; // default fallback
+    const lvlLower = level.toLowerCase();
+    
+    if (["estudiante", "becario", "interno", "dibujante", "pasante"].some(k => lvlLower.includes(k))) {
+      mappedLevel = "Estudiante";
+    } else if (["practicante", "auxiliar"].some(k => lvlLower.includes(k))) {
+      mappedLevel = "Practicante";
+    } else if (["junior", "médico general", "abogado junior"].some(k => lvlLower.includes(k))) {
+      mappedLevel = "Junior";
+    } else if (["semi senior", "analista", "titular", "residente", "proyectista", "proyecto", "asociado"].some(k => lvlLower.includes(k)) && !lvlLower.includes("senior")) {
+      mappedLevel = "Semi Senior";
+    } else if (["senior", "coordinador"].some(k => lvlLower.includes(k))) {
+      mappedLevel = "Senior";
+    } else if (["especialista", "gerente", "director", "lead", "staff", "socio", "adscrito", "investigador"].some(k => lvlLower.includes(k))) {
+      mappedLevel = "Especialista";
+    }
+
+    switch (mappedLevel) {
       case "Estudiante":
         baseMin = 6000;
         baseMax = 9000;
@@ -158,7 +230,6 @@ Deno.serve(async (req: Request) => {
 
     // 3. Competencias (+2% avanzada, +1% intermedia, tope +12%)
     let compBonus = 0;
-    const userComps = (profileRow.user_competencies as Array<Record<string, unknown>>) || [];
     for (const comp of userComps) {
       const compObj = comp.competencies as Record<string, unknown> | null;
       const name = compObj?.name as string | undefined;
@@ -174,26 +245,38 @@ Deno.serve(async (req: Request) => {
     }
     compBonus = Math.min(compBonus, 0.12);
 
-    // 4. Idiomas (Inglés B2 +10%, C1/C2 +18%)
+    // 4. Idiomas
     let langBonus = 0;
-    const userLangs = (profileRow.user_languages as Array<Record<string, unknown>>) || [];
+    let nativosContados = 0;
     for (const lang of userLangs) {
       const langObj = lang.languages as Record<string, unknown> | null;
       const levelObj = lang.language_levels as Record<string, unknown> | null;
       const langName = (langObj?.name as string) ?? "";
       const lvlName = (levelObj?.name as string) ?? "";
 
-      if (langName.toLowerCase().includes("ingl") || langName.toLowerCase().includes("engl")) {
-        const bonus = ["C1", "C2", "Nativo"].includes(lvlName) ? 0.18 : ["B2"].includes(lvlName) ? 0.10 : 0.04;
-        langBonus += bonus;
-        const label = `Inglés ${lvlName}`;
-        influentialFactors.push(label);
-        highlightCandidates.push({ label, rawBonus: bonus });
+      if (lvlName === "Nativo") {
+        nativosContados++;
+        if (nativosContados === 1) {
+          continue; // Ignorar el primer idioma nativo
+        }
       }
+
+      const isEnglish = langName.toLowerCase().includes("ingl") || langName.toLowerCase().includes("engl");
+      let bonus = 0;
+
+      if (isEnglish) {
+        bonus = ["C1", "C2", "Nativo"].includes(lvlName) ? 0.18 : ["B2"].includes(lvlName) ? 0.10 : 0.04;
+      } else {
+        bonus = ["C1", "C2", "Nativo"].includes(lvlName) ? 0.10 : ["B2"].includes(lvlName) ? 0.05 : 0.02;
+      }
+
+      langBonus += bonus;
+      const label = `${langName} ${lvlName}`;
+      influentialFactors.push(label);
+      highlightCandidates.push({ label, rawBonus: bonus });
     }
 
     // 5. Certificaciones (+3% cada una, tope +8%)
-    const certs = (profileRow.certifications as Array<Record<string, unknown>>) || [];
     let certBonus = 0;
     for (const cert of certs) {
       certBonus += 0.03;
@@ -245,7 +328,7 @@ Deno.serve(async (req: Request) => {
     const factorBreakdown: BreakdownItem[] = [
       { category: "Experiencia y Trayectoria", percentage: expPct },
     ];
-    
+
     if (compPct > 0) {
       factorBreakdown.push({ category: "Competencias Técnicas", percentage: compPct });
     }
@@ -258,43 +341,129 @@ Deno.serve(async (req: Request) => {
 
     factorBreakdown.sort((a, b) => b.percentage - a.percentage);
 
-    const summary = `Basado en tu experiencia de ${yearsExp} años y tus ${userComps.length} habilidades principales, tienes un perfil sólido de nivel ${level} en el área de ${areaName}. Este rango refleja el valor actual que las empresas están dispuestas a pagar por tu combinación de conocimientos e idiomas en el mercado.`;
+    let summary = "";
+    if (requestBody.guest_profile) {
+      if (userComps.length > 0) {
+        summary = `¡Excelente inicio! Según el área de ${areaName} y las habilidades que agregaste, estimamos que este es el valor promedio actual en el mercado para un perfil ${level}. Regístrate para afinar este resultado añadiendo tu experiencia real, idiomas y certificaciones.`;
+      } else {
+        summary = `¡Excelente inicio! Según el área de ${areaName}, este es el valor base estimado en el mercado para un ${level}. Regístrate para agregar tus habilidades, experiencia e idiomas, y obtener un cálculo personalizado.`;
+      }
+    } else {
+      const expText = yearsExp > 0 ? `experiencia de ${yearsExp} años` : `trayectoria inicial`;
+      const compText = userComps.length > 0 ? ` y tus ${userComps.length} habilidades registradas` : ``;
+      summary = `Basado en tu ${expText}${compText}, tienes un perfil con potencial de nivel ${level} en el área de ${areaName}. Este rango refleja el valor actual que las empresas están dispuestas a pagar por tu perfil en el mercado.`;
+    }
 
-    if (profileRow.id && profileRow.professional_area_id) {
+    // =========================================================================
+    // REFINAMIENTO CON IA (GEMINI)
+    // =========================================================================
+    let finalMin = estimatedMinSalary;
+    let finalMax = estimatedMaxSalary;
+    let finalSummary = summary;
+
+    try {
+      const apiKey = Deno.env.get("GEMINI_API_KEY");
+      if (apiKey) {
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const modelsToTry = GEMINI_MODELS_FALLBACK;
+
+        const profileJson = JSON.stringify({
+          level, yearsExp, areaName, userComps, userLangs, certs
+        }, null, 2);
+
+        const prompt = `
+Eres un experto reclutador y analista de salarios en el sector profesional.
+Tu objetivo es analizar un perfil profesional y refinar su rango salarial matemáticamente calculado para hacerlo más preciso, detectando posibles anomalías de coherencia.
+
+Perfil del Usuario:
+${profileJson}
+
+Rango Salarial Base Calculado Matemáticamente:
+Mínimo: $${estimatedMinSalary} MXN
+Máximo: $${estimatedMaxSalary} MXN
+
+Instrucciones:
+1. Analiza el perfil buscando anomalías (por ejemplo, un Junior con 15 años de experiencia, o un "Desarrollador de Software" con la competencia "Cirugía Médica").
+2. Si detectas anomalías de coherencia, penaliza ligeramente el rango salarial (reduciendo un poco el máximo) porque indica que el perfil no está enfocado o los datos son inconsistentes. Si el perfil es altamente coherente y especializado, puedes acotar (volver más preciso) el rango salarial (ej. subir un poco el mínimo y bajar un poco el máximo para dar un rango de mayor confianza).
+3. NUNCA inventes rangos muy por fuera del rango base calculado. Usa el rango base como tu ancla estricta, solo refínalo (acótalo) para mayor precisión.
+4. Genera un 'summary' (resumen) redactado directamente para el usuario de unas 2 a 3 oraciones (en segunda persona). Explícale de forma profesional por qué tiene ese valor salarial, mencionando sus habilidades clave o años de experiencia. Si detectaste anomalías, menciónalas de forma constructiva (ej. "Notamos habilidades fuera de tu área que no añaden valor directo a tu rol principal..."). NUNCA uses markdown en el summary.
+5. Retorna ÚNICAMENTE un JSON válido con este formato exacto:
+{
+  "estimated_min_salary": 26000,
+  "estimated_max_salary": 32000,
+  "summary": "Texto del resumen personalizado..."
+}
+`;
+        let responseText = "";
+        for (const modelName of modelsToTry) {
+          try {
+            const model = genAI.getGenerativeModel({ model: modelName });
+            const result = await model.generateContent({
+              contents: [{ role: "user", parts: [{ text: prompt }] }],
+              generationConfig: { temperature: 0.2 }
+            });
+            responseText = result.response.text();
+            break;
+          } catch (e) {
+            console.warn(`Gemini model ${modelName} failed:`, e);
+          }
+        }
+
+        if (responseText) {
+          let cleanedJson = responseText.trim();
+          if (cleanedJson.startsWith("```json")) {
+            cleanedJson = cleanedJson.replace(/^```json/, "").replace(/```$/, "").trim();
+          } else if (cleanedJson.startsWith("```")) {
+            cleanedJson = cleanedJson.replace(/^```/, "").replace(/```$/, "").trim();
+          }
+          const parsed = JSON.parse(cleanedJson);
+          if (parsed.estimated_min_salary && parsed.estimated_max_salary && parsed.summary) {
+            finalMin = parsed.estimated_min_salary;
+            finalMax = parsed.estimated_max_salary;
+            finalSummary = parsed.summary;
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Gemini Salary Refinement Error:", e);
+      // Fallback silencioso a los valores matemáticos
+    }
+
+    if (profileId && profileAreaId) {
       // Evitar guardar historial si el valor es exactamente el mismo que el anterior
       const { data: lastEst } = await supabase
         .from("salary_estimations")
         .select("estimated_min_salary, estimated_max_salary, summary")
-        .eq("profile_id", profileRow.id)
+        .eq("profile_id", profileId)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
 
       const isDuplicate = lastEst &&
-        lastEst.estimated_min_salary === estimatedMinSalary &&
-        lastEst.estimated_max_salary === estimatedMaxSalary &&
-        lastEst.summary === summary;
+        lastEst.estimated_min_salary === finalMin &&
+        lastEst.estimated_max_salary === finalMax &&
+        lastEst.summary === finalSummary;
 
       if (!isDuplicate) {
         await supabase.from("salary_estimations").insert({
-          profile_id: profileRow.id,
-          professional_area_id: profileRow.professional_area_id,
-          estimated_min_salary: estimatedMinSalary,
-          estimated_max_salary: estimatedMaxSalary,
+          profile_id: profileId,
+          professional_area_id: profileAreaId,
+          estimated_min_salary: finalMin,
+          estimated_max_salary: finalMax,
           currency: "MXN",
           professional_level: level,
-          summary: summary,
+          summary: finalSummary,
         });
       }
     }
 
     return new Response(
       JSON.stringify({
-        estimated_min_salary: estimatedMinSalary,
-        estimated_max_salary: estimatedMaxSalary,
+        estimated_min_salary: finalMin,
+        estimated_max_salary: finalMax,
         currency: "MXN",
         professional_level: level,
-        summary: summary,
+        summary: finalSummary,
         influential_factors: influentialFactors,
         top_highlights: topHighlights,
         factor_breakdown: factorBreakdown,

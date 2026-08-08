@@ -26,7 +26,7 @@ class JobMatchResult {
   factory JobMatchResult.fromJson(Map<String, dynamic> json) {
     return JobMatchResult(
       jobRoleId: json['job_role_id'] ?? '',
-      jobRoleName: json['job_role_name'] ?? 'Rol Profesional',
+      jobRoleName: json['job_role_title'] ?? json['job_role_name'] ?? 'Rol Profesional',
       matchPercentage: (json['match_percentage'] as num?)?.toInt() ?? 0,
       estimatedMinSalary: (json['estimated_min_salary'] as num?)?.toInt() ?? 0,
       estimatedMaxSalary: (json['estimated_max_salary'] as num?)?.toInt() ?? 0,

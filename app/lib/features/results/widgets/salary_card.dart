@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -15,6 +16,8 @@ class SalaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isSkeleton = Skeletonizer.of(context).enabled;
+    
     return Container(
       decoration: BoxDecoration(
         color: AppColors.bgSurface,
@@ -32,30 +35,31 @@ class SalaryCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         child: Stack(
           children: [
-            Positioned(
-              top: -40,
-              right: -40,
-              child: Container(
-                width: 160,
-                height: 160,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      Color(0x1F4ADE80), // greenDim
-                      Colors.transparent,
-                    ],
+            if (!isSkeleton)
+              Positioned(
+                top: -40,
+                right: -40,
+                child: Container(
+                  width: 160,
+                  height: 160,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        Color(0x1F4ADE80), // greenDim
+                        Colors.transparent,
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
             Padding(
               padding: const EdgeInsets.all(AppSpacing.space28),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'VALOR CENTRAL ESTIMADO · ${result.currency}',
+                    'VALOR CENTRAL ESTIMADO MENSUAL · ${result.currency} / MES',
                     style: AppTextStyles.sectionLabel,
                   ),
                   const SizedBox(height: AppSpacing.space12),
@@ -105,6 +109,8 @@ class SalaryRangeBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isSkeleton = Skeletonizer.of(context).enabled;
+    
     return Column(
       children: [
         Stack(
@@ -120,12 +126,15 @@ class SalaryRangeBar extends StatelessWidget {
             Container(
               height: 4,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [
-                    AppColors.greenDim,
-                    AppColors.green,
-                  ],
-                ),
+                gradient: isSkeleton
+                    ? null
+                    : const LinearGradient(
+                        colors: [
+                          AppColors.greenDim,
+                          AppColors.green,
+                        ],
+                      ),
+                color: isSkeleton ? AppColors.borderDefault : null,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -133,16 +142,18 @@ class SalaryRangeBar extends StatelessWidget {
               width: 14,
               height: 14,
               decoration: BoxDecoration(
-                color: AppColors.green,
+                color: isSkeleton ? AppColors.silver : AppColors.green,
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x594ADE80),
-                    blurRadius: 12,
-                    spreadRadius: 2,
-                  ),
-                ],
+                border: Border.all(color: AppColors.bgSurface, width: 2),
+                boxShadow: isSkeleton
+                    ? null
+                    : const [
+                        BoxShadow(
+                          color: Color(0x594ADE80),
+                          blurRadius: 12,
+                          spreadRadius: 2,
+                        ),
+                      ],
               ),
             ),
           ],

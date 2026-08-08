@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.39.7";
 import { GoogleGenerativeAI } from "npm:@google/generative-ai";
+import { GEMINI_MODELS_FALLBACK } from "../_shared/ai_config.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -91,10 +92,23 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // 2. Fetch Job Roles for the area
+    // 1.5 Fetch latest salary estimation to anchor the job match
+    const { data: lastEstimation } = await supabase
+      .from("salary_estimations")
+      .select("estimated_min_salary, estimated_max_salary")
+      .eq("profile_id", profileRow.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const currentValuationText = lastEstimation
+      ? `$${lastEstimation.estimated_min_salary} - $${lastEstimation.estimated_max_salary} MXN`
+      : 'Desconocido';
+
+    // 2. Fetch Job Roles for the area (Optimizado sin description para ahorrar tokens)
     const { data: jobRoles, error: rolesError } = await supabase
       .from("job_roles")
-      .select("id, name, description, min_salary, max_salary")
+      .select("id, name, min_salary, max_salary")
       .eq("professional_area_id", profileRow.professional_area_id)
       .eq("is_active", true);
 
@@ -112,14 +126,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const modelsToTry = [
-      "gemini-3.5-flash-lite",
-      "gemini-3.1-flash",
-      "gemini-3.1-flash-lite",
-      "gemini-2.5-flash",
-      "gemini-2.5-flash-lite",
-      "gemini-1.5-flash",
-    ];
+    const modelsToTry = GEMINI_MODELS_FALLBACK;
 
     const profileJson = JSON.stringify(profileRow, null, 2);
     const rolesJson = JSON.stringify(jobRoles, null, 2);
@@ -134,20 +141,20 @@ ${profileJson}
 Catálogo de Roles Disponibles:
 ${rolesJson}
 
+Valoración Monetaria Actual del Usuario (Su Valor en el Mercado):
+${currentValuationText}
+
 Instrucciones:
 1. Analiza el nivel, carrera, años de experiencia, lenguajes, certificaciones y competencias del usuario.
-2. Compara esto con la descripción de cada rol en el catálogo.
+   - REGLA CRÍTICA: Si el usuario NO tiene competencias ni bio, NO inventes habilidades. Devuelve un arreglo vacío [] en "matched_competencies". Todas las habilidades requeridas por el rol deben ir en "missing_competencies".
+2. Compara esto con el nombre de cada rol en el catálogo y utiliza tu conocimiento experto para inferir qué exige cada rol.
 3. Selecciona los 3 roles con mayor compatibilidad.
-4. Ajusta el salario estimado dentro del rango del rol basándote en la experiencia del usuario (Junior vs Senior).
-5. Genera una cadena de búsqueda (search_query) altamente optimizada para Google Jobs, siguiendo estas reglas estrictas:
-   - NO incluyas palabras como "trabajo de" o "empleo de", busca el rol directo.
-   - NO incluyas habilidades técnicas en la cadena.
-   - Si el nivel es "Estudiante", omite el nivel (ej. "Desarrollador Frontend").
-   - Si el nivel es "Practicante", ponlo antes (ej. "practicante de Desarrollador Frontend").
-   - Si el nivel es "Junior", ponlo después (ej. "Desarrollador Frontend junior").
-   - Si el nivel es "Semi Senior", usa el término "mid level" al final (ej. "Desarrollador Frontend mid level").
-   - Si el nivel es "Senior", ponlo después (ej. "Desarrollador Frontend senior").
-   - Si el nivel es "Especialista", ponlo después (ej. "Desarrollador Frontend especialista").
+4. Ajusta el salario estimado (min/max) dentro del rango del rol, pero ANCLADO estrechamente al mercado real en México y a su "Valoración Monetaria Actual". 
+   - REGLA ESTRICTA: Un "Practicante", "Estudiante" o "Junior" rara vez supera los 15,000 a 25,000 MXN en México. Sé realista.
+5. Genera una cadena de búsqueda (search_query) altamente optimizada para Google Jobs:
+   - Usa el nombre puro del rol (ej. "Desarrollador Frontend") sin añadir niveles confusos (ni "mid level", ni "especialista", etc).
+   - EXCEPCIÓN 1: Si el nivel es "Practicante" o "Pasante", busca "Practicante de [Rol]".
+   - EXCEPCIÓN 2: Si el nivel es "Junior", busca "[Rol] junior".
 6. Retorna ÚNICAMENTE un arreglo JSON con el siguiente formato exacto y sin markdown extra:
 [
   {
@@ -178,7 +185,7 @@ Instrucciones:
           }
         });
         responseText = result.response.text();
-        break; 
+        break;
       } catch (e) {
         lastError = e;
         console.warn(`Model ${modelName} failed:`, e);
@@ -213,22 +220,31 @@ Instrucciones:
     }
 
     // 4. Save to Database
-    const recordsToInsert = parsedResult.map((match: any) => ({
-      profile_id: profileRow.id,
-      job_role_id: match.job_role_id,
-      match_percentage: match.match_percentage,
-      estimated_min_salary: match.estimated_min_salary,
-      estimated_max_salary: match.estimated_max_salary,
-      currency: match.currency || "MXN",
-      matched_competencies: match.matched_competencies || [],
-      missing_competencies: match.missing_competencies || [],
-      summary: match.summary || "",
-      search_query: match.search_query || match.job_role_name,
-    }));
+    const recordsToInsert = parsedResult.map((match: any) => {
+      const roleDef = jobRoles?.find((r) => r.id === match.job_role_id);
+      const baseName = roleDef?.name || match.job_role_name || "Rol Profesional";
+      const customTitle = profileRow.professional_level
+        ? `${baseName} (${profileRow.professional_level})`
+        : baseName;
 
-    const recordsToReturn = parsedResult.map((match: any) => ({
+      return {
+        profile_id: profileRow.id,
+        job_role_id: match.job_role_id,
+        match_percentage: match.match_percentage,
+        estimated_min_salary: match.estimated_min_salary,
+        estimated_max_salary: match.estimated_max_salary,
+        currency: match.currency || "MXN",
+        matched_competencies: match.matched_competencies || [],
+        missing_competencies: match.missing_competencies || [],
+        summary: match.summary || "",
+        search_query: match.search_query || baseName,
+        job_role_title: customTitle,
+      };
+    });
+
+    const recordsToReturn = recordsToInsert.map((match: any) => ({
       ...match,
-      search_query: match.search_query || match.job_role_name,
+      job_role_name: match.job_role_title,
     }));
 
     const { error: insertError } = await supabase

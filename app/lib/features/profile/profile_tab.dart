@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -46,7 +47,17 @@ class _ProfileTabState extends State<ProfileTab> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+          return Skeletonizer(
+            enabled: true,
+            effect: ShimmerEffect(
+              baseColor: AppColors.bgSurface,
+              highlightColor: AppColors.silver.withValues(alpha: 0.1),
+            ),
+            child: ProfileContent(
+              onEditPressed: () {},
+              onSignOut: () {},
+            ),
+          );
         }
 
         if (snapshot.hasError) {
@@ -119,13 +130,6 @@ class _ProfileTabMessage extends StatelessWidget {
               style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
             ),
             const SizedBox(height: AppSpacing.space20),
-            if (onCreateProfile != null) ...[
-              ElevatedButton(
-                onPressed: onCreateProfile,
-                child: const Text('Crear mi perfil ahora'),
-              ),
-              const SizedBox(height: AppSpacing.space16),
-            ],
             Wrap(
               alignment: WrapAlignment.center,
               spacing: AppSpacing.space12,

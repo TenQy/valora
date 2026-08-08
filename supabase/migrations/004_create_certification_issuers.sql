@@ -5,33 +5,9 @@ create table certification_issuers (
   created_at timestamptz not null default now()
 );
 
--- Migración de datos existentes: asegurarnos de que los issuers que ya existen 
--- en la tabla certifications sean insertados en nuestro catálogo para no 
--- violar la nueva llave foránea.
-insert into certification_issuers (name)
-select distinct issuer from certifications where issuer is not null
-on conflict (name) do nothing;
+alter table certification_issuers enable row level security;
 
--- Ahora insertamos un catálogo básico predefinido
-insert into certification_issuers (name) values
-  ('Amazon Web Services'),
-  ('Google'),
-  ('Microsoft'),
-  ('Meta'),
-  ('Oracle'),
-  ('Cisco'),
-  ('IBM'),
-  ('Apple'),
-  ('Platzi'),
-  ('Udemy'),
-  ('Coursera'),
-  ('edX'),
-  ('Scrum.org'),
-  ('Scrum Alliance'),
-  ('Project Management Institute (PMI)'),
-  ('LinkedIn Learning'),
-  ('FreeCodeCamp')
-on conflict (name) do nothing;
+
 
 -- Finalmente, agregamos la restricción (Foreign Key) a la tabla certifications 
 -- vinculando el texto issuer directamente a certification_issuers(name).

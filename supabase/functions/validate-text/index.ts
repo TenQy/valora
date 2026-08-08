@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.39.7";
 import { GoogleGenerativeAI } from "npm:@google/generative-ai";
+import { GEMINI_MODELS_FALLBACK } from "../_shared/ai_config.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -74,7 +75,7 @@ Si el texto parece un nombre realista, válido o posible (incluso si está escri
 Si es claramente inválido, falso, broma o basura, responde "false". 
 Responde ÚNICAMENTE con la palabra "true" o "false", sin ningún otro texto.`;
 
-    const modelsToTry = ["gemini-3.5-flash-lite", "gemini-3.1-flash", "gemini-3.1-flash-lite", "gemini-2.5-flash", "gemini-2.5-flash-lite"];
+    const modelsToTry = GEMINI_MODELS_FALLBACK;
     let lastError: any = null;
 
     for (const modelName of modelsToTry) {

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../core/theme/app_colors.dart';
 import '../dashboard/dashboard_screen.dart';
-import '../welcome/welcome_screen.dart';
+import '../guest/screens/guest_dashboard_screen.dart';
+import '../auth/screens/lock_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -70,19 +73,34 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    Future.delayed(const Duration(milliseconds: 2000), () {
+    Future.delayed(const Duration(milliseconds: 2000), () async {
       if (!mounted) return;
 
       final session = Supabase.instance.client.auth.currentSession;
       final hasValidSession = session != null && !session.isExpired;
 
+      final prefs = await SharedPreferences.getInstance();
+      final savedPin = prefs.getString('app_pin');
+      final isLocked = savedPin != null && savedPin.isNotEmpty;
+
+      if (!mounted) return;
+
+      Widget nextScreen;
+      if (hasValidSession) {
+        nextScreen = const DashboardScreen();
+      } else {
+        nextScreen = const GuestDashboardScreen();
+      }
+
+      if (isLocked) {
+        nextScreen = LockScreen(nextScreen: nextScreen);
+      }
+
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           transitionDuration: const Duration(milliseconds: 800),
           reverseTransitionDuration: const Duration(milliseconds: 400),
-          pageBuilder: (_, _, _) => hasValidSession
-              ? const DashboardScreen()
-              : const WelcomeScreen(),
+          pageBuilder: (_, _, _) => nextScreen,
           transitionsBuilder: (_, animation, _, child) {
             // Fade suave mientras el Hero hace su magia
             return FadeTransition(
@@ -144,13 +162,22 @@ class _SplashScreenState extends State<SplashScreen>
                 opacity: _loaderOpacity.value,
                 child: child,
               ),
-              child: const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(
-                  color: AppColors.silverMuted,
-                  strokeWidth: 1,
-                ),
+              child: Column(
+                children: [
+                  const Text('INICIANDO', style: TextStyle(color: AppColors.silverMuted, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 4)),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: 140,
+                    height: 2,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(1),
+                      child: const LinearProgressIndicator(
+                        backgroundColor: AppColors.bgSurface,
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.silver),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

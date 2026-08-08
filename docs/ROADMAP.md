@@ -272,7 +272,7 @@ Crear una página pública para presentar Valora.
 
 ## Actividades
 
-* Crear landing en React
+* Crear landing en Astro (o React)
 * Explicar funcionalidades
 * Mostrar beneficios
 * Mostrar flujo de uso
@@ -313,8 +313,8 @@ Publicar el proyecto y preparar la presentación final.
 
 ## Actividades
 
-* Configurar AWS EC2
-* Configurar Nginx
+* Configurar proyecto en Vercel
+* Preparar variables de entorno
 * Desplegar landing
 * Desplegar Flutter Web
 * Publicar APK

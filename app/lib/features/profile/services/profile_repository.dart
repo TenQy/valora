@@ -1,5 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-
+import '../../../core/database/local_db_helper.dart';
 import '../models/catalog_models.dart';
 import '../models/profile_models.dart';
 import 'language_flags.dart';
@@ -23,7 +23,7 @@ class ProfileRepository {
     years_experience,
     bio,
     professional_areas ( name ),
-    user_competencies ( level, competencies ( name ) ),
+    user_competencies ( level, competencies ( name, requires_level ) ),
     user_languages ( language_levels ( name ), languages ( name ) ),
     certifications ( name, issuer, issue_date ),
     projects ( name, description, project_competencies ( competencies ( name ) ) )
@@ -59,7 +59,7 @@ class ProfileRepository {
       professional_level,
       years_experience,
       bio,
-      user_competencies ( competency_id, level, competencies ( name ) ),
+      user_competencies ( competency_id, level, competencies ( name, requires_level ) ),
       user_languages ( language_id, language_level_id, languages ( name ), language_levels ( name ) ),
       certifications ( id, name, issuer, issue_date )
     ''';
@@ -84,9 +84,9 @@ class ProfileRepository {
   Future<List<CompetencyItem>> fetchCompetencies() async {
     final data = await _client
         .from('competencies')
-        .select('id, name, category')
+        .select('id, name, category, requires_level, competency_areas(professional_area_id)')
         .eq('is_active', true)
-        .order('name');
+        .order('name', ascending: true);
     return _asList(data).map((e) => CompetencyItem.fromJson(e)).toList();
   }
 
@@ -110,9 +110,9 @@ class ProfileRepository {
   Future<List<JobRoleItem>> fetchJobRoles() async {
     final data = await _client
         .from('job_roles')
-        .select('id, name')
+        .select('id, name, professional_area_id')
         .eq('is_active', true)
-        .order('name');
+        .order('name', ascending: true);
     return _asList(data).map((e) => JobRoleItem.fromJson(e)).toList();
   }
 
@@ -130,7 +130,9 @@ class ProfileRepository {
     final res = await _client.functions.invoke(
       'validate-text',
       body: {'text': text, 'type': type},
-    );
+    ).timeout(const Duration(seconds: 10), onTimeout: () {
+      throw Exception('Fallo de conexión al validar el texto.');
+    });
     
     if (res.status != 200 || res.data == null) {
       throw Exception('Fallo en el servicio de validación');
@@ -140,7 +142,8 @@ class ProfileRepository {
   }
 
   /// Guarda / Actualiza el perfil completo del usuario y sus relaciones.
-  Future<void> saveProfile({
+  /// Retorna el ID del perfil creado o actualizado.
+  Future<String> saveProfile({
     required String fullName,
     required String? professionalAreaId,
     required String career,
@@ -167,6 +170,7 @@ class ProfileRepository {
       'professional_level': professionalLevel,
       'years_experience': yearsExperience,
       'bio': bio.trim(),
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
     }, onConflict: 'user_id').select('id').single();
 
     final profileId = profileRow['id'] as String;
@@ -178,7 +182,7 @@ class ProfileRepository {
         competencies.map((c) => {
           'profile_id': profileId,
           'competency_id': c.competencyId,
-          'level': c.level,
+          'level': c.requiresLevel ? c.level : null,
         }).toList(),
       );
     }
@@ -207,20 +211,45 @@ class ProfileRepository {
         }).toList(),
       );
     }
+
+    // 5. Limpiar caché en SQLite para forzar recalculación con IA
+    await LocalDbHelper.instance.clearSalaryEstimation(profileId);
+    await LocalDbHelper.instance.clearSalaryEstimation(user.id);
+    await LocalDbHelper.instance.clearSalaryEstimation('guest');
+
+    await LocalDbHelper.instance.clearJobMatches(profileId);
+    await LocalDbHelper.instance.clearJobMatches(user.id);
+    await LocalDbHelper.instance.clearJobMatches('guest');
+
+    return profileId;
+  }
+
+  /// Migra los datos de estimación del invitado a su nuevo perfil
+  Future<void> saveGuestEstimation(String profileId, Map<String, dynamic> guestData) async {
+    await _client.from('salary_estimations').insert({
+      'profile_id': profileId,
+      'professional_area_id': guestData['professional_area_id'],
+      'estimated_min_salary': guestData['estimated_min_salary'],
+      'estimated_max_salary': guestData['estimated_max_salary'],
+      'currency': guestData['currency'],
+      'professional_level': guestData['professional_level'],
+      'summary': guestData['summary'],
+    });
   }
 
   ProfessionalProfile _mapProfile(Map<String, dynamic> row) {
     final professionalArea = row['professional_areas'] as Map<String, dynamic>?;
 
-    final competencies = _asList(row['user_competencies']).map((raw) {
+    final competencies = _asList(row['user_competencies']).map<UserCompetency>((raw) {
       final competency = raw['competencies'] as Map<String, dynamic>?;
       return UserCompetency(
         name: competency?['name'] as String? ?? '—',
         level: raw['level'] as String? ?? 'Básico',
+        requiresLevel: competency?['requires_level'] as bool? ?? true,
       );
     }).toList();
 
-    final languages = _asList(row['user_languages']).map((raw) {
+    final languages = _asList(row['user_languages']).map<UserLanguage>((raw) {
       final language = raw['languages'] as Map<String, dynamic>?;
       final level = raw['language_levels'] as Map<String, dynamic>?;
       final name = language?['name'] as String? ?? '—';
@@ -231,7 +260,7 @@ class ProfileRepository {
       );
     }).toList();
 
-    final certifications = _asList(row['certifications']).map((raw) {
+    final certifications = _asList(row['certifications']).map<UserCertification>((raw) {
       return UserCertification(
         name: raw['name'] as String? ?? '—',
         issuer: raw['issuer'] as String? ?? '—',
@@ -239,9 +268,9 @@ class ProfileRepository {
       );
     }).toList();
 
-    final projects = _asList(row['projects']).map((raw) {
+    final projects = _asList(row['projects']).map<UserProject>((raw) {
       final projectCompetencies = _asList(raw['project_competencies'])
-          .map((pc) {
+          .map<String>((pc) {
             final competency = pc['competencies'] as Map<String, dynamic>?;
             return competency?['name'] as String? ?? '—';
           })
@@ -268,7 +297,8 @@ class ProfileRepository {
   }
 
   List<Map<String, dynamic>> _asList(dynamic value) {
-    if (value is! List) return const [];
-    return value.cast<Map<String, dynamic>>();
+    if (value == null) return <Map<String, dynamic>>[];
+    if (value is List) return value.cast<Map<String, dynamic>>().toList();
+    return <Map<String, dynamic>>[];
   }
 }
