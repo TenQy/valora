@@ -86,9 +86,14 @@ class _AuthScreenState extends State<AuthScreen> {
     try {
       await action();
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const DashboardScreen()),
-        );
+        // Solo navegamos si la sesión realmente se estableció.
+        // En Web (signInWithOAuth), esto evita que navegue prematuramente
+        // mientras el navegador hace la redirección a Google.
+        if (_authService.currentUser != null) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const DashboardScreen()),
+          );
+        }
       }
     } on GoogleSignInCancelledException {
       // Cancelación del usuario: no es un error, no mostramos nada.
