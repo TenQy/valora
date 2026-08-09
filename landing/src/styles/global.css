@@ -27,6 +27,25 @@ body {
   color: var(--color-bg-base);
 }
 
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-base);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  border: 3px solid var(--color-bg-base);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(74, 222, 128, 0.6); /* hero-glow color */
+}
+
 /* Glassmorphism utility */
 .glass-card {
   background-color: rgba(255, 255, 255, 0.03);
