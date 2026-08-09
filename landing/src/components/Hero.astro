@@ -1,4 +1,8 @@
 ---
+import Badge from './ui/Badge.astro';
+import PrimaryButton from './ui/PrimaryButton.astro';
+import SecondaryButton from './ui/SecondaryButton.astro';
+import InteractiveMockup from './ui/InteractiveMockup.astro';
 ---
 
 <section id="hero-section" class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
@@ -7,11 +11,7 @@
     <!-- Text Content -->
     <div class="flex flex-col items-start text-left z-10">
       
-      <!-- Subtle Badge -->
-      <div class="animate-fade-up opacity-0 [animation-fill-mode:forwards] inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-white/5 border border-white/10 text-text-secondary text-xs font-medium tracking-wide uppercase mb-8">
-        <span class="w-1.5 h-1.5 rounded-full bg-brand-primary/80 animate-pulse"></span>
-        Plataforma impulsada por IA
-      </div>
+      <Badge text="Plataforma impulsada por IA" />
       
       <!-- Headline -->
       <h1 class="animate-fade-up opacity-0 [animation-fill-mode:forwards] [animation-delay:150ms] text-4xl lg:text-5xl font-semibold text-white tracking-tight leading-[1.15] mb-6 relative">
@@ -34,75 +34,35 @@
       <!-- Actions -->
       <div class="animate-fade-up opacity-0 [animation-fill-mode:forwards] [animation-delay:450ms] flex flex-col sm:flex-row gap-4 w-full sm:w-auto relative">
         
-        <!-- Primary Button: Clean White with Hover Lift & Glow -->
-        <a 
+        <PrimaryButton 
           href="https://vaalora.vercel.app" 
-          target="_blank"
-          rel="noopener noreferrer"
-          class="group relative flex items-center justify-center gap-3 px-7 py-3.5 rounded-md bg-white text-bg-base text-sm font-bold transition-all duration-300 hover:scale-[1.03] hover:-translate-y-1 hover:shadow-[0_10px_40px_rgba(255,255,255,0.15)] active:scale-95"
-        >
-          <span class="relative z-10">Probar en la Web</span>
-          
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="relative z-10 arrow-right-icon"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-        </a>
+          target="_blank" 
+          rel="noopener noreferrer" 
+          text="Probar en la Web" 
+        />
         
-        <!-- Secondary Button: Animated Download Icon -->
-        <a 
+        <SecondaryButton 
           href="/downloads/valora.apk" 
-          download
-          class="group relative flex items-center justify-center gap-3 px-7 py-3.5 rounded-md bg-transparent border border-white/20 text-white text-sm font-medium transition-all duration-300 hover:border-hero-glow/60 hover:shadow-[0_0_20px_rgba(74,222,128,0.15)] active:scale-95 overflow-hidden"
-        >
-          <div class="absolute inset-0 bg-hero-glow/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="relative z-10 opacity-70 group-hover:opacity-100 transition-opacity">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <!-- The arrow part wrapped for animation -->
-            <g class="download-arrow">
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" x2="12" y1="15" y2="3"/>
-            </g>
-          </svg>
-          <span class="relative z-10">Descargar APK</span>
-        </a>
+          download={true} 
+          text="Descargar APK" 
+        />
+        
       </div>
       
     </div>
 
     <!-- Image / Mockup -->
-    <div class="relative z-10 animate-fade-in opacity-0 [animation-fill-mode:forwards] [animation-delay:600ms]">
-      <!-- Continuous levitation float -->
-      <div class="animate-float">
-        <!-- JS Controlled 3D Tilt container -->
-        <div id="hero-mockup" class="relative rounded-2xl overflow-hidden glass-card p-1 shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/5 will-change-transform transform-gpu">
-          <img 
-            src="/images/hero_dashboard_real.png" 
-            alt="Valora Dashboard Mockup" 
-            class="w-full h-auto rounded-xl"
-          />
-          <!-- JS Controlled Glare effect -->
-          <div id="mockup-glare" class="absolute inset-0 pointer-events-none mix-blend-overlay opacity-0 transition-opacity duration-300"></div>
-        </div>
-      </div>
-      
-      <!-- Ambient shadow on the 'floor' to enhance levitation -->
-      <div class="absolute -bottom-10 left-1/2 -translate-x-1/2 w-3/4 h-8 bg-black/40 blur-xl rounded-full animate-shadow-pulse -z-10"></div>
-    </div>
+    <InteractiveMockup 
+      imageSrc="/images/hero_dashboard_real.png" 
+      altText="Valora Dashboard Mockup" 
+      trackingContainerId="hero-section"
+      delayClass="animate-fade-in opacity-0 [animation-fill-mode:forwards] [animation-delay:600ms]"
+    />
     
   </div>
 </section>
 
 <style>
-  /* Entrance animations */
-  @keyframes fade-up {
-    from { opacity: 0; transform: translateY(20px); filter: blur(4px); }
-    to { opacity: 1; transform: translateY(0); filter: blur(0); }
-  }
-  @keyframes fade-in {
-    from { opacity: 0; transform: scale(0.96); }
-    to { opacity: 1; transform: scale(1); }
-  }
-  .animate-fade-up { animation: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-  .animate-fade-in { animation: fade-in 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-
   /* Shimmering Text */
   @keyframes shimmer {
     to { background-position: -200% center; }
@@ -110,86 +70,4 @@
   .animate-shimmer {
     animation: shimmer 4s linear infinite;
   }
-
-  /* Levitating Image */
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-16px); }
-  }
-  .animate-float {
-    animation: float 6s ease-in-out infinite;
-  }
-
-  /* Ambient Floor Shadow pulse */
-  @keyframes shadow-pulse {
-    0%, 100% { opacity: 0.3; transform: translateX(-50%) scale(1); }
-    50% { opacity: 0.1; transform: translateX(-50%) scale(0.8); }
-  }
-  .animate-shadow-pulse {
-    animation: shadow-pulse 6s ease-in-out infinite;
-  }
-
-  /* Button Hover Animations */
-  @keyframes arrow-right {
-    0%, 100% { transform: translateX(0); }
-    50% { transform: translateX(4px); }
-  }
-  .group:hover .arrow-right-icon {
-    animation: arrow-right 0.8s ease-in-out infinite;
-  }
-  
-  @keyframes arrow-down {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(3px); }
-  }
-  .group:hover .download-arrow {
-    animation: arrow-down 0.8s ease-in-out infinite;
-  }
-  
-  /* Smooth reset for the JS parallax */
-  #hero-mockup {
-    transition: transform 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  }
-  #hero-section:not(:hover) #hero-mockup {
-    transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1);
-  }
 </style>
-
-<script>
-  // Vanilla JS 3D Mouse Parallax effect
-  const section = document.getElementById('hero-section');
-  const mockup = document.getElementById('hero-mockup');
-  const glare = document.getElementById('mockup-glare');
-
-  if (section && mockup && glare) {
-    section.addEventListener('mousemove', (e) => {
-      // Calculate mouse position relative to window center for a natural feel
-      const centerX = window.innerWidth / 2;
-      const centerY = window.innerHeight / 2;
-      
-      const mouseX = e.clientX;
-      const mouseY = e.clientY;
-      
-      // Calculate rotation angles (max 10 degrees)
-      const rotateX = ((mouseY - centerY) / centerY) * -10; 
-      const rotateY = ((mouseX - centerX) / centerX) * 10;
-      
-      requestAnimationFrame(() => {
-        // Apply 3D rotation and a subtle zoom
-        mockup.style.transform = `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
-        
-        // Dynamic lighting (glare) based on mouse position
-        glare.style.opacity = '1';
-        glare.style.background = `radial-gradient(circle at ${mouseX}px ${mouseY}px, rgba(255,255,255,0.15) 0%, transparent 40%)`;
-      });
-    });
-
-    section.addEventListener('mouseleave', () => {
-      // Reset smoothly when mouse leaves the section
-      requestAnimationFrame(() => {
-        mockup.style.transform = `perspective(1200px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
-        glare.style.opacity = '0';
-      });
-    });
-  }
-</script>

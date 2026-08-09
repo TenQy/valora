@@ -1,0 +1,11 @@
+---
+interface Props {
+  text: string;
+}
+
+const { text } = Astro.props;
+---
+<div class="animate-fade-up opacity-0 [animation-fill-mode:forwards] inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-white/5 border border-white/10 text-text-secondary text-xs font-medium tracking-wide uppercase mb-8">
+  <span class="w-1.5 h-1.5 rounded-full bg-brand-primary/80 animate-pulse"></span>
+  {text}
+</div>

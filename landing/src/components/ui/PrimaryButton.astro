@@ -1,0 +1,31 @@
+---
+interface Props {
+  href: string;
+  text: string;
+  target?: string;
+  rel?: string;
+  delayClass?: string;
+}
+
+const { href, text, target = "_self", rel = "", delayClass = "" } = Astro.props;
+---
+<a 
+  href={href} 
+  target={target}
+  rel={rel}
+  class={`group relative flex items-center justify-center gap-3 px-7 py-3.5 rounded-md bg-white text-bg-base text-sm font-bold transition-all duration-300 hover:scale-[1.03] hover:-translate-y-1 hover:shadow-[0_10px_40px_rgba(255,255,255,0.15)] active:scale-95 ${delayClass}`}
+>
+  <span class="relative z-10">{text}</span>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="relative z-10 arrow-right-icon"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+</a>
+
+<style>
+  @keyframes arrow-right {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(4px); }
+  }
+  .group:hover .arrow-right-icon {
+    animation: arrow-right 0.8s ease-in-out infinite;
+  }
+</style>
