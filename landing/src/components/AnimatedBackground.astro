@@ -1,0 +1,102 @@
+---
+---
+<div class="fixed inset-0 overflow-hidden pointer-events-none -z-20 bg-bg-base" id="animated-bg">
+  
+  <!-- Glows -->
+  <div class="absolute top-[10%] right-[10%] w-[60vw] h-[60vw] rounded-full mix-blend-screen opacity-50 blur-[80px] animate-blob-green">
+    <div class="w-full h-full rounded-full bg-[radial-gradient(circle_at_center,rgba(74,222,128,0.09),transparent_60%)]"></div>
+  </div>
+  
+  <div class="absolute bottom-[5%] left-[10%] w-[55vw] h-[55vw] rounded-full mix-blend-screen opacity-50 blur-[80px] animate-blob-gray">
+    <div class="w-full h-full rounded-full bg-[radial-gradient(circle_at_center,rgba(154,154,154,0.07),transparent_60%)]"></div>
+  </div>
+
+  <div class="absolute top-[48%] left-[25%] w-[45vw] h-[45vw] rounded-full mix-blend-screen opacity-50 blur-[60px] animate-blob-white">
+    <div class="w-full h-full rounded-full bg-[radial-gradient(circle_at_center,rgba(232,232,232,0.03),transparent_60%)]"></div>
+  </div>
+
+  <!-- SVG Geometry -->
+  <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <pattern id="dots-dark" x="0" y="0" width="14" height="14" patternUnits="userSpaceOnUse">
+        <circle cx="2" cy="2" r="1.5" fill="#2A2A2A" />
+      </pattern>
+      <pattern id="dots-light" x="0" y="0" width="14" height="14" patternUnits="userSpaceOnUse">
+        <circle cx="2" cy="2" r="1.5" fill="#222222" />
+      </pattern>
+    </defs>
+
+    <!-- Outlined Circles with Wobble Translation -->
+    <circle cx="88%" cy="35%" r="38%" fill="none" stroke="#2A2A2A" stroke-width="0.6" class="animate-wobble-1" />
+    <circle cx="10%" cy="65%" r="24%" fill="none" stroke="#222222" stroke-width="0.6" class="animate-wobble-2" />
+    <circle cx="62%" cy="8%" r="12%" fill="none" stroke="rgba(74,222,128,0.12)" stroke-width="0.8" class="animate-wobble-1" />
+
+    <!-- Static Lines -->
+    <line x1="0" y1="25%" x2="42%" y2="0" stroke="#242424" stroke-width="0.5" />
+    <line x1="100%" y1="75%" x2="58%" y2="100%" stroke="#242424" stroke-width="0.5" />
+    <line x1="24" y1="70%" x2="32%" y2="70%" stroke="#1E1E1E" stroke-width="0.5" />
+    <line x1="68%" y1="30%" x2="calc(100% - 24px)" y2="30%" stroke="#1E1E1E" stroke-width="0.5" />
+
+    <!-- Static Dot Grids -->
+    <rect x="72%" y="78%" width="56" height="56" fill="url(#dots-dark)" />
+    <rect x="6%" y="8%" width="42" height="42" fill="url(#dots-light)" />
+
+    <!-- Semantic Pulsating Dots -->
+    <circle cx="80%" cy="13%" r="3.5" fill="rgba(74,222,128,0.25)" class="animate-pulse-fast" />
+    <circle cx="20%" cy="87%" r="3" fill="rgba(232,232,232,0.15)" class="animate-pulse-slow" />
+  </svg>
+</div>
+
+<style>
+  /* Glow Animations */
+  @keyframes blob-green {
+    0% { transform: translate(0vw, 0vh); }
+    25% { transform: translate(8vw, 0vh); }
+    50% { transform: translate(0vw, -5vh); }
+    75% { transform: translate(-8vw, 0vh); }
+    100% { transform: translate(0vw, 0vh); }
+  }
+  @keyframes blob-gray {
+    0% { transform: translate(0vw, 0vh); }
+    25% { transform: translate(6vw, 4vh); }
+    50% { transform: translate(0vw, 8vh); }
+    75% { transform: translate(-6vw, 4vh); }
+    100% { transform: translate(0vw, 0vh); }
+  }
+  @keyframes blob-white {
+    0% { transform: translate(0vw, 0vh); }
+    50% { transform: translate(0vw, 3vh); }
+    100% { transform: translate(0vw, 0vh); }
+  }
+
+  .animate-blob-green { animation: blob-green 8s linear infinite; }
+  .animate-blob-gray { animation: blob-gray 8s linear infinite; }
+  .animate-blob-white { animation: blob-white 8s linear infinite; }
+
+  /* Circle Wobble Animations */
+  @keyframes wobble-1 {
+    0% { transform: translate(0, 0); }
+    25% { transform: translate(3%, 0%); }
+    50% { transform: translate(0, 3%); }
+    75% { transform: translate(-3%, 0%); }
+    100% { transform: translate(0, 0); }
+  }
+  @keyframes wobble-2 {
+    0% { transform: translate(0, 0); }
+    25% { transform: translate(0%, 3%); }
+    50% { transform: translate(-3%, 0%); }
+    75% { transform: translate(0%, -3%); }
+    100% { transform: translate(0, 0); }
+  }
+
+  .animate-wobble-1 { animation: wobble-1 8s linear infinite; }
+  .animate-wobble-2 { animation: wobble-2 8s linear infinite; }
+
+  /* Pulse Animations */
+  .animate-pulse-fast { animation: pulse-opacity 2s ease-in-out infinite alternate; }
+  .animate-pulse-slow { animation: pulse-opacity 4s ease-in-out infinite alternate; }
+  @keyframes pulse-opacity {
+    from { opacity: 0.1; }
+    to { opacity: 1; }
+  }
+</style>
