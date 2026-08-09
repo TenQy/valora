@@ -14,13 +14,15 @@ const { href, text, download = false, delayClass = "" } = Astro.props;
   class={`group relative flex items-center justify-center gap-3 px-7 py-3.5 rounded-md bg-transparent border border-white/20 text-white text-sm font-medium transition-all duration-300 hover:border-hero-glow/60 hover:shadow-[0_0_20px_rgba(74,222,128,0.15)] active:scale-95 overflow-hidden ${delayClass}`}
 >
   <div class="absolute inset-0 bg-hero-glow/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="relative z-10 opacity-70 group-hover:opacity-100 transition-opacity">
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-    <g class="download-arrow">
-      <polyline points="7 10 12 15 17 10"/>
-      <line x1="12" x2="12" y1="15" y2="3"/>
-    </g>
-  </svg>
+  {download && (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="relative z-10 opacity-70 group-hover:opacity-100 transition-opacity">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <g class="download-arrow">
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" x2="12" y1="15" y2="3"/>
+      </g>
+    </svg>
+  )}
   <span class="relative z-10">{text}</span>
 </a>
 

@@ -1,39 +1,89 @@
 ---
+import PrimaryButton from './ui/PrimaryButton.astro';
+import SecondaryButton from './ui/SecondaryButton.astro';
 ---
 
-<header class="fixed top-0 w-full z-50 glass-nav transition-all duration-300">
-  <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-    <div class="flex items-center gap-2">
-      <!-- Logo placeholder -->
-      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-primary to-brand-secondary flex items-center justify-center font-bold text-bg-base">
-        V
-      </div>
-      <span class="text-xl font-bold tracking-tight text-white">Valora</span>
-    </div>
+<header id="main-header" class="fixed top-0 w-full z-50 transition-all duration-500 bg-transparent py-4">
+  <!-- Glowing border that appears on scroll (handled via script) -->
+  <div id="header-bg" class="absolute inset-0 bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/5 opacity-0 transition-opacity duration-500 shadow-2xl"></div>
+  
+  <div class="relative max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
+    <!-- Logo -->
+    <a href="#" class="flex items-center gap-3 group relative">
+      <!-- Soft ambient glow that appears behind everything on hover -->
+      <div class="absolute -inset-4 bg-hero-glow/10 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none -z-10"></div>
+      
+      <!-- Flat Logo Image -->
+      <img src="/images/app_icon.png" alt="Valora Logo" class="relative z-10 w-10 h-10 object-contain drop-shadow-[0_0_15px_rgba(74,222,128,0)] group-hover:drop-shadow-[0_0_15px_rgba(74,222,128,0.5)] transition-all duration-500 group-hover:scale-105 group-hover:-rotate-3" />
+      
+      <!-- Main Text (Wave Effect) -->
+      <span class="relative z-10 text-2xl font-bold tracking-tight flex items-center group-hover:drop-shadow-[0_0_12px_rgba(74,222,128,0.5)] transition-all duration-500 cursor-default">
+        <span class="text-white group-hover:text-hero-glow transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] group-hover:-translate-y-1">V</span>
+        <span class="text-white group-hover:text-hero-glow transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] delay-[50ms] group-hover:-translate-y-1">a</span>
+        <span class="text-white group-hover:text-hero-glow transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] delay-[100ms] group-hover:-translate-y-1">l</span>
+        <span class="text-white group-hover:text-hero-glow transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] delay-[150ms] group-hover:-translate-y-1">o</span>
+        <span class="text-white group-hover:text-hero-glow transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] delay-[200ms] group-hover:-translate-y-1">r</span>
+        <span class="text-white group-hover:text-hero-glow transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] delay-[250ms] group-hover:-translate-y-1">a</span>
+      </span>
+    </a>
     
-    <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-text-secondary">
-      <a href="#como-funciona" class="hover:text-white transition-colors">Cómo Funciona</a>
-      <a href="#caracteristicas" class="hover:text-white transition-colors">Características</a>
-      <a href="#para-quien" class="hover:text-white transition-colors">Para Quién</a>
+    <!-- Navigation -->
+    <nav class="hidden md:flex items-center gap-8 lg:gap-12 text-sm font-medium text-gray-400">
+      <a href="#como-funciona" class="relative px-3 py-1.5 group text-gray-400 hover:text-white transition-colors duration-300">
+        <span class="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-hero-glow opacity-0 group-hover:opacity-100 group-hover:-translate-x-1 group-hover:-translate-y-1 transition-all duration-300 ease-out shadow-[-2px_-2px_4px_rgba(74,222,128,0.5)]"></span>
+        <span class="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-hero-glow opacity-0 group-hover:opacity-100 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all duration-300 ease-out shadow-[2px_-2px_4px_rgba(74,222,128,0.5)]"></span>
+        <span class="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-hero-glow opacity-0 group-hover:opacity-100 group-hover:-translate-x-1 group-hover:translate-y-1 transition-all duration-300 ease-out shadow-[-2px_2px_4px_rgba(74,222,128,0.5)]"></span>
+        <span class="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-hero-glow opacity-0 group-hover:opacity-100 group-hover:translate-x-1 group-hover:translate-y-1 transition-all duration-300 ease-out shadow-[2px_2px_4px_rgba(74,222,128,0.5)]"></span>
+        <span class="relative z-10 group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all duration-300">Cómo Funciona</span>
+      </a>
+      <a href="#caracteristicas" class="relative px-3 py-1.5 group text-gray-400 hover:text-white transition-colors duration-300">
+        <span class="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-hero-glow opacity-0 group-hover:opacity-100 group-hover:-translate-x-1 group-hover:-translate-y-1 transition-all duration-300 ease-out shadow-[-2px_-2px_4px_rgba(74,222,128,0.5)]"></span>
+        <span class="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-hero-glow opacity-0 group-hover:opacity-100 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all duration-300 ease-out shadow-[2px_-2px_4px_rgba(74,222,128,0.5)]"></span>
+        <span class="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-hero-glow opacity-0 group-hover:opacity-100 group-hover:-translate-x-1 group-hover:translate-y-1 transition-all duration-300 ease-out shadow-[-2px_2px_4px_rgba(74,222,128,0.5)]"></span>
+        <span class="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-hero-glow opacity-0 group-hover:opacity-100 group-hover:translate-x-1 group-hover:translate-y-1 transition-all duration-300 ease-out shadow-[2px_2px_4px_rgba(74,222,128,0.5)]"></span>
+        <span class="relative z-10 group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all duration-300">Características</span>
+      </a>
+      <a href="#para-quien" class="relative px-3 py-1.5 group text-gray-400 hover:text-white transition-colors duration-300">
+        <span class="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-hero-glow opacity-0 group-hover:opacity-100 group-hover:-translate-x-1 group-hover:-translate-y-1 transition-all duration-300 ease-out shadow-[-2px_-2px_4px_rgba(74,222,128,0.5)]"></span>
+        <span class="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-hero-glow opacity-0 group-hover:opacity-100 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all duration-300 ease-out shadow-[2px_-2px_4px_rgba(74,222,128,0.5)]"></span>
+        <span class="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-hero-glow opacity-0 group-hover:opacity-100 group-hover:-translate-x-1 group-hover:translate-y-1 transition-all duration-300 ease-out shadow-[-2px_2px_4px_rgba(74,222,128,0.5)]"></span>
+        <span class="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-hero-glow opacity-0 group-hover:opacity-100 group-hover:translate-x-1 group-hover:translate-y-1 transition-all duration-300 ease-out shadow-[2px_2px_4px_rgba(74,222,128,0.5)]"></span>
+        <span class="relative z-10 group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all duration-300">Para Quién</span>
+      </a>
     </nav>
 
-    <div class="flex items-center gap-4">
-      <a 
+    <!-- Actions (Scaled down slightly to fit the header gracefully) -->
+    <div class="flex items-center gap-3 scale-90 origin-right">
+      <div class="hidden sm:block">
+        <SecondaryButton 
+          href="https://vaalora.vercel.app" 
+          text="Iniciar Sesión" 
+        />
+      </div>
+      <PrimaryButton 
         href="https://vaalora.vercel.app" 
         target="_blank"
         rel="noopener noreferrer"
-        class="hidden sm:inline-flex px-5 py-2.5 rounded-md bg-white/5 hover:bg-white/10 text-white text-sm font-medium transition-colors border border-white/10"
-      >
-        Iniciar Sesión
-      </a>
-      <a 
-        href="https://vaalora.vercel.app" 
-        target="_blank"
-        rel="noopener noreferrer"
-        class="px-5 py-2.5 rounded-md bg-brand-primary hover:bg-brand-primary-hover text-bg-base text-sm font-bold transition-all shadow-[0_0_20px_rgba(3,218,197,0.3)] hover:shadow-[0_0_30px_rgba(3,218,197,0.5)]"
-      >
-        Probar Gratis
-      </a>
+        text="Probar Gratis" 
+      />
     </div>
   </div>
 </header>
+
+<script>
+  // Add background and border when scrolling for a premium glass feel
+  const headerBg = document.getElementById('header-bg');
+  const header = document.getElementById('main-header');
+  
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 20) {
+      headerBg?.classList.remove('opacity-0');
+      headerBg?.classList.add('opacity-100');
+      header?.classList.replace('py-4', 'py-2');
+    } else {
+      headerBg?.classList.add('opacity-0');
+      headerBg?.classList.remove('opacity-100');
+      header?.classList.replace('py-2', 'py-4');
+    }
+  });
+</script>
