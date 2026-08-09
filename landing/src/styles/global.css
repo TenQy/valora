@@ -54,3 +54,11 @@ body {
 }
 .animate-fade-up { animation: fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 .animate-fade-in { animation: fade-in 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+/* Shimmering Text */
+@keyframes shimmer {
+  to { background-position: -200% center; }
+}
+.animate-shimmer {
+  animation: shimmer 4s linear infinite;
+}

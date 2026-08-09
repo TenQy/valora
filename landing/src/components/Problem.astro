@@ -2,45 +2,71 @@
 ---
 
 <section class="py-24 relative" id="problema">
-  <div class="max-w-4xl mx-auto px-6 text-center">
+  <!-- Subtle ambient background glow for the section -->
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl h-[400px] bg-hero-glow/5 blur-[120px] rounded-full pointer-events-none -z-10"></div>
+  
+  <div class="max-w-6xl mx-auto px-6 text-center">
     <h2 class="text-2xl md:text-4xl font-bold text-white mb-8">
       El mercado laboral cambia rápido. <br />
-      <span class="text-text-secondary">Tu perfil también debería.</span>
+      <span class="text-transparent bg-clip-text bg-gradient-to-r from-hero-glow via-emerald-300 to-emerald-600 bg-[length:200%_auto] animate-shimmer">Tu perfil también debería.</span>
     </h2>
     
-    <div class="grid md:grid-cols-3 gap-8 mt-16">
+    <div class="grid md:grid-cols-3 gap-6 lg:gap-8 mt-16">
+      
       <!-- Pain point 1 -->
-      <div class="glass-card p-8 text-left transition-transform hover:-translate-y-2">
-        <div class="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400 mb-6">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <div class="group relative p-8 text-left rounded-2xl bg-gradient-to-b from-white/[0.03] to-transparent border border-white/5 transition-all duration-500 hover:-translate-y-2 hover:border-hero-glow/20 hover:shadow-[0_20px_40px_-15px_rgba(74,222,128,0.15)] overflow-hidden cursor-default min-h-[240px]">
+        <!-- Colored ambient glow on hover -->
+        <div class="absolute -top-24 -right-24 w-56 h-56 bg-hero-glow/20 rounded-full blur-[60px] transition-opacity duration-500 opacity-0 group-hover:opacity-100 pointer-events-none z-0"></div>
+        
+        <!-- Large background icon (Subtle resting state) -->
+        <div class="absolute -bottom-8 -right-8 text-white/5 group-hover:text-hero-glow/15 transition-colors duration-700 pointer-events-none z-0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="transform -rotate-6 group-hover:rotate-0 group-hover:scale-110 transition-transform duration-700"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         </div>
-        <h3 class="text-xl font-bold text-white mb-3">Sueldos Desactualizados</h3>
-        <p class="text-text-secondary text-sm leading-relaxed">
-          Es difícil saber cuánto pedir en una entrevista. Las calculadoras tradicionales usan promedios genéricos que no reflejan tu stack tecnológico real.
-        </p>
+        
+        <div class="relative z-10">
+          <h3 class="text-xl md:text-2xl font-bold text-white mb-3 tracking-wide">Sueldos Desactualizados</h3>
+          <p class="text-gray-400 text-sm leading-relaxed group-hover:text-gray-200 transition-colors duration-500 max-w-[90%] relative z-10">
+            Es difícil saber cuánto pedir en una entrevista. Las calculadoras tradicionales usan promedios genéricos que no reflejan tu conjunto de habilidades reales.
+          </p>
+        </div>
       </div>
 
       <!-- Pain point 2 -->
-      <div class="glass-card p-8 text-left transition-transform hover:-translate-y-2">
-        <div class="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-400 mb-6">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m12 16 4-4-4-4"/><path d="M8 12h8"/></svg>
+      <div class="group relative p-8 text-left rounded-2xl bg-gradient-to-b from-white/[0.03] to-transparent border border-white/5 transition-all duration-500 hover:-translate-y-2 hover:border-hero-glow/20 hover:shadow-[0_20px_40px_-15px_rgba(74,222,128,0.15)] overflow-hidden cursor-default min-h-[240px]">
+        <!-- Colored ambient glow on hover -->
+        <div class="absolute -top-24 -right-24 w-56 h-56 bg-hero-glow/20 rounded-full blur-[60px] transition-opacity duration-500 opacity-0 group-hover:opacity-100 pointer-events-none z-0"></div>
+        
+        <!-- Large background icon (Subtle resting state) -->
+        <div class="absolute -bottom-8 -right-8 text-white/5 group-hover:text-hero-glow/15 transition-colors duration-700 pointer-events-none z-0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="transform -rotate-6 group-hover:rotate-0 group-hover:scale-110 transition-transform duration-700"><circle cx="12" cy="12" r="10"/><path d="m12 16 4-4-4-4"/><path d="M8 12h8"/></svg>
         </div>
-        <h3 class="text-xl font-bold text-white mb-3">Estancamiento</h3>
-        <p class="text-text-secondary text-sm leading-relaxed">
-          ¿Sabes exactamente qué tecnología o habilidad aprender a continuación para aumentar tu valor en el mercado en un 20%?
-        </p>
+        
+        <div class="relative z-10">
+          <h3 class="text-xl md:text-2xl font-bold text-white mb-3 tracking-wide">Estancamiento</h3>
+          <p class="text-gray-400 text-sm leading-relaxed group-hover:text-gray-200 transition-colors duration-500 max-w-[90%] relative z-10">
+            ¿Sabes exactamente qué competencia o certificación adquirir a continuación para aumentar drásticamente tu valor en el mercado?
+          </p>
+        </div>
       </div>
 
       <!-- Pain point 3 -->
-      <div class="glass-card p-8 text-left transition-transform hover:-translate-y-2">
-        <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 mb-6">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+      <div class="group relative p-8 text-left rounded-2xl bg-gradient-to-b from-white/[0.03] to-transparent border border-white/5 transition-all duration-500 hover:-translate-y-2 hover:border-hero-glow/20 hover:shadow-[0_20px_40px_-15px_rgba(74,222,128,0.15)] overflow-hidden cursor-default min-h-[240px]">
+        <!-- Colored ambient glow on hover -->
+        <div class="absolute -top-24 -right-24 w-56 h-56 bg-hero-glow/20 rounded-full blur-[60px] transition-opacity duration-500 opacity-0 group-hover:opacity-100 pointer-events-none z-0"></div>
+        
+        <!-- Large background icon (Subtle resting state) -->
+        <div class="absolute -bottom-8 -right-8 text-white/5 group-hover:text-hero-glow/15 transition-colors duration-700 pointer-events-none z-0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="transform -rotate-6 group-hover:rotate-0 group-hover:scale-110 transition-transform duration-700"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
         </div>
-        <h3 class="text-xl font-bold text-white mb-3">Fricción al Aplicar</h3>
-        <p class="text-text-secondary text-sm leading-relaxed">
-          Aplicas a decenas de ofertas sin saber si realmente haces "match" con lo que la empresa busca en ese rol específico.
-        </p>
+        
+        <div class="relative z-10">
+          <h3 class="text-xl md:text-2xl font-bold text-white mb-3 tracking-wide">Fricción al Aplicar</h3>
+          <p class="text-gray-400 text-sm leading-relaxed group-hover:text-gray-200 transition-colors duration-500 max-w-[90%] relative z-10">
+            Aplicas a decenas de ofertas sin saber si realmente haces "match" con las competencias específicas que la empresa busca.
+          </p>
+        </div>
       </div>
+      
     </div>
   </div>
 </section>
