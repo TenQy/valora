@@ -62,3 +62,10 @@ body {
 .animate-shimmer {
   animation: shimmer 4s linear infinite;
 }
+
+/* SVG Line Drawing */
+@keyframes dash {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
