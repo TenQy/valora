@@ -85,23 +85,30 @@ class ResultsService {
     return results;
   }
 
-  /// Llama a la Edge Function `growth-path` en Supabase (con soporte offline SQLite).
+  /// Llama a la Edge Function `growth-path` en Supabase o lee de la base de datos de Supabase.
   Future<GrowthPathModel> fetchGrowthPath({String? profileId, bool forceRefresh = false}) async {
-    final effectiveProfileId = profileId ?? _client.auth.currentUser?.id ?? 'guest';
+    final effectiveProfileId = profileId ?? _client.auth.currentUser?.id;
 
-    // 1. Intentar cargar desde la base de datos local
+    if (effectiveProfileId == null || effectiveProfileId == 'guest') {
+      throw Exception('Debes iniciar sesión para generar una ruta de crecimiento.');
+    }
+
+    // 1. Intentar cargar desde Supabase si no es forceRefresh
     if (!forceRefresh) {
-      final cachedData = await LocalDbHelper.instance.getGrowthPath(effectiveProfileId);
-      if (cachedData != null) {
-        try {
-          return GrowthPathModel.fromJson(jsonDecode(cachedData));
-        } catch (_) {
-          // Si el JSON falla, seguimos a la red
-        }
+      final cachedRes = await _client
+          .from('growth_paths')
+          .select()
+          .eq('profile_id', effectiveProfileId)
+          .order('created_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      if (cachedRes != null) {
+        return GrowthPathModel.fromJson(cachedRes);
       }
     }
 
-    // 2. Si no hay datos locales, ir a la red
+    // 2. Si no hay datos, o es forceRefresh, ir a la red (Edge Function)
     final res = await _client.functions.invoke(
       'growth-path',
       body: profileId != null ? {'profile_id': profileId} : {},
@@ -117,11 +124,6 @@ class ResultsService {
     }
 
     final data = Map<String, dynamic>.from(res.data as Map);
-    final result = GrowthPathModel.fromJson(data);
-
-    // 3. Guardar el nuevo resultado en caché local SQLite
-    await LocalDbHelper.instance.saveGrowthPath(effectiveProfileId, jsonEncode(data));
-
-    return result;
+    return GrowthPathModel.fromJson(data);
   }
 }

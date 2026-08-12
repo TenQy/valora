@@ -169,6 +169,22 @@ IMPORTANTE: Debes ser extremadamente específico. No uses frases genéricas como
       );
     }
 
+    // 4. Save to Database
+    const { error: insertError } = await supabase
+      .from("growth_paths")
+      .insert({
+        profile_id: profileRow.id,
+        current_level: parsedResult.current_level || "",
+        next_level: parsedResult.next_level || "",
+        estimated_time: parsedResult.estimated_time || "",
+        summary: parsedResult.summary || "",
+        milestones: parsedResult.milestones || []
+      });
+
+    if (insertError) {
+      console.error("Error saving growth path:", insertError);
+    }
+
     return new Response(
       JSON.stringify(parsedResult),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }

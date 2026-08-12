@@ -115,20 +115,28 @@ class DashboardService {
       }));
     }
 
-    // 4. Fetch latest growth path from local db
+    // 4. Fetch latest growth path from Supabase
     GrowthPathModel? growthPath;
     bool isUpdated = false;
     
-    final cachedPath = await LocalDbHelper.instance.getGrowthPath(userId);
-    if (cachedPath != null) {
+    final growthPathRes = await _client
+        .from('growth_paths')
+        .select()
+        .eq('profile_id', profileId)
+        .order('created_at', ascending: false)
+        .limit(1)
+        .maybeSingle();
+
+    if (growthPathRes != null) {
       try {
-        growthPath = GrowthPathModel.fromJson(jsonDecode(cachedPath));
+        growthPath = GrowthPathModel.fromJson(growthPathRes);
         
         // Comparar fechas para ver si se actualizó el perfil después de generar la ruta
-        final pathCreatedAt = await LocalDbHelper.instance.getGrowthPathCreatedAt(userId);
-        if (pathCreatedAt != null && profileRes['updated_at'] != null) {
+        final pathCreatedAtStr = growthPathRes['created_at'] as String?;
+        if (pathCreatedAtStr != null && profileRes['updated_at'] != null) {
+          final pathCreatedAt = DateTime.tryParse(pathCreatedAtStr);
           final profileUpdatedAt = DateTime.tryParse(profileRes['updated_at'].toString());
-          if (profileUpdatedAt != null && profileUpdatedAt.isAfter(pathCreatedAt)) {
+          if (pathCreatedAt != null && profileUpdatedAt != null && profileUpdatedAt.isAfter(pathCreatedAt)) {
             isUpdated = true;
           }
         }
