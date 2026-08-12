@@ -24,7 +24,7 @@ class ResponsiveWrapper extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF000000), // Fondo completamente negro
+      backgroundColor: const Color(0xFF0B0C10), // Fondo ligeramente más claro que el negro puro
       body: Stack(
         alignment: Alignment.center,
         children: [
