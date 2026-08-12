@@ -86,6 +86,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       extendBodyBehindAppBar: true,
       appBar: const ValoraAppBar(
         title: 'Seguridad y Privacidad',
+        showBackButton: true,
       ),
       body: AnimatedAppBackground(
         child: SafeArea(

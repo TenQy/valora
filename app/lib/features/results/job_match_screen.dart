@@ -74,8 +74,16 @@ class _JobMatchScreenState extends State<JobMatchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bgPage,
-      appBar: const ValoraAppBar(title: 'Compatibilidad Laboral'),
-      body: _buildBody(),
+      extendBodyBehindAppBar: true,
+      appBar: const ValoraAppBar(
+        title: 'Compatibilidad Laboral',
+        showBackButton: true,
+      ),
+      body: AnimatedAppBackground(
+        child: SafeArea(
+          child: _buildBody(),
+        ),
+      ),
     );
   }
 

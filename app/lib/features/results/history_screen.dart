@@ -53,82 +53,89 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.bgPage,
+      extendBodyBehindAppBar: true,
       appBar: const ValoraAppBar(
         title: 'Historial de Estimaciones',
+        showBackButton: true,
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: _historyFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.silver),
-            );
-          }
+      body: AnimatedAppBackground(
+        child: SafeArea(
+          child: FutureBuilder<List<Map<String, dynamic>>>(
+            future: _historyFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.silver),
+                );
+              }
 
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: AppColors.colorError)));
-          }
+              if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: AppColors.colorError)));
+              }
 
-          final data = snapshot.data;
-          if (data == null || data.isEmpty) {
-            return const Center(
-              child: Text(
-                'Aún no tienes estimaciones guardadas.',
-                style: TextStyle(color: AppColors.silverMuted),
-              ),
-            );
-          }
+              final data = snapshot.data;
+              if (data == null || data.isEmpty) {
+                return const Center(
+                  child: Text(
+                    'Aún no tienes estimaciones guardadas.',
+                    style: TextStyle(color: AppColors.silverMuted),
+                  ),
+                );
+              }
 
-          return ListView.separated(
-            padding: const EdgeInsets.all(AppSpacing.space24),
-            itemCount: data.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 16),
-            itemBuilder: (context, index) {
-              final row = data[index];
-              final dateStr = row['created_at'] as String?;
-              final date = dateStr != null ? DateTime.tryParse(dateStr) : null;
-              final formattedDate = date != null ? '${date.day}/${date.month}/${date.year}' : 'Desconocida';
-              
-              final min = (row['estimated_min_salary'] as num?)?.toInt() ?? 0;
-              final max = (row['estimated_max_salary'] as num?)?.toInt() ?? 0;
-              final cur = row['currency'] ?? 'MXN';
+              return ListView.separated(
+                padding: const EdgeInsets.all(AppSpacing.space24),
+                itemCount: data.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 16),
+                itemBuilder: (context, index) {
+                  final row = data[index];
+                  final dateStr = row['created_at'] as String?;
+                  final date = dateStr != null ? DateTime.tryParse(dateStr) : null;
+                  final formattedDate = date != null ? '${date.day}/${date.month}/${date.year}' : 'Desconocida';
+                  
+                  final min = (row['estimated_min_salary'] as num?)?.toInt() ?? 0;
+                  final max = (row['estimated_max_salary'] as num?)?.toInt() ?? 0;
+                  final cur = row['currency'] ?? 'MXN';
 
-              return Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.bgSurface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.borderDefault),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.bgSurface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.borderDefault),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Fecha: $formattedDate', style: const TextStyle(color: AppColors.silverMuted, fontSize: 13)),
-                        if (index == 0)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppColors.silver.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Text('ACTUAL', style: TextStyle(color: AppColors.silver, fontSize: 10, fontWeight: FontWeight.bold)),
-                          ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Fecha: $formattedDate', style: const TextStyle(color: AppColors.silverMuted, fontSize: 13)),
+                            if (index == 0)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.silver.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Text('ACTUAL', style: TextStyle(color: AppColors.silver, fontSize: 10, fontWeight: FontWeight.bold)),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '\$${Formatters.formatThousands(min)} - \$${Formatters.formatThousands(max)} $cur',
+                          style: const TextStyle(color: AppColors.silver, fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '\$${Formatters.formatThousands(min)} - \$${Formatters.formatThousands(max)} $cur',
-                      style: const TextStyle(color: AppColors.silver, fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              ).animate(delay: (index * 50).ms).fade(duration: 400.ms).slideX(begin: 0.05, curve: Curves.easeOut);
+                  ).animate(delay: (index * 50).ms).fade(duration: 400.ms).slideX(begin: 0.05, curve: Curves.easeOut);
+                },
+              );
             },
-          );
-        },
+          ),
+        ),
       ),
     );
   }
