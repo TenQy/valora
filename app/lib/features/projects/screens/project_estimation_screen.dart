@@ -273,7 +273,9 @@ class _ResultView extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
           ),
           child: ExpandableText(
-            text: project.description,
+            text: project.summary != null && project.summary!.isNotEmpty 
+                ? project.summary! 
+                : project.description,
             maxLines: 4,
             style: const TextStyle(
               color: AppColors.silver,
